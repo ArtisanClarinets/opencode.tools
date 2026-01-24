@@ -1,0 +1,82 @@
+4811f0fb5b59fe5a2cbc05038482f283
+"use strict";
+// C:\Users\drpt0\iCloudDrive\Developer\Projects\Active\opencode.tools\agents\research\index.ts
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.gatherDossier = gatherDossier;
+const fs = __importStar(require("fs"));
+const research_agent_1 = require("./research-agent");
+/**
+ * Orchestrates research using the ResearchAgent.
+ * @param briefPathOrJson The client brief as a JSON string or path to a JSON file.
+ * @returns A structured Research Output.
+ */
+async function gatherDossier(briefPathOrJson) {
+    let input;
+    try {
+        // Check if input is a file path
+        if (fs.existsSync(briefPathOrJson) && fs.lstatSync(briefPathOrJson).isFile()) {
+            const content = fs.readFileSync(briefPathOrJson, 'utf-8');
+            // If the file contains the full ResearchInput structure
+            const parsed = JSON.parse(content);
+            if (parsed.brief) {
+                input = parsed;
+            }
+            else {
+                // If the file is just the ClientBrief
+                input = { brief: parsed };
+            }
+        }
+        else {
+            // Try parsing as JSON string
+            const parsed = JSON.parse(briefPathOrJson);
+            if (parsed.brief) {
+                input = parsed;
+            }
+            else {
+                input = { brief: parsed };
+            }
+        }
+    }
+    catch (error) {
+        console.error("Failed to parse input brief:", error);
+        throw new Error("Invalid input: Must be a valid JSON string or path to a JSON file containing a ClientBrief.");
+    }
+    const agent = new research_agent_1.ResearchAgent();
+    console.log(`Starting research for ${input.brief.company}...`);
+    return await agent.execute(input);
+}
+// CLI Entry Point removed to enforce TUI-only access
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiL2FwcC9hZ2VudHMvcmVzZWFyY2gvaW5kZXgudHMiLCJtYXBwaW5ncyI6IjtBQUFBLCtGQUErRjs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7QUFzQi9GLHNDQWdDQztBQXBERCx1Q0FBeUI7QUFFekIscURBQWlEO0FBYWpEOzs7O0dBSUc7QUFDSSxLQUFLLFVBQVUsYUFBYSxDQUFDLGVBQXVCO0lBQ3ZELElBQUksS0FBb0IsQ0FBQztJQUV6QixJQUFJLENBQUM7UUFDRCxnQ0FBZ0M7UUFDaEMsSUFBSSxFQUFFLENBQUMsVUFBVSxDQUFDLGVBQWUsQ0FBQyxJQUFJLEVBQUUsQ0FBQyxTQUFTLENBQUMsZUFBZSxDQUFDLENBQUMsTUFBTSxFQUFFLEVBQUUsQ0FBQztZQUMzRSxNQUFNLE9BQU8sR0FBRyxFQUFFLENBQUMsWUFBWSxDQUFDLGVBQWUsRUFBRSxPQUFPLENBQUMsQ0FBQztZQUMxRCx3REFBd0Q7WUFDeEQsTUFBTSxNQUFNLEdBQUcsSUFBSSxDQUFDLEtBQUssQ0FBQyxPQUFPLENBQUMsQ0FBQztZQUNuQyxJQUFJLE1BQU0sQ0FBQyxLQUFLLEVBQUUsQ0FBQztnQkFDZixLQUFLLEdBQUcsTUFBTSxDQUFDO1lBQ25CLENBQUM7aUJBQU0sQ0FBQztnQkFDSixzQ0FBc0M7Z0JBQ3RDLEtBQUssR0FBRyxFQUFFLEtBQUssRUFBRSxNQUFNLEVBQUUsQ0FBQztZQUM5QixDQUFDO1FBQ0wsQ0FBQzthQUFNLENBQUM7WUFDSiw2QkFBNkI7WUFDN0IsTUFBTSxNQUFNLEdBQUcsSUFBSSxDQUFDLEtBQUssQ0FBQyxlQUFlLENBQUMsQ0FBQztZQUMzQyxJQUFJLE1BQU0sQ0FBQyxLQUFLLEVBQUUsQ0FBQztnQkFDZixLQUFLLEdBQUcsTUFBTSxDQUFDO1lBQ25CLENBQUM7aUJBQU0sQ0FBQztnQkFDSixLQUFLLEdBQUcsRUFBRSxLQUFLLEVBQUUsTUFBTSxFQUFFLENBQUM7WUFDOUIsQ0FBQztRQUNMLENBQUM7SUFDTCxDQUFDO0lBQUMsT0FBTyxLQUFLLEVBQUUsQ0FBQztRQUNiLE9BQU8sQ0FBQyxLQUFLLENBQUMsOEJBQThCLEVBQUUsS0FBSyxDQUFDLENBQUM7UUFDckQsTUFBTSxJQUFJLEtBQUssQ0FBQyw2RkFBNkYsQ0FBQyxDQUFDO0lBQ25ILENBQUM7SUFFRCxNQUFNLEtBQUssR0FBRyxJQUFJLDhCQUFhLEVBQUUsQ0FBQztJQUNsQyxPQUFPLENBQUMsR0FBRyxDQUFDLHlCQUF5QixLQUFLLENBQUMsS0FBSyxDQUFDLE9BQU8sS0FBSyxDQUFDLENBQUM7SUFDL0QsT0FBTyxNQUFNLEtBQUssQ0FBQyxPQUFPLENBQUMsS0FBSyxDQUFDLENBQUM7QUFDdEMsQ0FBQztBQUVELHFEQUFxRCIsIm5hbWVzIjpbXSwic291cmNlcyI6WyIvYXBwL2FnZW50cy9yZXNlYXJjaC9pbmRleC50cyJdLCJzb3VyY2VzQ29udGVudCI6WyIvLyBDOlxcVXNlcnNcXGRycHQwXFxpQ2xvdWREcml2ZVxcRGV2ZWxvcGVyXFxQcm9qZWN0c1xcQWN0aXZlXFxvcGVuY29kZS50b29sc1xcYWdlbnRzXFxyZXNlYXJjaFxcaW5kZXgudHNcblxuaW1wb3J0ICogYXMgZnMgZnJvbSAnZnMnO1xuaW1wb3J0ICogYXMgcGF0aCBmcm9tICdwYXRoJztcbmltcG9ydCB7IFJlc2VhcmNoQWdlbnQgfSBmcm9tICcuL3Jlc2VhcmNoLWFnZW50JztcbmltcG9ydCB7IFJlc2VhcmNoSW5wdXQsIFJlc2VhcmNoT3V0cHV0IH0gZnJvbSAnLi90eXBlcyc7XG5cbi8vIEtlcHQgZm9yIGJhY2t3YXJkIGNvbXBhdGliaWxpdHkgaWYgbmVlZGVkLCBidXQgZ2F0aGVyRG9zc2llciBub3cgcmV0dXJucyBSZXNlYXJjaE91dHB1dFxuZXhwb3J0IGludGVyZmFjZSBEb3NzaWVyIHtcbiAgICBzdW1tYXJ5OiBzdHJpbmc7XG4gICAgY29tcGV0aXRvcnM6IHN0cmluZ1tdO1xuICAgIGNvbnN0cmFpbnRzOiBzdHJpbmdbXTtcbiAgICBvcHBvcnR1bml0aWVzOiBzdHJpbmdbXTtcbiAgICByYXdTb3VyY2VzOiBzdHJpbmdbXTtcbiAgICBtYXJrZG93bjogc3RyaW5nO1xufVxuXG4vKipcbiAqIE9yY2hlc3RyYXRlcyByZXNlYXJjaCB1c2luZyB0aGUgUmVzZWFyY2hBZ2VudC5cbiAqIEBwYXJhbSBicmllZlBhdGhPckpzb24gVGhlIGNsaWVudCBicmllZiBhcyBhIEpTT04gc3RyaW5nIG9yIHBhdGggdG8gYSBKU09OIGZpbGUuXG4gKiBAcmV0dXJucyBBIHN0cnVjdHVyZWQgUmVzZWFyY2ggT3V0cHV0LlxuICovXG5leHBvcnQgYXN5bmMgZnVuY3Rpb24gZ2F0aGVyRG9zc2llcihicmllZlBhdGhPckpzb246IHN0cmluZyk6IFByb21pc2U8UmVzZWFyY2hPdXRwdXQ+IHtcbiAgICBsZXQgaW5wdXQ6IFJlc2VhcmNoSW5wdXQ7XG5cbiAgICB0cnkge1xuICAgICAgICAvLyBDaGVjayBpZiBpbnB1dCBpcyBhIGZpbGUgcGF0aFxuICAgICAgICBpZiAoZnMuZXhpc3RzU3luYyhicmllZlBhdGhPckpzb24pICYmIGZzLmxzdGF0U3luYyhicmllZlBhdGhPckpzb24pLmlzRmlsZSgpKSB7XG4gICAgICAgICAgICBjb25zdCBjb250ZW50ID0gZnMucmVhZEZpbGVTeW5jKGJyaWVmUGF0aE9ySnNvbiwgJ3V0Zi04Jyk7XG4gICAgICAgICAgICAvLyBJZiB0aGUgZmlsZSBjb250YWlucyB0aGUgZnVsbCBSZXNlYXJjaElucHV0IHN0cnVjdHVyZVxuICAgICAgICAgICAgY29uc3QgcGFyc2VkID0gSlNPTi5wYXJzZShjb250ZW50KTtcbiAgICAgICAgICAgIGlmIChwYXJzZWQuYnJpZWYpIHtcbiAgICAgICAgICAgICAgICBpbnB1dCA9IHBhcnNlZDtcbiAgICAgICAgICAgIH0gZWxzZSB7XG4gICAgICAgICAgICAgICAgLy8gSWYgdGhlIGZpbGUgaXMganVzdCB0aGUgQ2xpZW50QnJpZWZcbiAgICAgICAgICAgICAgICBpbnB1dCA9IHsgYnJpZWY6IHBhcnNlZCB9O1xuICAgICAgICAgICAgfVxuICAgICAgICB9IGVsc2Uge1xuICAgICAgICAgICAgLy8gVHJ5IHBhcnNpbmcgYXMgSlNPTiBzdHJpbmdcbiAgICAgICAgICAgIGNvbnN0IHBhcnNlZCA9IEpTT04ucGFyc2UoYnJpZWZQYXRoT3JKc29uKTtcbiAgICAgICAgICAgIGlmIChwYXJzZWQuYnJpZWYpIHtcbiAgICAgICAgICAgICAgICBpbnB1dCA9IHBhcnNlZDtcbiAgICAgICAgICAgIH0gZWxzZSB7XG4gICAgICAgICAgICAgICAgaW5wdXQgPSB7IGJyaWVmOiBwYXJzZWQgfTtcbiAgICAgICAgICAgIH1cbiAgICAgICAgfVxuICAgIH0gY2F0Y2ggKGVycm9yKSB7XG4gICAgICAgIGNvbnNvbGUuZXJyb3IoXCJGYWlsZWQgdG8gcGFyc2UgaW5wdXQgYnJpZWY6XCIsIGVycm9yKTtcbiAgICAgICAgdGhyb3cgbmV3IEVycm9yKFwiSW52YWxpZCBpbnB1dDogTXVzdCBiZSBhIHZhbGlkIEpTT04gc3RyaW5nIG9yIHBhdGggdG8gYSBKU09OIGZpbGUgY29udGFpbmluZyBhIENsaWVudEJyaWVmLlwiKTtcbiAgICB9XG5cbiAgICBjb25zdCBhZ2VudCA9IG5ldyBSZXNlYXJjaEFnZW50KCk7XG4gICAgY29uc29sZS5sb2coYFN0YXJ0aW5nIHJlc2VhcmNoIGZvciAke2lucHV0LmJyaWVmLmNvbXBhbnl9Li4uYCk7XG4gICAgcmV0dXJuIGF3YWl0IGFnZW50LmV4ZWN1dGUoaW5wdXQpO1xufVxuXG4vLyBDTEkgRW50cnkgUG9pbnQgcmVtb3ZlZCB0byBlbmZvcmNlIFRVSS1vbmx5IGFjY2Vzc1xuIl0sInZlcnNpb24iOjN9

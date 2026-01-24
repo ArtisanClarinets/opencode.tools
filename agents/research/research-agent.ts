@@ -120,8 +120,8 @@ export class ResearchAgent {
 
   private async searchWeb(query: string): Promise<any[]> {
     try {
-      // Use webfetch tool to search
-      const result = await webfetch(`https://www.google.com/search?q=${encodeURIComponent(query)}`, 'text');
+      // Use webfetch tool to search via DuckDuckGo HTML (more reliable for scraping)
+      const result = await webfetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`, 'text');
       
       return [{
         query,
