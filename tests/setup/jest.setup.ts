@@ -229,7 +229,7 @@ export const createMockFunctions = {
   // Mock webfetch responses
   webfetch: {
     success: (content: string = 'Mock web content with relevant information') => {
-      return jest.fn().mockResolvedValue({
+      return jest.fn<any>().mockResolvedValue({
         content,
         url: 'https://example.com',
         success: true,
@@ -238,11 +238,11 @@ export const createMockFunctions = {
     },
 
     failure: (error: string = 'Service unavailable') => {
-      return jest.fn().mockRejectedValue(new Error(error));
+      return jest.fn<any>().mockRejectedValue(new Error(error));
     },
 
     timeout: (delay: number = 5000) => {
-      return jest.fn().mockImplementation(() => 
+      return jest.fn<any>().mockImplementation(() =>
         new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Request timeout')), delay)
         )
@@ -253,19 +253,19 @@ export const createMockFunctions = {
   // Mock file system operations
   filesystem: {
     readSuccess: (content: string) => {
-      return jest.fn().mockResolvedValue(content);
+      return jest.fn<any>().mockResolvedValue(content);
     },
 
     readFailure: (error: string = 'File not found') => {
-      return jest.fn().mockRejectedValue(new Error(error));
+      return jest.fn<any>().mockRejectedValue(new Error(error));
     },
 
     writeSuccess: () => {
-      return jest.fn().mockResolvedValue(undefined);
+      return jest.fn<any>().mockResolvedValue(undefined);
     },
 
     writeFailure: (error: string = 'Permission denied') => {
-      return jest.fn().mockRejectedValue(new Error(error));
+      return jest.fn<any>().mockRejectedValue(new Error(error));
     }
   }
 };
@@ -282,7 +282,6 @@ export const setupTestEnvironment = () => {
 
   // Mock Date for consistent timestamps in tests
   const mockDate = new Date('2024-01-01T00:00:00.000Z');
-  jest.spyOn(global, 'Date').mockImplementation(() => mockDate);
   
   // Ensure clean state
   jest.clearAllTimers();
@@ -336,7 +335,7 @@ export const securityTestUtils = {
     xss: [
       '<script>alert("XSS")</script>',
       'javascript:alert("XSS")',
-      '<img src="x" onerror="alert('XSS')">'
+      '<img src="x" onerror="alert(\'XSS\')">'
     ],
     pathTraversal: [
       '../../../etc/passwd',
@@ -351,8 +350,10 @@ export const securityTestUtils = {
   },
 
   // Test for common vulnerabilities
-  testForVulnerabilities: (input: string, vulnerabilityType: string) => {
-    const vectors = this.attackVectors[vulnerabilityType] || [];
+  testForVulnerabilities(input: string, vulnerabilityType: string) {
+    // @ts-ignore
+    const vectors = this.attackVectors[vulnerabilityType as keyof typeof this.attackVectors] || [];
+    // @ts-ignore
     return vectors.some(vector => input.includes(vector));
   }
 };
@@ -385,19 +386,6 @@ afterAll(() => {
   console.log('✅ Cleaning up OpenCode Tools test environment...');
   cleanupTestEnvironment();
 });
-
-// ====================
-// Export Everything
-// ====================
-
-export {
-  setupTestEnvironment,
-  cleanupTestEnvironment,
-  createMockFunctions,
-  performanceUtils,
-  securityTestUtils,
-  globalTestData
-};
 
 export default {
   setupTestEnvironment,

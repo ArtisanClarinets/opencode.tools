@@ -1,5 +1,6 @@
 import { ResearchInput, ResearchOutput, Source } from './types';
 import { webfetch } from '../../tools/webfetch';
+import { logger } from '../../src/runtime/logger';
 
 export class ResearchAgent {
   private readonly agentName = 'research-agent';
@@ -9,6 +10,8 @@ export class ResearchAgent {
   async execute(input: ResearchInput): Promise<ResearchOutput> {
     const runId = this.generateRunId();
     const timestamp = new Date().toISOString();
+
+    logger.info('Research Agent started', { runId, company: input.brief.company });
 
     // Gather research data
     const companyData = await this.gatherCompanyData(input);
@@ -39,6 +42,8 @@ export class ResearchAgent {
     // Compile sources
     const sources = await this.compileSources(companyData, industryData, competitorData);
 
+    logger.info('Research Agent completed', { runId, sourcesCount: sources.length });
+
     return {
       dossier,
       sources,
@@ -53,7 +58,7 @@ export class ResearchAgent {
   }
 
   private generateRunId(): string {
-    return `research-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `research-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
   }
 
   private async gatherCompanyData(input: ResearchInput): Promise<any> {
@@ -125,7 +130,7 @@ export class ResearchAgent {
         timestamp: new Date().toISOString()
       }];
     } catch (error) {
-      console.warn(`Search failed for query: ${query}`, error);
+      logger.warn(`Search failed for query: ${query}`, { error, query });
       return [];
     }
   }

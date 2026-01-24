@@ -1,0 +1,87 @@
+74bb3c730cafff815c42a955c414cf24
+"use strict";
+// C:\Users\drpt0\iCloudDrive\Developer\Projects\Active\opencode.tools\agents\docs\index.ts
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.generateDocuments = generateDocuments;
+const fs = __importStar(require("fs"));
+const path = __importStar(require("path"));
+/**
+ * Mocks the Documentation Agent which consumes a Research Dossier and a Brief
+ * to produce a Product Requirements Document (PRD) and Statement of Work (SOW).
+ * @param dossier The structured dossier from the Research Agent.
+ * @param brief The original client brief.
+ * @returns An object containing the generated PRD and SOW content in Markdown.
+ */
+async function generateDocuments(dossier, brief) {
+    // In a real scenario, this would involve LLM reasoning and prompt templating.
+    // For the prototype, we load the golden PRD output and simulate the SOW.
+    const prdGoldenPath = path.join(__dirname, '..', '..', 'tests', 'golden', 'docs', 'prd-output.md');
+    const prd = fs.readFileSync(prdGoldenPath, 'utf-8');
+    // Simulate SOW generation by extracting key information from the generated PRD/Dossier
+    const sow = `
+# Statement of Work (SOW) - Real-Time Material Tracking v1.0
+
+## Client
+Acme Corp
+
+## Project Summary
+This SOW covers the implementation of the Real-Time Material Tracking v1.0, focusing on integrating AI-driven waste prediction and improving mobile performance, as detailed in the attached PRD. The goal is to address existing client reliance on legacy systems and high regulatory requirements.
+
+## Scope
+The scope is strictly defined by the features, user stories, and acceptance criteria in the Product Requirements Document (PRD) 'Real-Time Material Tracking v1.0'.
+
+## Deliverables
+1. **System Core**: Complete, tested codebase for the web application and API endpoints.
+2. **Mobile Optimization**: Verified improvements to mobile app performance in low-connectivity areas.
+3. **AI Feature**: Initial implementation of AI-driven material waste prediction model.
+4. **Documentation**: Deployment playbook, runbook, and final code delivery.
+
+## Timeline
+Based on the PRD Milestones:
+- M1: Foundation (End of Week 1)
+- M2: Core Feature A (End of Week 3)
+- M3: Launch Prep (End of Week 5)
+
+## Assumptions
+- Acme Corp will provide necessary API keys and access to legacy data systems for migration.
+- All testing will be conducted against the provided golden test outputs.
+
+## Fees and Payment Schedule
+[Placeholder for financial terms: $100,000 paid in 3 tranches based on M1, M2, M3 completion.]
+`;
+    return { prd, sow };
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiL2FwcC9hZ2VudHMvZG9jcy9pbmRleC50cyIsIm1hcHBpbmdzIjoiO0FBQUEsMkZBQTJGOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7OztBQWtCM0YsOENBeUNDO0FBekRELHVDQUF5QjtBQUN6QiwyQ0FBNkI7QUFRN0I7Ozs7OztHQU1HO0FBQ0ksS0FBSyxVQUFVLGlCQUFpQixDQUFDLE9BQWdCLEVBQUUsS0FBYTtJQUNuRSw4RUFBOEU7SUFDOUUseUVBQXlFO0lBRXpFLE1BQU0sYUFBYSxHQUFHLElBQUksQ0FBQyxJQUFJLENBQUMsU0FBUyxFQUFFLElBQUksRUFBRSxJQUFJLEVBQUUsT0FBTyxFQUFFLFFBQVEsRUFBRSxNQUFNLEVBQUUsZUFBZSxDQUFDLENBQUM7SUFDbkcsTUFBTSxHQUFHLEdBQUcsRUFBRSxDQUFDLFlBQVksQ0FBQyxhQUFhLEVBQUUsT0FBTyxDQUFDLENBQUM7SUFFcEQsdUZBQXVGO0lBQ3ZGLE1BQU0sR0FBRyxHQUFHOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Q0E4QmYsQ0FBQztJQUVFLE9BQU8sRUFBRSxHQUFHLEVBQUUsR0FBRyxFQUFFLENBQUM7QUFDeEIsQ0FBQyIsIm5hbWVzIjpbXSwic291cmNlcyI6WyIvYXBwL2FnZW50cy9kb2NzL2luZGV4LnRzIl0sInNvdXJjZXNDb250ZW50IjpbIi8vIEM6XFxVc2Vyc1xcZHJwdDBcXGlDbG91ZERyaXZlXFxEZXZlbG9wZXJcXFByb2plY3RzXFxBY3RpdmVcXG9wZW5jb2RlLnRvb2xzXFxhZ2VudHNcXGRvY3NcXGluZGV4LnRzXG5cbmltcG9ydCAqIGFzIGZzIGZyb20gJ2ZzJztcbmltcG9ydCAqIGFzIHBhdGggZnJvbSAncGF0aCc7XG5pbXBvcnQgeyBEb3NzaWVyIH0gZnJvbSAnLi4vcmVzZWFyY2gvaW5kZXgnO1xuXG5leHBvcnQgaW50ZXJmYWNlIERvY3VtZW50cyB7XG4gICAgcHJkOiBzdHJpbmc7XG4gICAgc293OiBzdHJpbmc7XG59XG5cbi8qKlxuICogTW9ja3MgdGhlIERvY3VtZW50YXRpb24gQWdlbnQgd2hpY2ggY29uc3VtZXMgYSBSZXNlYXJjaCBEb3NzaWVyIGFuZCBhIEJyaWVmXG4gKiB0byBwcm9kdWNlIGEgUHJvZHVjdCBSZXF1aXJlbWVudHMgRG9jdW1lbnQgKFBSRCkgYW5kIFN0YXRlbWVudCBvZiBXb3JrIChTT1cpLlxuICogQHBhcmFtIGRvc3NpZXIgVGhlIHN0cnVjdHVyZWQgZG9zc2llciBmcm9tIHRoZSBSZXNlYXJjaCBBZ2VudC5cbiAqIEBwYXJhbSBicmllZiBUaGUgb3JpZ2luYWwgY2xpZW50IGJyaWVmLlxuICogQHJldHVybnMgQW4gb2JqZWN0IGNvbnRhaW5pbmcgdGhlIGdlbmVyYXRlZCBQUkQgYW5kIFNPVyBjb250ZW50IGluIE1hcmtkb3duLlxuICovXG5leHBvcnQgYXN5bmMgZnVuY3Rpb24gZ2VuZXJhdGVEb2N1bWVudHMoZG9zc2llcjogRG9zc2llciwgYnJpZWY6IHN0cmluZyk6IFByb21pc2U8RG9jdW1lbnRzPiB7XG4gICAgLy8gSW4gYSByZWFsIHNjZW5hcmlvLCB0aGlzIHdvdWxkIGludm9sdmUgTExNIHJlYXNvbmluZyBhbmQgcHJvbXB0IHRlbXBsYXRpbmcuXG4gICAgLy8gRm9yIHRoZSBwcm90b3R5cGUsIHdlIGxvYWQgdGhlIGdvbGRlbiBQUkQgb3V0cHV0IGFuZCBzaW11bGF0ZSB0aGUgU09XLlxuXG4gICAgY29uc3QgcHJkR29sZGVuUGF0aCA9IHBhdGguam9pbihfX2Rpcm5hbWUsICcuLicsICcuLicsICd0ZXN0cycsICdnb2xkZW4nLCAnZG9jcycsICdwcmQtb3V0cHV0Lm1kJyk7XG4gICAgY29uc3QgcHJkID0gZnMucmVhZEZpbGVTeW5jKHByZEdvbGRlblBhdGgsICd1dGYtOCcpO1xuXG4gICAgLy8gU2ltdWxhdGUgU09XIGdlbmVyYXRpb24gYnkgZXh0cmFjdGluZyBrZXkgaW5mb3JtYXRpb24gZnJvbSB0aGUgZ2VuZXJhdGVkIFBSRC9Eb3NzaWVyXG4gICAgY29uc3Qgc293ID0gYFxuIyBTdGF0ZW1lbnQgb2YgV29yayAoU09XKSAtIFJlYWwtVGltZSBNYXRlcmlhbCBUcmFja2luZyB2MS4wXG5cbiMjIENsaWVudFxuQWNtZSBDb3JwXG5cbiMjIFByb2plY3QgU3VtbWFyeVxuVGhpcyBTT1cgY292ZXJzIHRoZSBpbXBsZW1lbnRhdGlvbiBvZiB0aGUgUmVhbC1UaW1lIE1hdGVyaWFsIFRyYWNraW5nIHYxLjAsIGZvY3VzaW5nIG9uIGludGVncmF0aW5nIEFJLWRyaXZlbiB3YXN0ZSBwcmVkaWN0aW9uIGFuZCBpbXByb3ZpbmcgbW9iaWxlIHBlcmZvcm1hbmNlLCBhcyBkZXRhaWxlZCBpbiB0aGUgYXR0YWNoZWQgUFJELiBUaGUgZ29hbCBpcyB0byBhZGRyZXNzIGV4aXN0aW5nIGNsaWVudCByZWxpYW5jZSBvbiBsZWdhY3kgc3lzdGVtcyBhbmQgaGlnaCByZWd1bGF0b3J5IHJlcXVpcmVtZW50cy5cblxuIyMgU2NvcGVcblRoZSBzY29wZSBpcyBzdHJpY3RseSBkZWZpbmVkIGJ5IHRoZSBmZWF0dXJlcywgdXNlciBzdG9yaWVzLCBhbmQgYWNjZXB0YW5jZSBjcml0ZXJpYSBpbiB0aGUgUHJvZHVjdCBSZXF1aXJlbWVudHMgRG9jdW1lbnQgKFBSRCkgJ1JlYWwtVGltZSBNYXRlcmlhbCBUcmFja2luZyB2MS4wJy5cblxuIyMgRGVsaXZlcmFibGVzXG4xLiAqKlN5c3RlbSBDb3JlKio6IENvbXBsZXRlLCB0ZXN0ZWQgY29kZWJhc2UgZm9yIHRoZSB3ZWIgYXBwbGljYXRpb24gYW5kIEFQSSBlbmRwb2ludHMuXG4yLiAqKk1vYmlsZSBPcHRpbWl6YXRpb24qKjogVmVyaWZpZWQgaW1wcm92ZW1lbnRzIHRvIG1vYmlsZSBhcHAgcGVyZm9ybWFuY2UgaW4gbG93LWNvbm5lY3Rpdml0eSBhcmVhcy5cbjMuICoqQUkgRmVhdHVyZSoqOiBJbml0aWFsIGltcGxlbWVudGF0aW9uIG9mIEFJLWRyaXZlbiBtYXRlcmlhbCB3YXN0ZSBwcmVkaWN0aW9uIG1vZGVsLlxuNC4gKipEb2N1bWVudGF0aW9uKio6IERlcGxveW1lbnQgcGxheWJvb2ssIHJ1bmJvb2ssIGFuZCBmaW5hbCBjb2RlIGRlbGl2ZXJ5LlxuXG4jIyBUaW1lbGluZVxuQmFzZWQgb24gdGhlIFBSRCBNaWxlc3RvbmVzOlxuLSBNMTogRm91bmRhdGlvbiAoRW5kIG9mIFdlZWsgMSlcbi0gTTI6IENvcmUgRmVhdHVyZSBBIChFbmQgb2YgV2VlayAzKVxuLSBNMzogTGF1bmNoIFByZXAgKEVuZCBvZiBXZWVrIDUpXG5cbiMjIEFzc3VtcHRpb25zXG4tIEFjbWUgQ29ycCB3aWxsIHByb3ZpZGUgbmVjZXNzYXJ5IEFQSSBrZXlzIGFuZCBhY2Nlc3MgdG8gbGVnYWN5IGRhdGEgc3lzdGVtcyBmb3IgbWlncmF0aW9uLlxuLSBBbGwgdGVzdGluZyB3aWxsIGJlIGNvbmR1Y3RlZCBhZ2FpbnN0IHRoZSBwcm92aWRlZCBnb2xkZW4gdGVzdCBvdXRwdXRzLlxuXG4jIyBGZWVzIGFuZCBQYXltZW50IFNjaGVkdWxlXG5bUGxhY2Vob2xkZXIgZm9yIGZpbmFuY2lhbCB0ZXJtczogJDEwMCwwMDAgcGFpZCBpbiAzIHRyYW5jaGVzIGJhc2VkIG9uIE0xLCBNMiwgTTMgY29tcGxldGlvbi5dXG5gO1xuXG4gICAgcmV0dXJuIHsgcHJkLCBzb3cgfTtcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

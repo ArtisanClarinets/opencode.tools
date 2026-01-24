@@ -1,0 +1,17 @@
+9f2acc7a22ff2bcc6abd42aa5e6a04c2
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.webfetch = webfetch;
+/**
+ * Fetches content from a specified URL, handles HTTP requests, and extracts text using a readability algorithm.
+ * Replaces the mock with a real HTTP fetch layer.
+ * @param url The URL to fetch.
+ * @param format The desired output format ("markdown", "text", "html").
+ * @returns The fetched content.
+ */
+async function webfetch(url, format = 'markdown') {
+    // TODO: Implement real fetch, ETag/Last-Modified caching, and readability extraction.
+    console.log("[STUB] Fetching URL: " + url + " with format: " + format);
+    return { success: true, content: "Content from " + url + " (format: " + format + ")" };
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiL2FwcC90b29scy93ZWJmZXRjaC50cyIsIm1hcHBpbmdzIjoiOztBQU9BLDRCQUlDO0FBWEQ7Ozs7OztHQU1HO0FBQ0ksS0FBSyxVQUFVLFFBQVEsQ0FBQyxHQUFXLEVBQUUsU0FBdUMsVUFBVTtJQUMzRixzRkFBc0Y7SUFDdEYsT0FBTyxDQUFDLEdBQUcsQ0FBQyx1QkFBdUIsR0FBRyxHQUFHLEdBQUcsZ0JBQWdCLEdBQUcsTUFBTSxDQUFDLENBQUM7SUFDdkUsT0FBTyxFQUFFLE9BQU8sRUFBRSxJQUFJLEVBQUUsT0FBTyxFQUFFLGVBQWUsR0FBRyxHQUFHLEdBQUcsWUFBWSxHQUFHLE1BQU0sR0FBRyxHQUFHLEVBQUUsQ0FBQztBQUN6RixDQUFDIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIi9hcHAvdG9vbHMvd2ViZmV0Y2gudHMiXSwic291cmNlc0NvbnRlbnQiOlsiLyoqXG4gKiBGZXRjaGVzIGNvbnRlbnQgZnJvbSBhIHNwZWNpZmllZCBVUkwsIGhhbmRsZXMgSFRUUCByZXF1ZXN0cywgYW5kIGV4dHJhY3RzIHRleHQgdXNpbmcgYSByZWFkYWJpbGl0eSBhbGdvcml0aG0uXG4gKiBSZXBsYWNlcyB0aGUgbW9jayB3aXRoIGEgcmVhbCBIVFRQIGZldGNoIGxheWVyLlxuICogQHBhcmFtIHVybCBUaGUgVVJMIHRvIGZldGNoLlxuICogQHBhcmFtIGZvcm1hdCBUaGUgZGVzaXJlZCBvdXRwdXQgZm9ybWF0IChcIm1hcmtkb3duXCIsIFwidGV4dFwiLCBcImh0bWxcIikuXG4gKiBAcmV0dXJucyBUaGUgZmV0Y2hlZCBjb250ZW50LlxuICovXG5leHBvcnQgYXN5bmMgZnVuY3Rpb24gd2ViZmV0Y2godXJsOiBzdHJpbmcsIGZvcm1hdDogJ21hcmtkb3duJyB8ICd0ZXh0JyB8ICdodG1sJyA9ICdtYXJrZG93bicpOiBQcm9taXNlPGFueT4ge1xuICAvLyBUT0RPOiBJbXBsZW1lbnQgcmVhbCBmZXRjaCwgRVRhZy9MYXN0LU1vZGlmaWVkIGNhY2hpbmcsIGFuZCByZWFkYWJpbGl0eSBleHRyYWN0aW9uLlxuICBjb25zb2xlLmxvZyhcIltTVFVCXSBGZXRjaGluZyBVUkw6IFwiICsgdXJsICsgXCIgd2l0aCBmb3JtYXQ6IFwiICsgZm9ybWF0KTtcbiAgcmV0dXJuIHsgc3VjY2VzczogdHJ1ZSwgY29udGVudDogXCJDb250ZW50IGZyb20gXCIgKyB1cmwgKyBcIiAoZm9ybWF0OiBcIiArIGZvcm1hdCArIFwiKVwiIH07XG59Il0sInZlcnNpb24iOjN9

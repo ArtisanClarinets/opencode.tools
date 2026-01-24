@@ -1,0 +1,90 @@
+65481634d8a90a313d69b0774ffb06de
+"use strict";
+/**
+ * Global Test Teardown
+ *
+ * Runs once after all test suites complete
+ */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+const fs = __importStar(require("fs"));
+const path = __importStar(require("path"));
+module.exports = async () => {
+    console.log('🧹 Global test teardown starting...');
+    try {
+        // Clean up test artifacts
+        const artifactsToClean = [
+            'test-config.json',
+            'temp-test-data',
+            '.nyc_output'
+        ];
+        for (const artifact of artifactsToClean) {
+            const artifactPath = path.join(process.cwd(), artifact);
+            if (fs.existsSync(artifactPath)) {
+                if (fs.statSync(artifactPath).isDirectory()) {
+                    fs.rmSync(artifactPath, { recursive: true, force: true });
+                }
+                else {
+                    fs.unlinkSync(artifactPath);
+                }
+                console.log(`🗑️ Cleaned up: ${artifact}`);
+            }
+        }
+        // Generate test execution summary
+        const summaryPath = path.join(process.cwd(), 'test-results', 'execution-summary.json');
+        const summary = {
+            timestamp: new Date().toISOString(),
+            environment: 'test',
+            status: 'completed',
+            cleanupCompleted: true,
+            artifactsCleaned: artifactsToClean.length
+        };
+        // Ensure test-results directory exists
+        const testResultsDir = path.join(process.cwd(), 'test-results');
+        if (!fs.existsSync(testResultsDir)) {
+            fs.mkdirSync(testResultsDir, { recursive: true });
+        }
+        fs.writeFileSync(summaryPath, JSON.stringify(summary, null, 2));
+        // Reset environment variables
+        delete process.env.TEST_MODE;
+        delete process.env.LOG_LEVEL;
+        console.log('✅ Global test teardown completed successfully');
+    }
+    catch (error) {
+        console.error('❌ Global test teardown failed:', error);
+        // Don't throw in teardown to avoid masking test results
+    }
+};
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiL2FwcC90ZXN0cy9zZXR1cC9nbG9iYWwtdGVhcmRvd24udHMiLCJtYXBwaW5ncyI6IjtBQUFBOzs7O0dBSUc7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7O0FBRUgsdUNBQXlCO0FBQ3pCLDJDQUE2QjtBQUU3QixNQUFNLENBQUMsT0FBTyxHQUFHLEtBQUssSUFBSSxFQUFFO0lBQzFCLE9BQU8sQ0FBQyxHQUFHLENBQUMscUNBQXFDLENBQUMsQ0FBQztJQUVuRCxJQUFJLENBQUM7UUFDSCwwQkFBMEI7UUFDMUIsTUFBTSxnQkFBZ0IsR0FBRztZQUN2QixrQkFBa0I7WUFDbEIsZ0JBQWdCO1lBQ2hCLGFBQWE7U0FDZCxDQUFDO1FBRUYsS0FBSyxNQUFNLFFBQVEsSUFBSSxnQkFBZ0IsRUFBRSxDQUFDO1lBQ3hDLE1BQU0sWUFBWSxHQUFHLElBQUksQ0FBQyxJQUFJLENBQUMsT0FBTyxDQUFDLEdBQUcsRUFBRSxFQUFFLFFBQVEsQ0FBQyxDQUFDO1lBQ3hELElBQUksRUFBRSxDQUFDLFVBQVUsQ0FBQyxZQUFZLENBQUMsRUFBRSxDQUFDO2dCQUNoQyxJQUFJLEVBQUUsQ0FBQyxRQUFRLENBQUMsWUFBWSxDQUFDLENBQUMsV0FBVyxFQUFFLEVBQUUsQ0FBQztvQkFDNUMsRUFBRSxDQUFDLE1BQU0sQ0FBQyxZQUFZLEVBQUUsRUFBRSxTQUFTLEVBQUUsSUFBSSxFQUFFLEtBQUssRUFBRSxJQUFJLEVBQUUsQ0FBQyxDQUFDO2dCQUM1RCxDQUFDO3FCQUFNLENBQUM7b0JBQ04sRUFBRSxDQUFDLFVBQVUsQ0FBQyxZQUFZLENBQUMsQ0FBQztnQkFDOUIsQ0FBQztnQkFDRCxPQUFPLENBQUMsR0FBRyxDQUFDLG1CQUFtQixRQUFRLEVBQUUsQ0FBQyxDQUFDO1lBQzdDLENBQUM7UUFDSCxDQUFDO1FBRUQsa0NBQWtDO1FBQ2xDLE1BQU0sV0FBVyxHQUFHLElBQUksQ0FBQyxJQUFJLENBQUMsT0FBTyxDQUFDLEdBQUcsRUFBRSxFQUFFLGNBQWMsRUFBRSx3QkFBd0IsQ0FBQyxDQUFDO1FBQ3ZGLE1BQU0sT0FBTyxHQUFHO1lBQ2QsU0FBUyxFQUFFLElBQUksSUFBSSxFQUFFLENBQUMsV0FBVyxFQUFFO1lBQ25DLFdBQVcsRUFBRSxNQUFNO1lBQ25CLE1BQU0sRUFBRSxXQUFXO1lBQ25CLGdCQUFnQixFQUFFLElBQUk7WUFDdEIsZ0JBQWdCLEVBQUUsZ0JBQWdCLENBQUMsTUFBTTtTQUMxQyxDQUFDO1FBRUYsdUNBQXVDO1FBQ3ZDLE1BQU0sY0FBYyxHQUFHLElBQUksQ0FBQyxJQUFJLENBQUMsT0FBTyxDQUFDLEdBQUcsRUFBRSxFQUFFLGNBQWMsQ0FBQyxDQUFDO1FBQ2hFLElBQUksQ0FBQyxFQUFFLENBQUMsVUFBVSxDQUFDLGNBQWMsQ0FBQyxFQUFFLENBQUM7WUFDbkMsRUFBRSxDQUFDLFNBQVMsQ0FBQyxjQUFjLEVBQUUsRUFBRSxTQUFTLEVBQUUsSUFBSSxFQUFFLENBQUMsQ0FBQztRQUNwRCxDQUFDO1FBRUQsRUFBRSxDQUFDLGFBQWEsQ0FBQyxXQUFXLEVBQUUsSUFBSSxDQUFDLFNBQVMsQ0FBQyxPQUFPLEVBQUUsSUFBSSxFQUFFLENBQUMsQ0FBQyxDQUFDLENBQUM7UUFFaEUsOEJBQThCO1FBQzlCLE9BQU8sT0FBTyxDQUFDLEdBQUcsQ0FBQyxTQUFTLENBQUM7UUFDN0IsT0FBTyxPQUFPLENBQUMsR0FBRyxDQUFDLFNBQVMsQ0FBQztRQUU3QixPQUFPLENBQUMsR0FBRyxDQUFDLCtDQUErQyxDQUFDLENBQUM7SUFFL0QsQ0FBQztJQUFDLE9BQU8sS0FBSyxFQUFFLENBQUM7UUFDZixPQUFPLENBQUMsS0FBSyxDQUFDLGdDQUFnQyxFQUFFLEtBQUssQ0FBQyxDQUFDO1FBQ3ZELHdEQUF3RDtJQUMxRCxDQUFDO0FBQ0gsQ0FBQyxDQUFDIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIi9hcHAvdGVzdHMvc2V0dXAvZ2xvYmFsLXRlYXJkb3duLnRzIl0sInNvdXJjZXNDb250ZW50IjpbIi8qKlxuICogR2xvYmFsIFRlc3QgVGVhcmRvd25cbiAqIFxuICogUnVucyBvbmNlIGFmdGVyIGFsbCB0ZXN0IHN1aXRlcyBjb21wbGV0ZVxuICovXG5cbmltcG9ydCAqIGFzIGZzIGZyb20gJ2ZzJztcbmltcG9ydCAqIGFzIHBhdGggZnJvbSAncGF0aCc7XG5cbm1vZHVsZS5leHBvcnRzID0gYXN5bmMgKCkgPT4ge1xuICBjb25zb2xlLmxvZygn8J+nuSBHbG9iYWwgdGVzdCB0ZWFyZG93biBzdGFydGluZy4uLicpO1xuICBcbiAgdHJ5IHtcbiAgICAvLyBDbGVhbiB1cCB0ZXN0IGFydGlmYWN0c1xuICAgIGNvbnN0IGFydGlmYWN0c1RvQ2xlYW4gPSBbXG4gICAgICAndGVzdC1jb25maWcuanNvbicsXG4gICAgICAndGVtcC10ZXN0LWRhdGEnLFxuICAgICAgJy5ueWNfb3V0cHV0J1xuICAgIF07XG4gICAgXG4gICAgZm9yIChjb25zdCBhcnRpZmFjdCBvZiBhcnRpZmFjdHNUb0NsZWFuKSB7XG4gICAgICBjb25zdCBhcnRpZmFjdFBhdGggPSBwYXRoLmpvaW4ocHJvY2Vzcy5jd2QoKSwgYXJ0aWZhY3QpO1xuICAgICAgaWYgKGZzLmV4aXN0c1N5bmMoYXJ0aWZhY3RQYXRoKSkge1xuICAgICAgICBpZiAoZnMuc3RhdFN5bmMoYXJ0aWZhY3RQYXRoKS5pc0RpcmVjdG9yeSgpKSB7XG4gICAgICAgICAgZnMucm1TeW5jKGFydGlmYWN0UGF0aCwgeyByZWN1cnNpdmU6IHRydWUsIGZvcmNlOiB0cnVlIH0pO1xuICAgICAgICB9IGVsc2Uge1xuICAgICAgICAgIGZzLnVubGlua1N5bmMoYXJ0aWZhY3RQYXRoKTtcbiAgICAgICAgfVxuICAgICAgICBjb25zb2xlLmxvZyhg8J+Xke+4jyBDbGVhbmVkIHVwOiAke2FydGlmYWN0fWApO1xuICAgICAgfVxuICAgIH1cbiAgICBcbiAgICAvLyBHZW5lcmF0ZSB0ZXN0IGV4ZWN1dGlvbiBzdW1tYXJ5XG4gICAgY29uc3Qgc3VtbWFyeVBhdGggPSBwYXRoLmpvaW4ocHJvY2Vzcy5jd2QoKSwgJ3Rlc3QtcmVzdWx0cycsICdleGVjdXRpb24tc3VtbWFyeS5qc29uJyk7XG4gICAgY29uc3Qgc3VtbWFyeSA9IHtcbiAgICAgIHRpbWVzdGFtcDogbmV3IERhdGUoKS50b0lTT1N0cmluZygpLFxuICAgICAgZW52aXJvbm1lbnQ6ICd0ZXN0JyxcbiAgICAgIHN0YXR1czogJ2NvbXBsZXRlZCcsXG4gICAgICBjbGVhbnVwQ29tcGxldGVkOiB0cnVlLFxuICAgICAgYXJ0aWZhY3RzQ2xlYW5lZDogYXJ0aWZhY3RzVG9DbGVhbi5sZW5ndGhcbiAgICB9O1xuICAgIFxuICAgIC8vIEVuc3VyZSB0ZXN0LXJlc3VsdHMgZGlyZWN0b3J5IGV4aXN0c1xuICAgIGNvbnN0IHRlc3RSZXN1bHRzRGlyID0gcGF0aC5qb2luKHByb2Nlc3MuY3dkKCksICd0ZXN0LXJlc3VsdHMnKTtcbiAgICBpZiAoIWZzLmV4aXN0c1N5bmModGVzdFJlc3VsdHNEaXIpKSB7XG4gICAgICBmcy5ta2RpclN5bmModGVzdFJlc3VsdHNEaXIsIHsgcmVjdXJzaXZlOiB0cnVlIH0pO1xuICAgIH1cbiAgICBcbiAgICBmcy53cml0ZUZpbGVTeW5jKHN1bW1hcnlQYXRoLCBKU09OLnN0cmluZ2lmeShzdW1tYXJ5LCBudWxsLCAyKSk7XG4gICAgXG4gICAgLy8gUmVzZXQgZW52aXJvbm1lbnQgdmFyaWFibGVzXG4gICAgZGVsZXRlIHByb2Nlc3MuZW52LlRFU1RfTU9ERTtcbiAgICBkZWxldGUgcHJvY2Vzcy5lbnYuTE9HX0xFVkVMO1xuICAgIFxuICAgIGNvbnNvbGUubG9nKCfinIUgR2xvYmFsIHRlc3QgdGVhcmRvd24gY29tcGxldGVkIHN1Y2Nlc3NmdWxseScpO1xuICAgIFxuICB9IGNhdGNoIChlcnJvcikge1xuICAgIGNvbnNvbGUuZXJyb3IoJ+KdjCBHbG9iYWwgdGVzdCB0ZWFyZG93biBmYWlsZWQ6JywgZXJyb3IpO1xuICAgIC8vIERvbid0IHRocm93IGluIHRlYXJkb3duIHRvIGF2b2lkIG1hc2tpbmcgdGVzdCByZXN1bHRzXG4gIH1cbn07Il0sInZlcnNpb24iOjN9
