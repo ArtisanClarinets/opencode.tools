@@ -1,0 +1,8 @@
+[
+  {
+    "url": "https://example.com/mock-result",
+    "title": "Mock Result for Acme Corp Widgets",
+    "snippet": "This is a mock result because API keys are missing.",
+    "source": "mock"
+  }
+]

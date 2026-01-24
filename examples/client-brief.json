@@ -1,0 +1,19 @@
+{
+  "company": "TechCorp",
+  "industry": "FinTech",
+  "description": "A financial technology company specializing in payment processing solutions for small businesses",
+  "goals": [
+    "Increase market share by 25% in 12 months",
+    "Expand to 3 new geographic markets",
+    "Improve user onboarding conversion rate by 30%"
+  ],
+  "constraints": [
+    "Must comply with PCI DSS standards",
+    "Budget limit of $500K for development",
+    "Timeline of 6 months for MVP launch"
+  ],
+  "timeline": "6 months",
+  "keywords": ["fintech", "payments", "SaaS", "small business"],
+  "urls": ["https://techcorp.com", "https://techcorp.com/about"],
+  "priorNotes": "Company has strong technical team and existing customer base of 1000+ merchants"
+}

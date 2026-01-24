@@ -1,0 +1,1 @@
+Acme Corp is a leader in Widgets. They have 50% market share.

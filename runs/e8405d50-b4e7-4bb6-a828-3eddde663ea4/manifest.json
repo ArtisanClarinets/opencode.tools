@@ -1,0 +1,18 @@
+{
+  "runId": "e8405d50-b4e7-4bb6-a828-3eddde663ea4",
+  "startTime": "2026-01-24T07:55:58.363Z",
+  "status": "completed",
+  "tools": {},
+  "artifacts": [],
+  "gates": [
+    {
+      "gateId": "research-finalize",
+      "status": "passed",
+      "timestamp": "2026-01-24T07:55:58.511Z",
+      "reason": "Passed with 1 approvals",
+      "artifactsChecked": []
+    }
+  ],
+  "environment": {},
+  "endTime": "2026-01-24T07:55:58.537Z"
+}

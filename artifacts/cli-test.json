@@ -1,0 +1,72 @@
+{
+  "dossier": {
+    "companySummary": "TechCorp operates in the FinTech industry. A financial technology company specializing in payment processing solutions for small businesses",
+    "industryOverview": "The industry shows these key trends: The fintech industry is experiencing rapid growth with digital payments, blockchain technology, and AI-driven financial services.. The fintech industry is experiencing rapid growth with digital payments, blockchain technology, and AI-driven financial services.. The fintech industry is experiencing rapid growth with digital payments, blockchain technology, and AI-driven financial services.",
+    "competitors": [],
+    "techStack": {
+      "frontend": [],
+      "backend": [],
+      "infrastructure": [],
+      "thirdParty": []
+    },
+    "risks": [
+      "Must comply with PCI DSS standards",
+      "Budget limit of $500K for development",
+      "Timeline of 6 months for MVP launch"
+    ],
+    "opportunities": [
+      "Industry growth identified in market analysis",
+      "Opportunity to achieve: Increase market share by 25% in 12 months",
+      "Opportunity to achieve: Expand to 3 new geographic markets"
+    ],
+    "recommendations": [
+      "Address identified risks through mitigation strategies",
+      "Leverage identified opportunities for competitive advantage"
+    ]
+  },
+  "sources": [
+    {
+      "url": "https://www.google.com/search?q=TechCorp%20company%20overview",
+      "title": "Research: TechCorp company overview",
+      "relevance": "High",
+      "accessedAt": "2026-01-23T08:01:46.205Z"
+    },
+    {
+      "url": "https://www.google.com/search?q=TechCorp%20about%20us",
+      "title": "Research: TechCorp about us",
+      "relevance": "High",
+      "accessedAt": "2026-01-23T08:01:46.206Z"
+    },
+    {
+      "url": "https://www.google.com/search?q=TechCorp%20mission%20vision",
+      "title": "Research: TechCorp mission vision",
+      "relevance": "High",
+      "accessedAt": "2026-01-23T08:01:46.206Z"
+    },
+    {
+      "url": "https://www.google.com/search?q=FinTech%20industry%20trends%202024",
+      "title": "Research: FinTech industry trends 2024",
+      "relevance": "High",
+      "accessedAt": "2026-01-23T08:01:46.207Z"
+    },
+    {
+      "url": "https://www.google.com/search?q=FinTech%20market%20analysis",
+      "title": "Research: FinTech market analysis",
+      "relevance": "High",
+      "accessedAt": "2026-01-23T08:01:46.207Z"
+    },
+    {
+      "url": "https://www.google.com/search?q=FinTech%20technology%20adoption",
+      "title": "Research: FinTech technology adoption",
+      "relevance": "High",
+      "accessedAt": "2026-01-23T08:01:46.207Z"
+    }
+  ],
+  "meta": {
+    "agent": "research-agent",
+    "promptVersion": "v1",
+    "mcpVersion": "v1",
+    "timestamp": "2026-01-23T08:01:46.202Z",
+    "runId": "research-1769155306202-9wz8zehpa"
+  }
+}

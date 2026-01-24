@@ -1,0 +1,11 @@
+# MCP Configuration for QA Agent (v1)
+model:
+  temperature: 0.3
+  token_limit: 4096
+  chain_of_thought: true
+agent:
+  role: qa-test
+  allowed_tools:
+    - grep
+    - glob
+    - read

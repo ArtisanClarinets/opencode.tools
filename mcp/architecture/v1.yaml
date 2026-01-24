@@ -1,0 +1,10 @@
+# Model Control Pattern for the Architecture Agent
+# This configuration is a placeholder for the agent's specific model tuning.
+model: gpt-4o
+temperature: 0.2
+max_tokens: 4096
+allowed_tools:
+  - webfetch
+  - next-devtools
+  - Serena
+  - Desktop-Commander

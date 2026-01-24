@@ -1,0 +1,60 @@
+{
+  "companySummary": "TestCorp operates in the Technology industry. A test technology company for TUI integration",
+  "industryOverview": "The industry shows these key trends: Common fintech tech stacks include React/Node.js, Python/Django, AWS infrastructure, and third-party APIs like Stripe and Plaid.. Common fintech tech stacks include React/Node.js, Python/Django, AWS infrastructure, and third-party APIs like Stripe and Plaid.. Common fintech tech stacks include React/Node.js, Python/Django, AWS infrastructure, and third-party APIs like Stripe and Plaid.",
+  "competitors": [
+    {
+      "name": "Major competitors",
+      "url": "https://www.google.com/search?q=Technology%20top%20competitors",
+      "differentiation": "Market competitor",
+      "marketPosition": "Established player"
+    },
+    {
+      "name": "competitors include",
+      "url": "https://www.google.com/search?q=Technology%20top%20competitors",
+      "differentiation": "Market competitor",
+      "marketPosition": "Established player"
+    },
+    {
+      "name": "include Stripe,",
+      "url": "https://www.google.com/search?q=Technology%20top%20competitors",
+      "differentiation": "Market competitor",
+      "marketPosition": "Established player"
+    },
+    {
+      "name": "Stripe, Square,",
+      "url": "https://www.google.com/search?q=Technology%20top%20competitors",
+      "differentiation": "Market competitor",
+      "marketPosition": "Established player"
+    },
+    {
+      "name": "Square, PayPal,",
+      "url": "https://www.google.com/search?q=Technology%20top%20competitors",
+      "differentiation": "Market competitor",
+      "marketPosition": "Established player"
+    }
+  ],
+  "techStack": {
+    "frontend": [
+      "React"
+    ],
+    "backend": [
+      "Node.js",
+      "Python",
+      "Go"
+    ],
+    "infrastructure": [
+      "AWS"
+    ],
+    "thirdParty": [
+      "Stripe"
+    ]
+  },
+  "risks": [],
+  "opportunities": [
+    "Opportunity to achieve: Market research"
+  ],
+  "recommendations": [
+    "Address identified risks through mitigation strategies",
+    "Leverage identified opportunities for competitive advantage"
+  ]
+}

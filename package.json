@@ -1,0 +1,64 @@
+{
+  "name": "opencode-tools",
+  "version": "1.0.0",
+  "description": "OpenCode Tools - Automated client project research, documentation, and code generation",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/index.ts",
+    "start": "node dist/index.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src/**/*.ts agents/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts agents/**/*.ts --fix",
+    "docs": "ts-node agents/docs/index.ts",
+    "codegen": "ts-node agents/codegen/index.ts",
+    "verify:system": "ts-node scripts/verify-full-system.ts",
+    "run:delivery": "ts-node scripts/run-delivery.ts"
+  },
+  "keywords": [
+    "opencode",
+    "automation",
+    "research",
+    "documentation",
+    "code-generation",
+    "client-projects",
+    "cli",
+    "mcp"
+  ],
+  "author": "OpenCode Tools Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@types/archiver": "^7.0.0",
+    "@types/html-to-text": "^9.0.4",
+    "@types/uuid": "^10.0.0",
+    "archiver": "^7.0.1",
+    "axios": "^1.6.0",
+    "cheerio": "^1.2.0",
+    "commander": "^11.0.0",
+    "html-to-text": "^9.0.5",
+    "js-yaml": "^4.1.0",
+    "uuid": "^13.0.0",
+    "winston": "^3.11.0",
+    "zod": "^4.3.6"
+  },
+  "directories": {
+    "doc": "docs",
+    "example": "examples",
+    "test": "tests"
+  },
+  "type": "commonjs",
+  "types": "./dist/index.d.ts"
+}
