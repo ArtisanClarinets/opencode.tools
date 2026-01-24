@@ -1,10 +1,43 @@
 import { ResearchAgent } from '../../agents/research/research-agent';
 import { ResearchInput } from '../../agents/research/types';
+import * as webfetchModule from '../../tools/webfetch';
+
+// Mock the webfetch tool
+jest.mock('../../tools/webfetch');
 
 describe('ResearchAgent', () => {
   let agent: ResearchAgent;
 
+  // Mock content that satisfies the extractor's heuristics
+  const mockContent = `
+    Competitor analysis results:
+    Competitor AlphaCorp is a leading provider.
+    Competition BetaInc offers similar services.
+    Alternative GammaLtd is another option.
+    Competitor DeltaCo is established.
+    Competitor EpsilonGrp is new.
+
+    Tech stack info:
+    We use React and Node.js with AWS.
+    Database is PostgreSQL.
+
+    Industry trends:
+    Risk of regulatory changes is high.
+    Opportunity for AI growth is massive.
+  `;
+
   beforeEach(() => {
+    // Reset mocks
+    jest.clearAllMocks();
+
+    // Setup webfetch mock
+    (webfetchModule.webfetch as jest.Mock).mockResolvedValue({
+      success: true,
+      content: mockContent,
+      url: 'https://example.com/research',
+      status: 200
+    });
+
     agent = new ResearchAgent();
   });
 
@@ -81,6 +114,7 @@ describe('ResearchAgent', () => {
 
       expect(result.dossier.competitors).toBeDefined();
       expect(Array.isArray(result.dossier.competitors)).toBe(true);
+      // The mock content should yield at least one competitor
       expect(result.dossier.competitors.length).toBeGreaterThan(0);
     });
 
@@ -98,10 +132,8 @@ describe('ResearchAgent', () => {
       const result = await agent.execute(input);
 
       expect(result.dossier.techStack).toBeDefined();
-      expect(result.dossier.techStack.frontend).toBeDefined();
-      expect(result.dossier.techStack.backend).toBeDefined();
-      expect(result.dossier.techStack.infrastructure).toBeDefined();
-      expect(result.dossier.techStack.thirdParty).toBeDefined();
+      expect(result.dossier.techStack.frontend).toContain('React');
+      expect(result.dossier.techStack.backend).toContain('Node.js');
     });
 
     it('should include risks in dossier', async () => {

@@ -54,29 +54,4 @@ export async function gatherDossier(briefPathOrJson: string): Promise<ResearchOu
     return await agent.execute(input);
 }
 
-// CLI Entry Point
-if (require.main === module) {
-    const args = process.argv.slice(2);
-    if (args.length < 1) {
-        console.error("Usage: ts-node agents/research/index.ts <path-to-brief-json>");
-        process.exit(1);
-    }
-
-    const briefPath = args[0];
-    gatherDossier(briefPath)
-        .then(output => {
-            console.log(JSON.stringify(output, null, 2));
-
-            // Optionally save to file if --output is provided
-            const outputIndex = args.indexOf('--output');
-            if (outputIndex !== -1 && args[outputIndex + 1]) {
-                const outputPath = args[outputIndex + 1];
-                fs.writeFileSync(outputPath, JSON.stringify(output, null, 2));
-                console.log(`Output saved to ${outputPath}`);
-            }
-        })
-        .catch(err => {
-            console.error("Research failed:", err);
-            process.exit(1);
-        });
-}
+// CLI Entry Point removed to enforce TUI-only access

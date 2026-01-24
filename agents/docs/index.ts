@@ -2,7 +2,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { Dossier } from '../research/index';
+import { ResearchDossier } from '../research/types';
 
 export interface Documents {
     prd: string;
@@ -16,7 +16,7 @@ export interface Documents {
  * @param brief The original client brief.
  * @returns An object containing the generated PRD and SOW content in Markdown.
  */
-export async function generateDocuments(dossier: Dossier, brief: string): Promise<Documents> {
+export async function generateDocuments(dossier: ResearchDossier, brief: string): Promise<Documents> {
     // In a real scenario, this would involve LLM reasoning and prompt templating.
     // For the prototype, we load the golden PRD output and simulate the SOW.
 

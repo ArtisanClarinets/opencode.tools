@@ -6,8 +6,8 @@ import * as path from 'path';
 // Use clean ES imports, relying on ts-jest for interop
 import { gatherDossier } from '../agents/research/index';
 import { generateDocuments } from '../agents/docs/index';
-import { CodeGenAgent, mockBacklogItem } from '../agents/codegen/index';
-import { QAAgent } from '../agents/qa/index';
+import { ResearchDossier } from '../agents/research/types';
+
 // Define the root of the project for pathing
 const projectRoot = path.join(__dirname, '..');
 
@@ -39,14 +39,15 @@ describe('Phase 2 Agents: Research and Documentation', () => {
     });
 
     test('Documentation Agent: generateDocuments produces PRD and SOW matching golden file', async () => {
-        // Mock the dossier output (using the expected structure)
-        const mockDossier = {
-            summary: 'Acme Corp summary...',
+        // Mock the dossier output (using the ResearchDossier structure)
+        const mockDossier: ResearchDossier = {
+            companySummary: 'Acme Corp summary...',
+            industryOverview: 'Industry overview...',
             competitors: [],
-            constraints: [],
+            techStack: { frontend: [], backend: [], infrastructure: [], thirdParty: [] },
+            risks: [],
             opportunities: [],
-            rawSources: [],
-            markdown: dossierMarkdown,
+            recommendations: []
         };
 
         const documents = await generateDocuments(mockDossier, brief);
