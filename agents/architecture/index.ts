@@ -65,7 +65,7 @@ export function generateArchitecture(prd_sow_content: string) {
     };
 
     // 3. Mock PRD/SOW consumption (just for demonstration, not used in the mock logic)
-    console.log(\`Architecture generation triggered for PRD/SOW content: \${prd_sow_content.substring(0, 50)}...\`);
+    console.log(`Architecture generation triggered for PRD/SOW content: ${prd_sow_content.substring(0, 50)}...`);
 
     return {
         architectureDiagram,

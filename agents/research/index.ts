@@ -49,4 +49,4 @@ export async function gatherDossier(brief: string): Promise<Dossier> {
     };
 }
 
-module.exports = { gatherDossier };
+

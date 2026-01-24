@@ -1,0 +1,1 @@
+{"version":3,"file":"store.d.ts","sourceRoot":"","sources":["../../../src/evidence/store.ts"],"names":[],"mappings":"AAGA,OAAO,EAAE,eAAe,EAAE,MAAM,sBAAsB,CAAC;AACvD,OAAO,EAAE,OAAO,EAAE,MAAM,mBAAmB,CAAC;AAE5C,qBAAa,aAAa;IACxB,OAAO,CAAC,eAAe,CAAkB;gBAE7B,eAAe,EAAE,eAAe;IAItC,GAAG,CAAC,IAAI,EAAE,OAAO,GAAG,OAAO,CAAC,MAAM,CAAC;CAqB1C"}

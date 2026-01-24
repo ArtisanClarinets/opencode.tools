@@ -93,30 +93,169 @@ npm run codegen -- --architecture "architecture.json" --feature "user-auth" --ou
 - Test generation
 - CI/CD configuration
 
-## Development
+## Development Setup
 
+### Prerequisites
+- Node.js 18+ 
+- npm 8+
+- TypeScript 5.x
+
+### Initial Setup
 ```bash
+# Clone the repository
+git clone https://github.com/opencode/ai-tool.git
+cd opencode-tools
+
 # Install dependencies
 npm install
 
-# Run tests
-npm test
+# Build the project
+npm run build
+```
 
-# Run tests with coverage
-npm run test:coverage
+### Development Commands
+
+```bash
+# Run in development mode (with ts-node)
+npm run dev
+
+# Run full validation (lint + build + test)
+npm run validate
 
 # Lint code
 npm run lint
 
-# Fix linting issues
+# Auto-fix linting issues
 npm run lint:fix
 
-# Build project
-npm run build
-
-# Run in development mode
-npm run dev
+# TypeScript type check only
+npx tsc --noEmit
 ```
+
+### Code Style and Conventions
+
+OpenCode Tools follows strict TypeScript conventions:
+
+- **TypeScript**: Strict mode enabled with `noImplicitAny`, `strictNullChecks`, `strictFunctionTypes`
+- **Imports**: Absolute imports only (no relative paths like `../../`)
+- **Naming**: PascalCase for classes, camelCase for functions/methods, UPPER_SNAKE_CASE for constants
+- **Types**: Prefer interfaces over type aliases for object shapes, explicit return types on public functions
+- **Errors**: Custom error classes extending `BaseError` with metadata
+- **Validation**: Zod schemas for all inputs (parse, don't validate)
+- **Async**: Always use async/await, never raw Promises
+
+See [AGENTS.md](./AGENTS.md) for comprehensive code style guidelines.
+
+### Testing Strategy
+
+```bash
+# Run all tests with coverage
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run specific test file
+npm test -- agents/research/research-agent.test.ts
+
+# Run tests with coverage report
+npm run test:coverage
+
+# Run only unit tests
+npm run test:unit
+
+# Run only integration tests  
+npm run test:integration
+
+# Run end-to-end tests
+npm run test:e2e
+
+# Run security tests
+npm run test:security
+
+# Run performance tests
+npm run test:performance
+
+# Run all test types
+npm run test:all
+```
+
+**Coverage Requirements** (enforced in CI/CD):
+- Global: 70% branches, functions, lines, statements
+- `./src/`: 80% all metrics  
+- `./agents/`: 75% all metrics
+
+**Test File Organization**:
+- Unit tests co-located with source: `research-agent.ts` + `research-agent.test.ts`
+- Integration tests: `tests/integration/`
+- E2E tests: `tests/e2e/`
+- Test utilities: `tests/utils/`
+
+### CI/CD Pipeline
+
+All changes go through comprehensive testing:
+
+1. **Lint & Security**: ESLint validation, TypeScript compilation, npm audit
+2. **Unit Tests**: Parallel testing by agent (research, docs, codegen, qa, etc.)
+3. **Integration Tests**: Real service integrations with Redis, databases
+4. **E2E Tests**: Full workflow validation  
+5. **Security Tests**: OWASP, CWE vulnerability scanning
+6. **Performance Tests**: Benchmarking and load testing
+7. **Mutation Testing**: Code quality validation
+8. **Coverage Analysis**: Combined coverage reporting with Codecov
+
+See [`.github/workflows/test-pipeline.yml`](.github/workflows/test-pipeline.yml) for complete pipeline configuration.
+
+### Configuration Files
+
+- **TypeScript**: `tsconfig.json` - Strict mode, ES2020 target, commonjs modules
+- **ESLint**: `.eslintrc.js` - TypeScript rules, no unused vars, no explicit any
+- **Jest**: `jest.config.js` - Coverage thresholds, module name mapping, test patterns
+- **CI/CD**: `.github/workflows/test-pipeline.yml` - Multi-stage validation pipeline
+
+### Agent Development
+
+When building or modifying agents:
+
+1. Follow the established [AGENTS.md](./AGENTS.md) coding standards
+2. Use Zod schemas for all inputs with strict validation
+3. Implement proper error handling with custom error classes
+4. Add comprehensive unit tests (minimum 75% coverage)
+5. Include integration tests for external dependencies
+6. Update relevant documentation
+7. Ensure backward compatibility when possible
+8. Add audit logging for agent actions
+
+### Contributing Guidelines
+
+1. **Fork and Branch**: Create feature branch from `develop`
+2. **Code Quality**: Follow all linting and type checking rules
+3. **Testing**: Add tests for all new functionality
+4. **Documentation**: Update docs for public APIs
+5. **Pull Request**: Use format `type(scope): description`
+6. **Review**: Address all reviewer feedback
+7. **Merge**: Only after CI passes and approval received
+
+**Branch Naming**:
+- Features: `feature/add-oauth-authentication`
+- Bug fixes: `fix/research-timeout-error`
+- Documentation: `docs/update-api-reference`
+
+**Commit Message Format**:
+```bash
+git commit -m "feat(auth): implement JWT authentication"
+git commit -m "fix(research): resolve web scraping timeout"
+git commit -m "test(security): add OAuth validation tests"
+```
+
+**PR Requirements**:
+- All CI checks passing
+- Code coverage maintained
+- Security review for agent changes
+- Documentation updated
+- 1+ maintainer approval
+
+See [AGENTS.md](./AGENTS.md) for comprehensive development guidelines.
 
 ## Configuration
 

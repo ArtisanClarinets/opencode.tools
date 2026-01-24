@@ -1,16 +1,6 @@
-import { IAgent, TestPlanResult, StaticAnalysisReport } from '../types'; // Assuming 'types' are defined elsewhere
+import { IAgent, TestPlanResult, StaticAnalysisReport } from '../types';
 
-// Mock interface definitions for self-containment
-interface IAgent {}
-interface TestPlanResult {
-    testPlan: string;
-    unitTestCode: string;
-    staticAnalysisReport: StaticAnalysisReport;
-}
-interface StaticAnalysisReport {
-    summary: string;
-    issues: { severity: string; description: string; file: string }[];
-}
+
 
 export class QAAgent implements IAgent {
     public async prototype(codebasePath: string): Promise<TestPlanResult> {

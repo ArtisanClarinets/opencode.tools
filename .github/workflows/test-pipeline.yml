@@ -1,0 +1,455 @@
+name: OpenCode Tools Test Pipeline
+
+on:
+  push:
+    branches: [ main, develop, feature/* ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+env:
+  NODE_VERSION: '18'
+  CACHE_VERSION: '1'
+
+jobs:
+  # Code quality and linting
+  lint:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Check TypeScript compilation
+        run: npm run build
+
+      - name: Run security audit
+        run: npm audit --audit-level=moderate
+
+  # Unit tests
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    strategy:
+      matrix:
+        test-group: [
+          'research-agent',
+          'docs-agent', 
+          'codegen-agent',
+          'qa-agent',
+          'architecture-agent',
+          'delivery-agent',
+          'tools'
+        ]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests for ${{ matrix.test-group }}
+        run: npm test -- --testPathPattern="${{ matrix.test-group }}" --coverage --ci
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage/lcov.info
+          flags: unit-tests,${{ matrix.test-group }}
+          name: ${{ matrix.test-group }}-coverage
+
+  # Integration tests
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    services:
+      # Add any required services here (databases, caches, etc.)
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run integration tests
+        run: npm run test:integration -- --coverage --ci
+        env:
+          NODE_ENV: test
+          REDIS_URL: redis://localhost:6379
+
+      - name: Upload integration test coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage/lcov.info
+          flags: integration-tests
+          name: integration-coverage
+
+  # End-to-end tests
+  e2e-tests:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Run E2E tests
+        run: npm run test:e2e -- --ci
+
+      - name: Upload E2E test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: e2e-test-results
+          path: test-results/
+
+  # Security testing
+  security-tests:
+    name: Security Testing
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run security tests
+        run: npm run test:security -- --ci
+
+      - name: Run OWASP dependency check
+        run: npm audit --audit-level=high
+
+      - name: Run CodeQL analysis
+        uses: github/codeql-action/analyze@v2
+        if: always()
+
+  # Performance testing
+  performance-tests:
+    name: Performance Testing
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run performance benchmarks
+        run: npm run test:performance -- --ci
+
+      - name: Upload performance results
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-results
+          path: performance-results/
+
+  # Test coverage analysis
+  coverage-analysis:
+    name: Coverage Analysis
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate coverage report
+        run: |
+          npm test -- --coverage --coverageReporters=text-lcov | coveralls
+          npm run test:coverage -- --coverageReporters=html
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage/lcov.info
+          flags: combined-coverage
+          name: combined-coverage
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: coverage/
+
+      - name: Comment PR with coverage
+        uses: romeovs/lcov-reporter-action@v0.3.1
+        if: github.event_name == 'pull_request'
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          lcov-file: ./coverage/lcov.info
+
+  # Mutation testing
+  mutation-tests:
+    name: Mutation Testing
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run mutation tests
+        run: npm run test:mutation
+
+      - name: Upload mutation test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: mutation-results
+          path: mutation-results/
+
+  # Load testing
+  load-tests:
+    name: Load Testing
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run load tests
+        run: npm run test:load
+
+      - name: Upload load test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: load-test-results
+          path: load-test-results/
+
+  # Test summary and reporting
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, e2e-tests, security-tests, performance-tests]
+    if: always()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all test artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Generate test summary
+        run: |
+          echo "# Test Execution Summary" > test-summary.md
+          echo "## Test Results" >> test-summary.md
+          echo "- Unit Tests: ${{ needs.unit-tests.result }}" >> test-summary.md
+          echo "- Integration Tests: ${{ needs.integration-tests.result }}" >> test-summary.md
+          echo "- E2E Tests: ${{ needs.e2e-tests.result }}" >> test-summary.md
+          echo "- Security Tests: ${{ needs.security-tests.result }}" >> test-summary.md
+          echo "- Performance Tests: ${{ needs.performance-tests.result }}" >> test-summary.md
+          echo "" >> test-summary.md
+          echo "## Coverage Report" >> test-summary.md
+          echo "See detailed coverage report in artifacts" >> test-summary.md
+
+      - name: Upload test summary
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-summary
+          path: test-summary.md
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.readFileSync('test-summary.md', 'utf8');
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });
+
+  # Deployment readiness check
+  deployment-readiness:
+    name: Deployment Readiness
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, e2e-tests, security-tests, performance-tests, coverage-analysis]
+    if: always()
+    steps:
+      - name: Check deployment readiness
+        run: |
+          # Check if all critical tests passed
+          critical_tests=("${{ needs.unit-tests.result }}" "${{ needs.integration-tests.result }}" "${{ needs.security-tests.result }}")
+          
+          for result in "${critical_tests[@]}"; do
+            if [[ "$result" != "success" ]]; then
+              echo "❌ Deployment blocked: Critical tests failed"
+              exit 1
+            fi
+          done
+          
+          echo "✅ All critical tests passed - deployment ready"
+
+      - name: Generate deployment report
+        run: |
+          echo "# Deployment Readiness Report" > deployment-report.md
+          echo "## Test Results Summary" >> deployment-report.md
+          echo "- **Unit Tests**: ${{ needs.unit-tests.result }}" >> deployment-report.md
+          echo "- **Integration Tests**: ${{ needs.integration-tests.result }}" >> deployment-report.md
+          echo "- **E2E Tests**: ${{ needs.e2e-tests.result }}" >> deployment-report.md
+          echo "- **Security Tests**: ${{ needs.security-tests.result }}" >> deployment-report.md
+          echo "- **Performance Tests**: ${{ needs.performance-tests.result }}" >> deployment-report.md
+          echo "- **Coverage Analysis**: ${{ needs.coverage-analysis.result }}" >> deployment-report.md
+          echo "" >> deployment-report.md
+          echo "## Deployment Status" >> deployment-report.md
+          echo "🚀 **READY FOR DEPLOYMENT**" >> deployment-report.md
+          echo "" >> deployment-report.md
+          echo "All critical tests have passed successfully." >> deployment-report.md
+
+      - name: Upload deployment report
+        uses: actions/upload-artifact@v3
+        with:
+          name: deployment-report
+          path: deployment-report.md
+
+  # Notification
+  notify:
+    name: Notification
+    runs-on: ubuntu-latest
+    needs: [deployment-readiness]
+    if: always()
+    steps:
+      - name: Notify on success
+        if: needs.deployment-readiness.result == 'success'
+        run: |
+          echo "✅ All tests passed successfully!"
+          echo "🚀 Ready for deployment"
+
+      - name: Notify on failure
+        if: needs.deployment-readiness.result != 'success'
+        run: |
+          echo "❌ Tests failed"
+          echo "🔧 Please fix the issues before deployment"
+
+      - name: Send Slack notification (optional)
+        if: always() && secrets.SLACK_WEBHOOK_URL
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          channel: '#ci-cd'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+
+# Environment protection rules
+environment:
+  name: testing
+  url: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+# Concurrency control
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Timeout configuration
+timeout-minutes: 45
+
+# Permissions
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+  security-events: write
+  actions: read
+
+# Environment variables
+env:
+  CI: true
+  FORCE_COLOR: 1
+  NODE_OPTIONS: --max-old-space-size=4096
+  JEST_JUNIT_OUTPUT_DIR: test-results
+  JEST_JUNIT_OUTPUT_NAME: junit.xml

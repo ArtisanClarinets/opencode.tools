@@ -16,11 +16,12 @@ class ResearchAgent {
         const industryData = await this.gatherIndustryData(input);
         const competitorData = await this.gatherCompetitorData(input);
         const techStackData = await this.gatherTechStackData(input);
-        // Compile dossier
-        const risks = this.identifyRisks(input, industryData);
-        const opportunities = this.identifyOpportunities(input, industryData);
+        // Generate summaries and analysis
         const companySummary = this.generateCompanySummary(companyData, input);
         const industryOverview = this.generateIndustryOverview(industryData);
+        const risks = this.identifyRisks(input, industryData);
+        const opportunities = this.identifyOpportunities(input, industryData);
+        // Compile dossier
         const dossier = {
             companySummary: companySummary,
             industryOverview: industryOverview,
@@ -90,10 +91,7 @@ class ResearchAgent {
     async searchWeb(query) {
         try {
             // Use webfetch tool to search
-            const result = await (0, webfetch_1.webfetch)({
-                url: `https://www.google.com/search?q=${encodeURIComponent(query)}`,
-                format: 'text'
-            });
+            const result = await (0, webfetch_1.webfetch)(`https://www.google.com/search?q=${encodeURIComponent(query)}`, 'text');
             return [{
                     query,
                     content: result.content,

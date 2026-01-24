@@ -1,18 +1,6 @@
-import { IAgent, BacklogItem, ProjectScaffoldResult } from '../types'; // Assuming 'types' are defined elsewhere
+import { IAgent, BacklogItem, ProjectScaffoldResult } from '../types';
 
-// Mock interface definitions for self-containment
-interface IAgent {}
-interface BacklogItem {
-    id: string;
-    title: string;
-    description: string;
-    techStack: string;
-}
-interface ProjectScaffoldResult {
-    success: boolean;
-    log: string;
-    filesCreated: string[];
-}
+
 
 export class CodeGenAgent implements IAgent {
     public async prototype(backlogItem: BacklogItem): Promise<ProjectScaffoldResult> {
