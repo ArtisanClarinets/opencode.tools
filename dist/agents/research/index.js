@@ -36,38 +36,46 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.gatherDossier = gatherDossier;
 const fs = __importStar(require("fs"));
-const path = __importStar(require("path"));
+const research_agent_1 = require("./research-agent");
 /**
- * Mocks the webfetch tool to return a predefined research dossier for a fictional company 'Acme Corp'.
- * In a real scenario, this would orchestrate multiple webfetch calls based on the brief.
- * @param brief The client brief for the research.
- * @returns A structured Research Dossier.
+ * Orchestrates research using the ResearchAgent.
+ * @param briefPathOrJson The client brief as a JSON string or path to a JSON file.
+ * @returns A structured Research Output.
  */
-async function gatherDossier(brief) {
-    // In a real implementation, this would involve LLM reasoning and webfetch calls.
-    // For the prototype, we load the golden output and parse the content.
-    const goldenPath = path.join(__dirname, '..', '..', 'tests', 'golden', 'research', 'dossier-output.md');
-    const dossierMarkdown = fs.readFileSync(goldenPath, 'utf-8');
-    // Simple parsing logic (simulated for prototype)
-    const summary = `Acme Corp is a fictional B2B SaaS company that provides specialized project management tools for the construction industry. Their core product focuses on real-time material tracking and compliance reporting, primarily serving small to mid-sized contractors.`;
-    const competitors = ['BuildTools', 'ConstractPro', 'PlanSwift', 'Fieldwire', 'Procore (Enterprise)'];
-    const constraints = [
-        'Existing client base relies on legacy, on-premise solutions.',
-        'High regulatory requirements in target market (compliance is critical).',
-        'Mobile app performance in low-connectivity construction zones is a known issue.'
-    ];
-    const opportunities = [
-        'AI-driven material waste prediction to reduce costs.',
-        'Integration with drone imaging for site progress monitoring.',
-        'Expansion into European regulatory compliance markets.'
-    ];
-    return {
-        summary,
-        competitors,
-        constraints,
-        opportunities,
-        rawSources: ['www.acmecorp.com/about', 'www.briefing.com/acme-analysis', 'www.construction-review.org/top-5'],
-        markdown: dossierMarkdown,
-    };
+async function gatherDossier(briefPathOrJson) {
+    let input;
+    try {
+        // Check if input is a file path
+        if (fs.existsSync(briefPathOrJson) && fs.lstatSync(briefPathOrJson).isFile()) {
+            const content = fs.readFileSync(briefPathOrJson, 'utf-8');
+            // If the file contains the full ResearchInput structure
+            const parsed = JSON.parse(content);
+            if (parsed.brief) {
+                input = parsed;
+            }
+            else {
+                // If the file is just the ClientBrief
+                input = { brief: parsed };
+            }
+        }
+        else {
+            // Try parsing as JSON string
+            const parsed = JSON.parse(briefPathOrJson);
+            if (parsed.brief) {
+                input = parsed;
+            }
+            else {
+                input = { brief: parsed };
+            }
+        }
+    }
+    catch (error) {
+        console.error("Failed to parse input brief:", error);
+        throw new Error("Invalid input: Must be a valid JSON string or path to a JSON file containing a ClientBrief.");
+    }
+    const agent = new research_agent_1.ResearchAgent();
+    console.log(`Starting research for ${input.brief.company}...`);
+    return await agent.execute(input);
 }
+// CLI Entry Point removed to enforce TUI-only access
 //# sourceMappingURL=index.js.map

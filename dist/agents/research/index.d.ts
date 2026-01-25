@@ -1,3 +1,4 @@
+import { ResearchOutput } from './types';
 export interface Dossier {
     summary: string;
     competitors: string[];
@@ -7,10 +8,9 @@ export interface Dossier {
     markdown: string;
 }
 /**
- * Mocks the webfetch tool to return a predefined research dossier for a fictional company 'Acme Corp'.
- * In a real scenario, this would orchestrate multiple webfetch calls based on the brief.
- * @param brief The client brief for the research.
- * @returns A structured Research Dossier.
+ * Orchestrates research using the ResearchAgent.
+ * @param briefPathOrJson The client brief as a JSON string or path to a JSON file.
+ * @returns A structured Research Output.
  */
-export declare function gatherDossier(brief: string): Promise<Dossier>;
+export declare function gatherDossier(briefPathOrJson: string): Promise<ResearchOutput>;
 //# sourceMappingURL=index.d.ts.map

@@ -34,7 +34,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TUIResearchAgent = void 0;
-const research_agent_1 = require("../../agents/research/research-agent");
+const phd_research_workflow_1 = require("../workflows/phd-research-workflow");
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const util_1 = require("util");
@@ -48,22 +48,22 @@ const mkdir = (0, util_1.promisify)(fs.mkdir);
 class TUIResearchAgent {
     constructor() {
         this.artifactsDir = 'artifacts';
-        this.agent = new research_agent_1.ResearchAgent();
+        this.workflow = new phd_research_workflow_1.PhdResearchWorkflow();
     }
     /**
      * Run research from TUI with interactive prompts
      */
     async runInteractive() {
-        console.log('\n🔍 OpenCode Research Agent');
+        console.log('\n🔍 OpenCode PhD Research Agent');
         console.log('============================');
         try {
             // Get research parameters through TUI prompts
             const input = await this.gatherInput();
-            console.log('\n🚀 Starting research...');
+            console.log('\n🚀 Starting PhD research workflow...');
             console.log(`🏢 Company: ${input.brief.company}`);
             console.log(`🏭 Industry: ${input.brief.industry}`);
-            // Execute research
-            const result = await this.agent.execute(input);
+            // Execute research workflow
+            const result = await this.workflow.execute(input);
             // Save results
             const outputPath = await this.saveResults(result, input.brief.company);
             // Display summary
@@ -80,14 +80,14 @@ class TUIResearchAgent {
     async runWithParams(params) {
         const input = this.paramsToInput(params);
         console.log(`🔍 Researching ${input.brief.company}...`);
-        const result = await this.agent.execute(input);
+        const result = await this.workflow.execute(input);
         const outputPath = await this.saveResults(result, input.brief.company);
         return {
-            success: true,
+            success: result.approved,
             outputPath,
-            dossier: result.dossier,
-            sources: result.sources,
-            meta: result.meta
+            dossier: result.research.dossier,
+            sources: result.research.sources,
+            meta: result.research.meta
         };
     }
     /**
@@ -177,22 +177,38 @@ class TUIResearchAgent {
      * Display research results summary
      */
     displayResultsSummary(result, outputPath) {
-        console.log('\n✅ Research completed successfully!');
+        if (result.approved) {
+            console.log('\n✅ PhD Research Workflow completed successfully!');
+        }
+        else {
+            console.log('\n⚠️ Research completed with Council warnings.');
+        }
         console.log(`📁 Results saved to: ${outputPath}`);
         console.log('\n📊 Summary:');
-        console.log(`   • Company: ${result.dossier.companySummary.substring(0, 80)}...`);
-        console.log(`   • Industry: ${result.dossier.industryOverview.substring(0, 80)}...`);
-        console.log(`   • Competitors: ${result.dossier.competitors.length}`);
-        console.log(`   • Tech Stack Items: ${Object.values(result.dossier.techStack).flat().length}`);
-        console.log(`   • Risks Identified: ${result.dossier.risks.length}`);
-        console.log(`   • Opportunities Found: ${result.dossier.opportunities.length}`);
-        console.log(`   • Recommendations: ${result.dossier.recommendations.length}`);
-        console.log(`   • Sources Cited: ${result.sources.length}`);
-        if (result.meta) {
+        // Adapt to nested structure if result is PhdResearchResult, or ResearchOutput if called from saveResults which flattens it?
+        // saveResults saves the whole object.
+        // Check structure
+        const dossier = result.research ? result.research.dossier : result.dossier;
+        const sources = result.research ? result.research.sources : result.sources;
+        const meta = result.research ? result.research.meta : result.meta;
+        const council = result.councilReview;
+        const summary = result.summary;
+        console.log(`   • Company: ${dossier.companySummary.substring(0, 80)}...`);
+        console.log(`   • Industry: ${dossier.industryOverview.substring(0, 80)}...`);
+        console.log(`   • Sources Cited: ${sources.length}`);
+        if (summary) {
+            console.log(`   • Executive Summary Generated: Yes`);
+        }
+        if (council) {
+            console.log('\n🏛️  Council Review:');
+            console.log(`   • Approved: ${council.approved ? 'Yes' : 'No'}`);
+            council.results.forEach((r) => {
+                console.log(`   • ${r.reviewerId}: ${r.passed ? '✅' : '❌'} (${r.comments})`);
+            });
+        }
+        if (meta) {
             console.log(`\nℹ️  Metadata:`);
-            console.log(`   • Agent: ${result.meta.agent}`);
-            console.log(`   • Version: ${result.meta.promptVersion}`);
-            console.log(`   • Run ID: ${result.meta.runId}`);
+            console.log(`   • Run ID: ${meta.runId}`);
         }
     }
 }
