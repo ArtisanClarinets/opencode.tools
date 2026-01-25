@@ -53,7 +53,40 @@ export class JsonDatabase implements Database {
   }
 
   async addFinding(researchId: string, finding: ResearchFinding): Promise<void> {
-    const record = this.data[researchId];
+// Helper function to validate researchId
+private isValidResearchId(researchId: string): boolean {
+  // Allow only alphanumeric characters, underscores, and dashes
+  return /^[a-zA-Z0-9_-]+$/.test(researchId);
+}
+
+async addFinding(researchId: string, finding: ResearchFinding): Promise<void> {
+  if (!this.isValidResearchId(researchId)) {
+    throw new Error('Invalid researchId');
+  }
+  const record = this.data[researchId];
+  if (record) {
+    record.findings.push(finding);
+    this.save();
+  } else {
+    throw new Error(`Research record ${researchId} not found`);
+  }
+}
+
+async updateStatus(researchId: string, status: ResearchRecord['status']): Promise<void> {
+  if (!this.isValidResearchId(researchId)) {
+    throw new Error('Invalid researchId');
+  }
+  const record = this.data[researchId];
+  if (record) {
+    record.status = status;
+    if (status === 'completed') {
+      record.completedAt = new Date().toISOString();
+    }
+    this.save();
+  } else {
+    throw new Error(`Research record ${researchId} not found`);
+  }
+}
     if (record) {
       record.findings.push(finding);
       this.save();
