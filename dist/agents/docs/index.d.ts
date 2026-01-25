@@ -1,4 +1,4 @@
-import { Dossier } from '../research/index';
+import { ResearchDossier } from '../research/types';
 export interface Documents {
     prd: string;
     sow: string;
@@ -10,5 +10,5 @@ export interface Documents {
  * @param brief The original client brief.
  * @returns An object containing the generated PRD and SOW content in Markdown.
  */
-export declare function generateDocuments(dossier: Dossier, brief: string): Promise<Documents>;
+export declare function generateDocuments(dossier: ResearchDossier, brief: string): Promise<Documents>;
 //# sourceMappingURL=index.d.ts.map

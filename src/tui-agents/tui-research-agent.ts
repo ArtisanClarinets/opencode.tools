@@ -1,4 +1,4 @@
-import { ResearchAgent } from '../../agents/research/research-agent';
+import { PhdResearchWorkflow } from '../workflows/phd-research-workflow';
 import { ResearchInput } from '../../agents/research/types';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -13,30 +13,30 @@ const mkdir = promisify(fs.mkdir);
  * Accessible ONLY through OpenCode TUI - no standalone CLI
  */
 export class TUIResearchAgent {
-  private agent: ResearchAgent;
+  private workflow: PhdResearchWorkflow;
   private readonly artifactsDir = 'artifacts';
 
   constructor() {
-    this.agent = new ResearchAgent();
+    this.workflow = new PhdResearchWorkflow();
   }
 
   /**
    * Run research from TUI with interactive prompts
    */
   async runInteractive(): Promise<void> {
-    console.log('\n🔍 OpenCode Research Agent');
+    console.log('\n🔍 OpenCode PhD Research Agent');
     console.log('============================');
     
     try {
       // Get research parameters through TUI prompts
       const input = await this.gatherInput();
       
-      console.log('\n🚀 Starting research...');
+      console.log('\n🚀 Starting PhD research workflow...');
       console.log(`🏢 Company: ${input.brief.company}`);
       console.log(`🏭 Industry: ${input.brief.industry}`);
       
-      // Execute research
-      const result = await this.agent.execute(input);
+      // Execute research workflow
+      const result = await this.workflow.execute(input);
       
       // Save results
       const outputPath = await this.saveResults(result, input.brief.company);
@@ -58,15 +58,15 @@ export class TUIResearchAgent {
     
     console.log(`🔍 Researching ${input.brief.company}...`);
     
-    const result = await this.agent.execute(input);
+    const result = await this.workflow.execute(input);
     const outputPath = await this.saveResults(result, input.brief.company);
     
     return {
-      success: true,
+      success: result.approved,
       outputPath,
-      dossier: result.dossier,
-      sources: result.sources,
-      meta: result.meta
+      dossier: result.research.dossier,
+      sources: result.research.sources,
+      meta: result.research.meta
     };
   }
 
@@ -168,23 +168,43 @@ export class TUIResearchAgent {
    * Display research results summary
    */
   private displayResultsSummary(result: any, outputPath: string): void {
-    console.log('\n✅ Research completed successfully!');
+    if (result.approved) {
+        console.log('\n✅ PhD Research Workflow completed successfully!');
+    } else {
+        console.log('\n⚠️ Research completed with Council warnings.');
+    }
+
     console.log(`📁 Results saved to: ${outputPath}`);
     console.log('\n📊 Summary:');
-    console.log(`   • Company: ${result.dossier.companySummary.substring(0, 80)}...`);
-    console.log(`   • Industry: ${result.dossier.industryOverview.substring(0, 80)}...`);
-    console.log(`   • Competitors: ${result.dossier.competitors.length}`);
-    console.log(`   • Tech Stack Items: ${Object.values(result.dossier.techStack).flat().length}`);
-    console.log(`   • Risks Identified: ${result.dossier.risks.length}`);
-    console.log(`   • Opportunities Found: ${result.dossier.opportunities.length}`);
-    console.log(`   • Recommendations: ${result.dossier.recommendations.length}`);
-    console.log(`   • Sources Cited: ${result.sources.length}`);
+    // Adapt to nested structure if result is PhdResearchResult, or ResearchOutput if called from saveResults which flattens it?
+    // saveResults saves the whole object.
+
+    // Check structure
+    const dossier = result.research ? result.research.dossier : result.dossier;
+    const sources = result.research ? result.research.sources : result.sources;
+    const meta = result.research ? result.research.meta : result.meta;
+    const council = result.councilReview;
+    const summary = result.summary;
+
+    console.log(`   • Company: ${dossier.companySummary.substring(0, 80)}...`);
+    console.log(`   • Industry: ${dossier.industryOverview.substring(0, 80)}...`);
+    console.log(`   • Sources Cited: ${sources.length}`);
     
-    if (result.meta) {
+    if (summary) {
+        console.log(`   • Executive Summary Generated: Yes`);
+    }
+
+    if (council) {
+        console.log('\n🏛️  Council Review:');
+        console.log(`   • Approved: ${council.approved ? 'Yes' : 'No'}`);
+        council.results.forEach((r: any) => {
+            console.log(`   • ${r.reviewerId}: ${r.passed ? '✅' : '❌'} (${r.comments})`);
+        });
+    }
+
+    if (meta) {
       console.log(`\nℹ️  Metadata:`);
-      console.log(`   • Agent: ${result.meta.agent}`);
-      console.log(`   • Version: ${result.meta.promptVersion}`);
-      console.log(`   • Run ID: ${result.meta.runId}`);
+      console.log(`   • Run ID: ${meta.runId}`);
     }
   }
 }
