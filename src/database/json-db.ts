@@ -63,7 +63,11 @@ export class JsonDatabase implements Database {
   }
 
   async updateStatus(researchId: string, status: ResearchRecord['status']): Promise<void> {
-    const record = this.data[researchId];
+// Validate researchId before using it as an object key to prevent prototype pollution and unsafe property access
+if (!/^[a-zA-Z0-9_-]+$/.test(researchId)) {
+  throw new Error("Invalid researchId");
+}
+const record = this.data[researchId];
     if (record) {
       record.status = status;
       if (status === 'completed') {
