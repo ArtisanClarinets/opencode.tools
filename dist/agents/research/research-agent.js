@@ -18,6 +18,11 @@ class ResearchAgent {
         const runId = this.generateRunId();
         const timestamp = new Date().toISOString();
         logger_1.logger.info('Research Agent started', { runId, company: input.brief.company });
+        // Gather research data
+        const companyData = await this.gatherCompanyData(input);
+        const industryData = await this.gatherIndustryData(input);
+        const competitorData = await this.gatherCompetitorData(input);
+        const techStackData = await this.gatherTechStackData(input);
         // Initialize Research Record in Database
         const recordId = (0, uuid_1.v4)();
         await this.db.saveResearch({
@@ -106,6 +111,8 @@ class ResearchAgent {
                 'Leverage identified opportunities for competitive advantage'
             ]
         };
+        // Compile sources
+        const sources = await this.compileSources(companyData, industryData, competitorData);
         logger_1.logger.info('Research Agent completed', { runId, sourcesCount: sources.length });
         return {
             dossier,
