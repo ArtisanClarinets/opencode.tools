@@ -45,7 +45,13 @@ export class JsonDatabase implements Database {
   }
 
   async getResearch(id: string): Promise<ResearchRecord | null> {
-    return this.data[id] || null;
+// Validate id before access to prevent prototype pollution and unsafe property access
+// If ID format restriction is needed, uncomment and adjust the regex below
+// if (!/^[a-zA-Z0-9_-]+$/.test(id)) { return null; }
+if (!Object.prototype.hasOwnProperty.call(this.data, id)) {
+  return null;
+}
+return this.data[id];
   }
 
   async getAllResearch(): Promise<ResearchRecord[]> {
