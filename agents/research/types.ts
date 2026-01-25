@@ -1,18 +1,23 @@
-export interface ResearchInput {
-  brief: ClientBrief;
-  keywords?: string[];
-  urls?: string[];
-  priorNotes?: string;
-}
+import { z } from 'zod';
 
-export interface ClientBrief {
-  company: string;
-  industry: string;
-  description: string;
-  goals: string[];
-  constraints?: string[];
-  timeline?: string;
-}
+export const ClientBriefSchema = z.object({
+  company: z.string().min(1, "Company name is required"),
+  industry: z.string().min(1, "Industry is required"),
+  description: z.string().min(1, "Description is required"),
+  goals: z.array(z.string()).min(1, "At least one goal is required"),
+  constraints: z.array(z.string()).optional(),
+  timeline: z.string().optional()
+});
+
+export const ResearchInputSchema = z.object({
+  brief: ClientBriefSchema,
+  keywords: z.array(z.string()).optional(),
+  urls: z.array(z.string().url()).optional(),
+  priorNotes: z.string().optional()
+});
+
+export type ResearchInput = z.infer<typeof ResearchInputSchema>;
+export type ClientBrief = z.infer<typeof ClientBriefSchema>;
 
 export interface ResearchOutput {
   dossier: ResearchDossier;

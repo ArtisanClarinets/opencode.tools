@@ -12,13 +12,20 @@ module.exports = {
     '/coverage/',
     '/.git/'
   ],
+  transformIgnorePatterns: [
+    'node_modules/(?!uuid)'
+  ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@agents/(.*)$': '<rootDir>/agents/$1',
     '^@tools/(.*)$': '<rootDir>/tools/$1',
     '^@tests/(.*)$': '<rootDir>/tests/$1',
     '^@utils/(.*)$': '<rootDir>/tests/utils/$1',
-    '^@fixtures/(.*)$': '<rootDir>/tests/fixtures/$1'
+    '^@fixtures/(.*)$': '<rootDir>/tests/fixtures/$1',
+    // Support non-prefixed imports as per AGENTS.md
+    '^src/(.*)$': '<rootDir>/src/$1',
+    '^agents/(.*)$': '<rootDir>/agents/$1',
+    '^tools/(.*)$': '<rootDir>/tools/$1'
   },
   collectCoverageFrom: [
     'src/**/*.ts',
@@ -73,7 +80,7 @@ module.exports = {
   },
   // Transform configuration
   transform: {
-    '^.+\\.ts$': ['ts-jest', {
+    '^.+\\.[tj]s$': ['ts-jest', {
       tsconfig: {
         esModuleInterop: true,
         allowSyntheticDefaultImports: true,

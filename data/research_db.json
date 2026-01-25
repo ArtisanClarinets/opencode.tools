@@ -1,0 +1,302 @@
+{
+  "e71e6947-bdab-490f-99f6-12f114e7a6af": {
+    "id": "e71e6947-bdab-490f-99f6-12f114e7a6af",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "3585fee0-6a8a-4f84-b7c7-0c43895e2287",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "55fc1522-830e-4b97-9eaf-b6f4f74454e1": {
+    "id": "55fc1522-830e-4b97-9eaf-b6f4f74454e1",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "437e4a0b-2b0f-4e8b-a711-e0bbdd6a0a56",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "91c5a2d9-6ebc-4055-94fb-630d268ec809": {
+    "id": "91c5a2d9-6ebc-4055-94fb-630d268ec809",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "2e446d2d-eb63-4ec2-85a2-c9b9d80d8599",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "81f42a8d-1a8d-46b8-846f-7d631e930917": {
+    "id": "81f42a8d-1a8d-46b8-846f-7d631e930917",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "b952fb66-c16f-4530-96fa-d42cabd52c99",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "66dee211-8409-4c7c-bee7-f570c95ff232": {
+    "id": "66dee211-8409-4c7c-bee7-f570c95ff232",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "46d86a42-d9f3-4947-9b8e-e2d27321be43",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "b875b231-2d75-4bf4-8e05-e43b768a13e0": {
+    "id": "b875b231-2d75-4bf4-8e05-e43b768a13e0",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "0db840c4-b0cf-4f7c-8957-ea92da33bbfb",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "ca270636-b267-4ab7-b6c2-9b7b08dac34e": {
+    "id": "ca270636-b267-4ab7-b6c2-9b7b08dac34e",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "c4a2a64e-4e57-409b-8e17-af3101150141",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "a69d72b1-759c-4e57-ace4-882c703562a3": {
+    "id": "a69d72b1-759c-4e57-ace4-882c703562a3",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "9ec198a0-e422-41fd-ac91-309d34536a42",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "10d50abc-bfb7-4e90-b612-cf4b47b15535": {
+    "id": "10d50abc-bfb7-4e90-b612-cf4b47b15535",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "5578aa07-a820-486d-96e1-28020eacb679",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "1e4c3987-e92f-441d-864a-851526ddba9f": {
+    "id": "1e4c3987-e92f-441d-864a-851526ddba9f",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "67ba561f-b25a-4971-a894-a121cbfd0527",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "b267e379-1453-44d9-b013-513209370fd8": {
+    "id": "b267e379-1453-44d9-b013-513209370fd8",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "4cd8fe5c-a360-43ff-9dfc-7ccb1179d00a",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "33b7d081-990f-4a94-85a1-796ac08e539d": {
+    "id": "33b7d081-990f-4a94-85a1-796ac08e539d",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "4543f20f-0bb1-4cb5-a5f6-4cc92909984c",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "19d2ea0e-8ab1-4b34-8120-3696932fa6e7": {
+    "id": "19d2ea0e-8ab1-4b34-8120-3696932fa6e7",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "9d52350c-0fdb-474c-bfa6-48c0138422ff",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "4acea32d-0ae5-48be-9664-b0c10221e3b1": {
+    "id": "4acea32d-0ae5-48be-9664-b0c10221e3b1",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "42940159-3c15-4c42-afc8-92f2b57117d9",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "db95312d-32a5-40ac-878d-1cd69f36a970": {
+    "id": "db95312d-32a5-40ac-878d-1cd69f36a970",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "83ce9cb2-1937-493a-9449-d5576992d51a",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "b8c51515-7cad-4bc4-a1ab-ae45afb881ec": {
+    "id": "b8c51515-7cad-4bc4-a1ab-ae45afb881ec",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "e2013613-ee30-4d80-ada8-9c0f19642712",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "84705c46-cfdf-4fd8-80e9-62262597ce92": {
+    "id": "84705c46-cfdf-4fd8-80e9-62262597ce92",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "36001ea7-56c7-4988-abb5-554727d924ae",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "894f98ba-3e23-49be-abbb-b25083358ce0": {
+    "id": "894f98ba-3e23-49be-abbb-b25083358ce0",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "7e021b79-df6b-47a0-a3d7-ac76029850cf",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "627cdc0f-834b-4e1f-92f9-0524f4f47e19": {
+    "id": "627cdc0f-834b-4e1f-92f9-0524f4f47e19",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "a356c513-fc57-4095-adb2-13c34df38e98",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "0254c5de-ed7e-4bc4-9a34-13cea6049018": {
+    "id": "0254c5de-ed7e-4bc4-9a34-13cea6049018",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "855e7ab4-49c4-4e6d-8571-82661c555cae",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  }
+}

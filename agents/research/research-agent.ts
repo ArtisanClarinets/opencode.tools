@@ -1,10 +1,25 @@
-import { ResearchInput, ResearchOutput, Source } from './types';
+import { ResearchInput, ResearchOutput, Source, ResearchInputSchema, Competitor, TechStack } from './types';
 import { webfetch } from '../../tools/webfetch';
 import { logger } from '../../src/runtime/logger';
 import { Database } from '../../src/database/types';
 import { JsonDatabase } from '../../src/database/json-db';
 import { ResearchGatekeeper } from '../../src/governance/gatekeeper';
 import { v4 as uuidv4 } from 'uuid';
+import { z } from 'zod';
+
+export class ResearchError extends Error {
+  constructor(message: string, public context?: Record<string, any>) {
+    super(message);
+    this.name = 'ResearchError';
+  }
+}
+
+interface SearchResult {
+  query: string;
+  content: string;
+  url: string;
+  timestamp: string;
+}
 
 export class ResearchAgent {
   private readonly agentName = 'research-agent';
@@ -24,11 +39,18 @@ export class ResearchAgent {
 
     logger.info('Research Agent started', { runId, company: input.brief.company });
 
+    // Validate Input
+    const validation = ResearchInputSchema.safeParse(input);
+    if (!validation.success) {
+      throw new ResearchError('Invalid input provided', { errors: validation.error.issues });
+    }
+    const validatedInput = validation.data;
+
     // Initialize Research Record in Database
     const recordId = uuidv4();
     await this.db.saveResearch({
       id: recordId,
-      topic: input.brief.company,
+      topic: validatedInput.brief.company,
       status: 'in_progress',
       startedAt: timestamp,
       findings: []
@@ -36,10 +58,10 @@ export class ResearchAgent {
 
     let iterations = 0;
     const maxIterations = 3;
-    let companyData: any[] = [];
-    let industryData: any[] = [];
-    let competitorData: any[] = [];
-    let techStackData: any = { frontend: [], backend: [], infrastructure: [], thirdParty: [] };
+    let companyData: SearchResult[] = [];
+    let industryData: SearchResult[] = [];
+    let competitorData: Competitor[] = [];
+    let techStackData: TechStack = { frontend: [], backend: [], infrastructure: [], thirdParty: [] };
     let sources: Source[] = [];
 
     // Research Loop
@@ -52,19 +74,33 @@ export class ResearchAgent {
       const iterationSuffix = iterations > 1 ? ` depth ${iterations}` : '';
 
       // Gather research data
-      const [newCompanyData, newIndustryData, newCompetitorData, newTechStackData] = await Promise.all([
-        this.gatherCompanyData(input, iterationSuffix),
-        this.gatherIndustryData(input, iterationSuffix),
-        this.gatherCompetitorData(input, iterationSuffix),
-        this.gatherTechStackData(input, iterationSuffix)
-      ]);
+      try {
+        const [newCompanyData, newIndustryData, newCompetitorData, newTechStackData] = await Promise.all([
+          this.gatherCompanyData(validatedInput, iterationSuffix),
+          this.gatherIndustryData(validatedInput, iterationSuffix),
+          this.gatherCompetitorData(validatedInput, iterationSuffix),
+          this.gatherTechStackData(validatedInput, iterationSuffix)
+        ]);
 
-      companyData = [...companyData, ...newCompanyData];
-      industryData = [...industryData, ...newIndustryData];
-      // Competitors and tech stack might duplicate, but extractors handle some logic.
-      // For simplicity in this loop, we just take the latest or merge unique.
-      competitorData = newCompetitorData.length > 0 ? newCompetitorData : competitorData;
-      techStackData = Object.keys(newTechStackData.frontend).length > 0 ? newTechStackData : techStackData;
+        companyData = [...companyData, ...newCompanyData];
+        industryData = [...industryData, ...newIndustryData];
+
+        // Merge competitors ensuring uniqueness by name
+        const existingNames = new Set(competitorData.map(c => c.name));
+        newCompetitorData.forEach(c => {
+          if (!existingNames.has(c.name)) {
+            competitorData.push(c);
+            existingNames.add(c.name);
+          }
+        });
+
+        // Merge tech stack
+        this.mergeTechStack(techStackData, newTechStackData);
+
+      } catch (error) {
+        logger.error('Error gathering data in iteration', { iterations, error });
+        // Don't crash entirely, try to proceed with what we have
+      }
 
       // Compile sources for gatekeeper
       sources = await this.compileSources(companyData, industryData, competitorData);
@@ -91,36 +127,30 @@ export class ResearchAgent {
             relevanceScore: 1
         }));
 
+        currentRecord.status = gatePassed ? 'completed' : 'in_progress';
         if (gatePassed) {
-          currentRecord.status = 'completed';
           currentRecord.completedAt = new Date().toISOString();
-        } else {
-          currentRecord.status = 'in_progress'; // Or 'failed' if strict
-          // We keep it in_progress or maybe add a 'review_needed' status?
-          // Keeping in_progress implies it's not done.
         }
 
         await this.db.saveResearch(currentRecord);
     }
 
     // Generate summaries and analysis
-    const companySummary = this.generateCompanySummary(companyData, input);
+    const companySummary = this.generateCompanySummary(companyData, validatedInput);
     const industryOverview = this.generateIndustryOverview(industryData);
-    const risks = this.identifyRisks(input, industryData);
-    const opportunities = this.identifyOpportunities(input, industryData);
+    const risks = this.identifyRisks(validatedInput, industryData);
+    const opportunities = this.identifyOpportunities(validatedInput, industryData);
+    const recommendations = this.generateRecommendations(validatedInput, { risks, opportunities, techStack: techStackData });
 
     // Compile dossier
     const dossier = {
-      companySummary: companySummary,
-      industryOverview: industryOverview,
+      companySummary,
+      industryOverview,
       competitors: competitorData,
       techStack: techStackData,
-      risks: risks,
-      opportunities: opportunities,
-      recommendations: [
-        'Address identified risks through mitigation strategies',
-        'Leverage identified opportunities for competitive advantage'
-      ]
+      risks,
+      opportunities,
+      recommendations
     };
 
     logger.info('Research Agent completed', { runId, sourcesCount: sources.length });
@@ -142,8 +172,7 @@ export class ResearchAgent {
     return `research-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
   }
 
-  private async gatherCompanyData(input: ResearchInput, suffix: string = ''): Promise<any> {
-    // Search for company information
+  private async gatherCompanyData(input: ResearchInput, suffix: string = ''): Promise<SearchResult[]> {
     const searchQueries = [
       `${input.brief.company} company overview${suffix}`,
       `${input.brief.company} about us${suffix}`,
@@ -157,7 +186,7 @@ export class ResearchAgent {
     return results.flat();
   }
 
-  private async gatherIndustryData(input: ResearchInput, suffix: string = ''): Promise<any> {
+  private async gatherIndustryData(input: ResearchInput, suffix: string = ''): Promise<SearchResult[]> {
     const industryQueries = [
       `${input.brief.industry} industry trends 2024${suffix}`,
       `${input.brief.industry} market analysis${suffix}`,
@@ -171,7 +200,7 @@ export class ResearchAgent {
     return results.flat();
   }
 
-  private async gatherCompetitorData(input: ResearchInput, suffix: string = ''): Promise<any[]> {
+  private async gatherCompetitorData(input: ResearchInput, suffix: string = ''): Promise<Competitor[]> {
     const competitorQueries = [
       `${input.brief.industry} top competitors${suffix}`,
       `${input.brief.company} competitors${suffix}`,
@@ -185,7 +214,7 @@ export class ResearchAgent {
     return this.extractCompetitors(results.flat(), input);
   }
 
-  private async gatherTechStackData(input: ResearchInput, suffix: string = ''): Promise<any> {
+  private async gatherTechStackData(input: ResearchInput, suffix: string = ''): Promise<TechStack> {
     const techQueries = [
       `${input.brief.company} tech stack${suffix}`,
       `${input.brief.company} technology${suffix}`,
@@ -199,9 +228,10 @@ export class ResearchAgent {
     return this.extractTechStack(results.flat());
   }
 
-  private async searchWeb(query: string): Promise<any[]> {
+  private async searchWeb(query: string, retryCount = 0): Promise<SearchResult[]> {
     try {
       // Use webfetch tool to search via DuckDuckGo HTML (more reliable for scraping)
+      // Added basic retry logic
       const result = await webfetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`, 'text');
       
       return [{
@@ -211,18 +241,21 @@ export class ResearchAgent {
         timestamp: new Date().toISOString()
       }];
     } catch (error) {
-      logger.warn(`Search failed for query: ${query}`, { error, query });
+      if (retryCount < 2) {
+        logger.warn(`Search failed for query: ${query}, retrying...`, { retryCount });
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Exponentialish backoff
+        return this.searchWeb(query, retryCount + 1);
+      }
+      logger.error(`Search failed for query: ${query} after retries`, { error, query });
       return [];
     }
   }
 
-  private extractCompetitors(data: any[], input: ResearchInput): any[] {
-    // Extract competitor information from search results
-    const competitors = [];
+  private extractCompetitors(data: SearchResult[], input: ResearchInput): Competitor[] {
+    const competitors: Competitor[] = [];
     const seen = new Set<string>();
 
     for (const result of data) {
-      // Simple extraction logic - in production, use more sophisticated NLP
       const lines = result.content.split('\n');
       
       for (const line of lines) {
@@ -230,13 +263,14 @@ export class ResearchAgent {
             line.toLowerCase().includes('competition') ||
             line.toLowerCase().includes('alternative')) {
           
-          // Extract company names (simple heuristic)
           const words = line.split(' ');
           for (let i = 0; i < words.length - 1; i++) {
             const potentialCompany = words[i] + ' ' + words[i + 1];
+            // Cleaner logic: check length, uniqueness, and not the client company
             if (potentialCompany.length > 3 && 
                 !potentialCompany.toLowerCase().includes(input.brief.company.toLowerCase()) &&
-                !seen.has(potentialCompany)) {
+                !seen.has(potentialCompany) &&
+                /^[A-Z]/.test(potentialCompany)) { // Heuristic: Starts with Capital
               
               competitors.push({
                 name: potentialCompany,
@@ -258,15 +292,15 @@ export class ResearchAgent {
     return competitors.slice(0, 5);
   }
 
-  private extractTechStack(data: any[]): any {
-    const techStack = {
+  private extractTechStack(data: SearchResult[]): TechStack {
+    const techStack: TechStack = {
       frontend: [],
       backend: [],
       infrastructure: [],
       thirdParty: []
     };
 
-    const commonTech = {
+    const commonTech: Record<keyof TechStack, string[]> = {
       frontend: ['React', 'Vue', 'Angular', 'Next.js', 'Svelte'],
       backend: ['Node.js', 'Python', 'Java', 'Go', 'Ruby', 'PHP'],
       infrastructure: ['AWS', 'Azure', 'Google Cloud', 'Docker', 'Kubernetes'],
@@ -275,11 +309,11 @@ export class ResearchAgent {
 
     const content = data.map(d => d.content).join(' ').toLowerCase();
 
-    // Extract technologies
     for (const [category, techs] of Object.entries(commonTech)) {
+      const cat = category as keyof TechStack;
       for (const tech of techs) {
-        if (content.includes(tech.toLowerCase())) {
-          (techStack as any)[category].push(tech);
+        if (content.includes(tech.toLowerCase()) && !techStack[cat]?.includes(tech)) {
+          techStack[cat]?.push(tech);
         }
       }
     }
@@ -287,34 +321,42 @@ export class ResearchAgent {
     return techStack;
   }
 
-  private generateCompanySummary(companyData: any[], input: ResearchInput): string {
-    // Generate a 3-5 sentence summary
+  private mergeTechStack(target: TechStack, source: TechStack): void {
+     const merge = (t: string[] | undefined, s: string[] | undefined) => {
+         if (!s) return t || [];
+         if (!t) return s;
+         return Array.from(new Set([...t, ...s]));
+     };
+
+     target.frontend = merge(target.frontend, source.frontend);
+     target.backend = merge(target.backend, source.backend);
+     target.infrastructure = merge(target.infrastructure, source.infrastructure);
+     target.thirdParty = merge(target.thirdParty, source.thirdParty);
+  }
+
+  private generateCompanySummary(companyData: SearchResult[], input: ResearchInput): string {
     const baseSummary = `${input.brief.company} operates in the ${input.brief.industry} industry.`;
     
     if (input.brief.description) {
       return `${baseSummary} ${input.brief.description}`;
     }
 
-    // Extract key points from research
-    const keyPoints = companyData.slice(0, 2).map(d => d.content.substring(0, 100));
+    const keyPoints = companyData.slice(0, 2).map(d => d.content.substring(0, 100).trim());
     return `${baseSummary} Based on available information: ${keyPoints.join('. ')}`;
   }
 
-  private generateIndustryOverview(industryData: any[]): string {
-    // Generate industry overview from research
-    const trends = industryData.slice(0, 3).map(d => d.content.substring(0, 150));
+  private generateIndustryOverview(industryData: SearchResult[]): string {
+    const trends = industryData.slice(0, 3).map(d => d.content.substring(0, 150).trim());
     return `The industry shows these key trends: ${trends.join('. ')}`;
   }
 
-  private identifyRisks(input: ResearchInput, industryData: any[]): string[] {
+  private identifyRisks(input: ResearchInput, industryData: SearchResult[]): string[] {
     const risks = [];
     
-    // Common industry risks
     if (input.brief.constraints) {
       risks.push(...input.brief.constraints);
     }
 
-    // Extract risks from industry data
     const riskKeywords = ['risk', 'challenge', 'threat', 'concern'];
     const content = industryData.map(d => d.content).join(' ').toLowerCase();
     
@@ -324,13 +366,13 @@ export class ResearchAgent {
       }
     }
 
-    return risks.slice(0, 3);
+    // Deduplicate
+    return Array.from(new Set(risks)).slice(0, 3);
   }
 
-  private identifyOpportunities(input: ResearchInput, industryData: any[]): string[] {
+  private identifyOpportunities(input: ResearchInput, industryData: SearchResult[]): string[] {
     const opportunities = [];
     
-    // Extract opportunities from industry data
     const oppKeywords = ['opportunity', 'growth', 'trend', 'innovation'];
     const content = industryData.map(d => d.content).join(' ').toLowerCase();
     
@@ -340,36 +382,33 @@ export class ResearchAgent {
       }
     }
 
-    // Add goal-based opportunities
     if (input.brief.goals) {
       opportunities.push(...input.brief.goals.map(g => `Opportunity to achieve: ${g}`));
     }
 
-    return opportunities.slice(0, 3);
+    return Array.from(new Set(opportunities)).slice(0, 3);
   }
 
-  private generateRecommendations(input: ResearchInput, dossier: any): string[] {
+  private generateRecommendations(input: ResearchInput, data: { risks: string[], opportunities: string[], techStack: TechStack }): string[] {
     const recommendations = [];
     
-    // Based on risks and opportunities
-    if (dossier.risks.length > 0) {
+    if (data.risks.length > 0) {
       recommendations.push('Address identified risks through mitigation strategies');
     }
     
-    if (dossier.opportunities.length > 0) {
+    if (data.opportunities.length > 0) {
       recommendations.push('Leverage identified opportunities for competitive advantage');
     }
 
-    // Based on tech stack
-    if (dossier.techStack.frontend.length === 0) {
+    if (data.techStack.frontend && data.techStack.frontend.length === 0) {
       recommendations.push('Consider modern frontend frameworks for improved user experience');
     }
 
     return recommendations.slice(0, 3);
   }
 
-  private async compileSources(companyData: any[], industryData: any[], competitorData: any[]): Promise<Source[]> {
-    const allData = [...companyData, ...industryData, ...competitorData];
+  private async compileSources(companyData: SearchResult[], industryData: SearchResult[], competitorData: Competitor[]): Promise<Source[]> {
+    const allData: any[] = [...companyData, ...industryData, ...competitorData];
     const sources: Source[] = [];
     const seen = new Set<string>();
 
@@ -377,7 +416,7 @@ export class ResearchAgent {
       if (data.url && !seen.has(data.url)) {
         sources.push({
           url: data.url,
-          title: `Research: ${data.query || 'Industry Analysis'}`,
+          title: data.query ? `Research: ${data.query}` : 'Competitor Analysis',
           relevance: 'High',
           accessedAt: data.timestamp || new Date().toISOString()
         });

@@ -9,6 +9,7 @@ export declare class JsonDatabase implements Database {
     saveResearch(record: ResearchRecord): Promise<void>;
     getResearch(id: string): Promise<ResearchRecord | null>;
     getAllResearch(): Promise<ResearchRecord[]>;
+    private isValidResearchId;
     addFinding(researchId: string, finding: ResearchFinding): Promise<void>;
     updateStatus(researchId: string, status: ResearchRecord['status']): Promise<void>;
 }
