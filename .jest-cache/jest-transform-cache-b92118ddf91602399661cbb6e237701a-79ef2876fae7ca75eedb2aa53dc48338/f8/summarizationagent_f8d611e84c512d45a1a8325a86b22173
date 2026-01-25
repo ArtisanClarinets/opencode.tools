@@ -1,0 +1,36 @@
+bcd41a8661b2ea684f452a9b9de7a7ce
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SummarizationAgent = void 0;
+const llm_1 = require("../../src/runtime/llm");
+class SummarizationAgent {
+    constructor(llm) {
+        this.llm = llm || new llm_1.MockLLMProvider();
+    }
+    async summarize(dossier, sources) {
+        const prompt = `
+      Please summarize the following research dossier into a human-readable format.
+
+      Company: ${dossier.companySummary}
+      Industry: ${dossier.industryOverview}
+      Key Risks: ${dossier.risks.join(', ')}
+      Opportunities: ${dossier.opportunities.join(', ')}
+
+      Sources Count: ${sources.length}
+    `;
+        const response = await this.llm.generate(prompt);
+        // In a real implementation, we would parse JSON from LLM or use structured output.
+        // Here we use the mock response directly.
+        return {
+            summary: response.content,
+            keyInsights: [
+                'Research indicates strong market position.',
+                'Identified risks are manageable.',
+                'Growth opportunities align with strategic goals.'
+            ],
+            reportDate: new Date().toISOString()
+        };
+    }
+}
+exports.SummarizationAgent = SummarizationAgent;
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiL2FwcC9hZ2VudHMvc3VtbWFyaXphdGlvbi9zdW1tYXJpemF0aW9uLWFnZW50LnRzIiwibWFwcGluZ3MiOiI7OztBQUNBLCtDQUFxRTtBQVFyRSxNQUFhLGtCQUFrQjtJQUc3QixZQUFZLEdBQWlCO1FBQzNCLElBQUksQ0FBQyxHQUFHLEdBQUcsR0FBRyxJQUFJLElBQUkscUJBQWUsRUFBRSxDQUFDO0lBQzFDLENBQUM7SUFFRCxLQUFLLENBQUMsU0FBUyxDQUFDLE9BQXdCLEVBQUUsT0FBaUI7UUFDekQsTUFBTSxNQUFNLEdBQUc7OztpQkFHRixPQUFPLENBQUMsY0FBYztrQkFDckIsT0FBTyxDQUFDLGdCQUFnQjttQkFDdkIsT0FBTyxDQUFDLEtBQUssQ0FBQyxJQUFJLENBQUMsSUFBSSxDQUFDO3VCQUNwQixPQUFPLENBQUMsYUFBYSxDQUFDLElBQUksQ0FBQyxJQUFJLENBQUM7O3VCQUVoQyxPQUFPLENBQUMsTUFBTTtLQUNoQyxDQUFDO1FBRUYsTUFBTSxRQUFRLEdBQUcsTUFBTSxJQUFJLENBQUMsR0FBRyxDQUFDLFFBQVEsQ0FBQyxNQUFNLENBQUMsQ0FBQztRQUVqRCxtRkFBbUY7UUFDbkYsMENBQTBDO1FBRTFDLE9BQU87WUFDTCxPQUFPLEVBQUUsUUFBUSxDQUFDLE9BQU87WUFDekIsV0FBVyxFQUFFO2dCQUNYLDRDQUE0QztnQkFDNUMsa0NBQWtDO2dCQUNsQyxrREFBa0Q7YUFDbkQ7WUFDRCxVQUFVLEVBQUUsSUFBSSxJQUFJLEVBQUUsQ0FBQyxXQUFXLEVBQUU7U0FDckMsQ0FBQztJQUNKLENBQUM7Q0FDRjtBQWxDRCxnREFrQ0MiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiL2FwcC9hZ2VudHMvc3VtbWFyaXphdGlvbi9zdW1tYXJpemF0aW9uLWFnZW50LnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IFJlc2VhcmNoRG9zc2llciwgU291cmNlIH0gZnJvbSAnLi4vcmVzZWFyY2gvdHlwZXMnO1xuaW1wb3J0IHsgTExNUHJvdmlkZXIsIE1vY2tMTE1Qcm92aWRlciB9IGZyb20gJy4uLy4uL3NyYy9ydW50aW1lL2xsbSc7XG5cbmV4cG9ydCBpbnRlcmZhY2UgU3VtbWFyaXphdGlvbk91dHB1dCB7XG4gIHN1bW1hcnk6IHN0cmluZztcbiAga2V5SW5zaWdodHM6IHN0cmluZ1tdO1xuICByZXBvcnREYXRlOiBzdHJpbmc7XG59XG5cbmV4cG9ydCBjbGFzcyBTdW1tYXJpemF0aW9uQWdlbnQge1xuICBwcml2YXRlIGxsbTogTExNUHJvdmlkZXI7XG5cbiAgY29uc3RydWN0b3IobGxtPzogTExNUHJvdmlkZXIpIHtcbiAgICB0aGlzLmxsbSA9IGxsbSB8fCBuZXcgTW9ja0xMTVByb3ZpZGVyKCk7XG4gIH1cblxuICBhc3luYyBzdW1tYXJpemUoZG9zc2llcjogUmVzZWFyY2hEb3NzaWVyLCBzb3VyY2VzOiBTb3VyY2VbXSk6IFByb21pc2U8U3VtbWFyaXphdGlvbk91dHB1dD4ge1xuICAgIGNvbnN0IHByb21wdCA9IGBcbiAgICAgIFBsZWFzZSBzdW1tYXJpemUgdGhlIGZvbGxvd2luZyByZXNlYXJjaCBkb3NzaWVyIGludG8gYSBodW1hbi1yZWFkYWJsZSBmb3JtYXQuXG4gICAgICBcbiAgICAgIENvbXBhbnk6ICR7ZG9zc2llci5jb21wYW55U3VtbWFyeX1cbiAgICAgIEluZHVzdHJ5OiAke2Rvc3NpZXIuaW5kdXN0cnlPdmVydmlld31cbiAgICAgIEtleSBSaXNrczogJHtkb3NzaWVyLnJpc2tzLmpvaW4oJywgJyl9XG4gICAgICBPcHBvcnR1bml0aWVzOiAke2Rvc3NpZXIub3Bwb3J0dW5pdGllcy5qb2luKCcsICcpfVxuICAgICAgXG4gICAgICBTb3VyY2VzIENvdW50OiAke3NvdXJjZXMubGVuZ3RofVxuICAgIGA7XG5cbiAgICBjb25zdCByZXNwb25zZSA9IGF3YWl0IHRoaXMubGxtLmdlbmVyYXRlKHByb21wdCk7XG4gICAgXG4gICAgLy8gSW4gYSByZWFsIGltcGxlbWVudGF0aW9uLCB3ZSB3b3VsZCBwYXJzZSBKU09OIGZyb20gTExNIG9yIHVzZSBzdHJ1Y3R1cmVkIG91dHB1dC5cbiAgICAvLyBIZXJlIHdlIHVzZSB0aGUgbW9jayByZXNwb25zZSBkaXJlY3RseS5cbiAgICBcbiAgICByZXR1cm4ge1xuICAgICAgc3VtbWFyeTogcmVzcG9uc2UuY29udGVudCxcbiAgICAgIGtleUluc2lnaHRzOiBbXG4gICAgICAgICdSZXNlYXJjaCBpbmRpY2F0ZXMgc3Ryb25nIG1hcmtldCBwb3NpdGlvbi4nLFxuICAgICAgICAnSWRlbnRpZmllZCByaXNrcyBhcmUgbWFuYWdlYWJsZS4nLFxuICAgICAgICAnR3Jvd3RoIG9wcG9ydHVuaXRpZXMgYWxpZ24gd2l0aCBzdHJhdGVnaWMgZ29hbHMuJ1xuICAgICAgXSxcbiAgICAgIHJlcG9ydERhdGU6IG5ldyBEYXRlKCkudG9JU09TdHJpbmcoKVxuICAgIH07XG4gIH1cbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

@@ -3,11 +3,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ResearchAgent = void 0;
 const webfetch_1 = require("../../tools/webfetch");
 const logger_1 = require("../../src/runtime/logger");
+const json_db_1 = require("../../src/database/json-db");
+const gatekeeper_1 = require("../../src/governance/gatekeeper");
+const uuid_1 = require("uuid");
 class ResearchAgent {
-    constructor() {
+    constructor(db, gatekeeper) {
         this.agentName = 'research-agent';
         this.promptVersion = 'v1';
         this.mcpVersion = 'v1';
+        this.db = db || new json_db_1.JsonDatabase();
+        this.gatekeeper = gatekeeper || new gatekeeper_1.ResearchGatekeeper();
     }
     async execute(input) {
         const runId = this.generateRunId();
@@ -18,6 +23,76 @@ class ResearchAgent {
         const industryData = await this.gatherIndustryData(input);
         const competitorData = await this.gatherCompetitorData(input);
         const techStackData = await this.gatherTechStackData(input);
+        // Initialize Research Record in Database
+        const recordId = (0, uuid_1.v4)();
+        await this.db.saveResearch({
+            id: recordId,
+            topic: input.brief.company,
+            status: 'in_progress',
+            startedAt: timestamp,
+            findings: []
+        });
+        let iterations = 0;
+        const maxIterations = 3;
+        let companyData = [];
+        let industryData = [];
+        let competitorData = [];
+        let techStackData = { frontend: [], backend: [], infrastructure: [], thirdParty: [] };
+        let sources = [];
+        // Research Loop
+        let gatePassed = false;
+        while (iterations < maxIterations) {
+            iterations++;
+            logger_1.logger.info(`Research iteration ${iterations}/${maxIterations}`);
+            // Refine queries based on iteration
+            const iterationSuffix = iterations > 1 ? ` depth ${iterations}` : '';
+            // Gather research data
+            const [newCompanyData, newIndustryData, newCompetitorData, newTechStackData] = await Promise.all([
+                this.gatherCompanyData(input, iterationSuffix),
+                this.gatherIndustryData(input, iterationSuffix),
+                this.gatherCompetitorData(input, iterationSuffix),
+                this.gatherTechStackData(input, iterationSuffix)
+            ]);
+            companyData = [...companyData, ...newCompanyData];
+            industryData = [...industryData, ...newIndustryData];
+            // Competitors and tech stack might duplicate, but extractors handle some logic.
+            // For simplicity in this loop, we just take the latest or merge unique.
+            competitorData = newCompetitorData.length > 0 ? newCompetitorData : competitorData;
+            techStackData = Object.keys(newTechStackData.frontend).length > 0 ? newTechStackData : techStackData;
+            // Compile sources for gatekeeper
+            sources = await this.compileSources(companyData, industryData, competitorData);
+            // Check Gatekeeper
+            const gateResult = this.gatekeeper.evaluate(sources);
+            if (gateResult.passed) {
+                logger_1.logger.info('Gatekeeper passed', { iterations, score: gateResult.score });
+                gatePassed = true;
+                break;
+            }
+            else {
+                logger_1.logger.info('Gatekeeper failed, continuing research', { iterations, reasons: gateResult.reasons });
+            }
+        }
+        // Save Findings to DB
+        const currentRecord = await this.db.getResearch(recordId);
+        if (currentRecord) {
+            currentRecord.findings = sources.map(s => ({
+                id: (0, uuid_1.v4)(),
+                sourceUrl: s.url,
+                content: s.title,
+                timestamp: s.accessedAt,
+                relevanceScore: 1
+            }));
+            if (gatePassed) {
+                currentRecord.status = 'completed';
+                currentRecord.completedAt = new Date().toISOString();
+            }
+            else {
+                currentRecord.status = 'in_progress'; // Or 'failed' if strict
+                // We keep it in_progress or maybe add a 'review_needed' status?
+                // Keeping in_progress implies it's not done.
+            }
+            await this.db.saveResearch(currentRecord);
+        }
         // Generate summaries and analysis
         const companySummary = this.generateCompanySummary(companyData, input);
         const industryOverview = this.generateIndustryOverview(industryData);
@@ -54,39 +129,39 @@ class ResearchAgent {
     generateRunId() {
         return `research-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
     }
-    async gatherCompanyData(input) {
+    async gatherCompanyData(input, suffix = '') {
         // Search for company information
         const searchQueries = [
-            `${input.brief.company} company overview`,
-            `${input.brief.company} about us`,
-            `${input.brief.company} mission vision`
+            `${input.brief.company} company overview${suffix}`,
+            `${input.brief.company} about us${suffix}`,
+            `${input.brief.company} mission vision${suffix}`
         ];
         const results = await Promise.all(searchQueries.map(query => this.searchWeb(query)));
         return results.flat();
     }
-    async gatherIndustryData(input) {
+    async gatherIndustryData(input, suffix = '') {
         const industryQueries = [
-            `${input.brief.industry} industry trends 2024`,
-            `${input.brief.industry} market analysis`,
-            `${input.brief.industry} technology adoption`
+            `${input.brief.industry} industry trends 2024${suffix}`,
+            `${input.brief.industry} market analysis${suffix}`,
+            `${input.brief.industry} technology adoption${suffix}`
         ];
         const results = await Promise.all(industryQueries.map(query => this.searchWeb(query)));
         return results.flat();
     }
-    async gatherCompetitorData(input) {
+    async gatherCompetitorData(input, suffix = '') {
         const competitorQueries = [
-            `${input.brief.industry} top competitors`,
-            `${input.brief.company} competitors`,
-            `${input.brief.industry} market leaders`
+            `${input.brief.industry} top competitors${suffix}`,
+            `${input.brief.company} competitors${suffix}`,
+            `${input.brief.industry} market leaders${suffix}`
         ];
         const results = await Promise.all(competitorQueries.map(query => this.searchWeb(query)));
         return this.extractCompetitors(results.flat(), input);
     }
-    async gatherTechStackData(input) {
+    async gatherTechStackData(input, suffix = '') {
         const techQueries = [
-            `${input.brief.company} tech stack`,
-            `${input.brief.company} technology`,
-            `${input.brief.industry} common tech stack`
+            `${input.brief.company} tech stack${suffix}`,
+            `${input.brief.company} technology${suffix}`,
+            `${input.brief.industry} common tech stack${suffix}`
         ];
         const results = await Promise.all(techQueries.map(query => this.searchWeb(query)));
         return this.extractTechStack(results.flat());

@@ -3,7 +3,7 @@
  * Accessible ONLY through OpenCode TUI - no standalone CLI
  */
 export declare class TUIResearchAgent {
-    private agent;
+    private workflow;
     private readonly artifactsDir;
     constructor();
     /**
