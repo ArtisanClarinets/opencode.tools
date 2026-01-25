@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ResearchAgent = void 0;
 const webfetch_1 = require("../../tools/webfetch");
+const logger_1 = require("../../src/runtime/logger");
 class ResearchAgent {
     constructor() {
         this.agentName = 'research-agent';
@@ -11,6 +12,7 @@ class ResearchAgent {
     async execute(input) {
         const runId = this.generateRunId();
         const timestamp = new Date().toISOString();
+        logger_1.logger.info('Research Agent started', { runId, company: input.brief.company });
         // Gather research data
         const companyData = await this.gatherCompanyData(input);
         const industryData = await this.gatherIndustryData(input);
@@ -36,6 +38,7 @@ class ResearchAgent {
         };
         // Compile sources
         const sources = await this.compileSources(companyData, industryData, competitorData);
+        logger_1.logger.info('Research Agent completed', { runId, sourcesCount: sources.length });
         return {
             dossier,
             sources,
@@ -49,7 +52,7 @@ class ResearchAgent {
         };
     }
     generateRunId() {
-        return `research-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        return `research-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
     }
     async gatherCompanyData(input) {
         // Search for company information
@@ -90,8 +93,8 @@ class ResearchAgent {
     }
     async searchWeb(query) {
         try {
-            // Use webfetch tool to search
-            const result = await (0, webfetch_1.webfetch)(`https://www.google.com/search?q=${encodeURIComponent(query)}`, 'text');
+            // Use webfetch tool to search via DuckDuckGo HTML (more reliable for scraping)
+            const result = await (0, webfetch_1.webfetch)(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`, 'text');
             return [{
                     query,
                     content: result.content,
@@ -100,7 +103,7 @@ class ResearchAgent {
                 }];
         }
         catch (error) {
-            console.warn(`Search failed for query: ${query}`, error);
+            logger_1.logger.warn(`Search failed for query: ${query}`, { error, query });
             return [];
         }
     }
