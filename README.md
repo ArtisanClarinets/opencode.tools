@@ -21,14 +21,8 @@ npm install
 # Build the project
 npm run build
 
-# Run research agent
-npm run research -- --brief "path/to/brief.json" --output "path/to/dossier.json"
-
-# Run documentation agent
-npm run docs -- --input "path/to/dossier.json" --output "path/to/prd.md"
-
-# Run code generation agent
-npm run codegen -- --architecture "path/to/arch.json" --output "path/to/project"
+# Run the interactive TUI (Text User Interface)
+npm run tui
 ```
 
 ## Project Structure
@@ -49,12 +43,10 @@ opencode-tools/
 
 ### Research Agent
 
-The Research Agent automates gathering context about clients, their industries, competitors, and technology stacks.
+The Research Agent automates gathering context about clients, their industries, competitors, and technology stacks. It is now a fully production-ready agent with robust validation and persistence.
 
 **Usage:**
-```bash
-npm run research -- --brief "client-brief.json" --output "research-dossier.json"
-```
+Access via the TUI main menu. See [RESEARCH_AGENT_GUIDE.md](docs/RESEARCH_AGENT_GUIDE.md) for details.
 
 **Features:**
 - Company and industry analysis
