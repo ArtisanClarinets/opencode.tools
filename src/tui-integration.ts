@@ -1,5 +1,6 @@
 import { TUIResearchAgent } from './tui-agents';
 import { ResearchParams } from './tui-agents';
+import * as fs from 'fs';
 
 /**
  * OpenCode TUI Tools Registration
@@ -98,9 +99,12 @@ export class TUIResearchAgentExtended extends TUIResearchAgent {
    * Run research from a brief file (TUI-accessible)
    */
   async runWithBriefFile(briefPath: string, _outputPath?: string): Promise<unknown> {
-    const briefContent = await import('fs').then(fs => 
-      fs.promises.readFile(briefPath, 'utf-8')
-    );
+    // Validate path
+    if (!fs.existsSync(briefPath) || !fs.statSync(briefPath).isFile()) {
+        throw new Error(`Invalid brief path: ${briefPath}`);
+    }
+
+    const briefContent = await fs.promises.readFile(briefPath, 'utf-8');
     const brief = JSON.parse(briefContent);
     
     const params: ResearchParams = {
