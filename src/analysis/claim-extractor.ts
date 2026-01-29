@@ -1,4 +1,5 @@
 import { Claim } from '../types/research';
+import * as crypto from 'crypto';
 
 export class ClaimExtractor {
   // This would typically use an LLM
@@ -12,7 +13,7 @@ export class ClaimExtractor {
     for (const sent of sentences) {
       if (sent.includes(' is ') || sent.includes(' has ') || sent.includes(' will ')) {
         claims.push({
-          id: `claim-${Math.random().toString(36).substring(7)}`,
+          id: `claim-${crypto.randomUUID().substring(0, 8)}`,
           text: sent,
           sentiment: 'neutral',
           confidenceLabel: 'medium',

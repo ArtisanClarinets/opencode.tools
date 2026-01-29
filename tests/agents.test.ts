@@ -8,6 +8,16 @@ import { gatherDossier } from '../agents/research/index';
 import { generateDocuments } from '../agents/docs/index';
 import { ResearchDossier } from '../agents/research/types';
 
+// Mock webfetch to prevent real network calls
+jest.mock('../tools/webfetch', () => ({
+    webfetch: jest.fn().mockResolvedValue({
+        success: true,
+        content: 'Mocked search result for Acme Corp. Acme Corp is a leading Construction Tech company.',
+        url: 'https://mock.com',
+        status: 200
+    })
+}));
+
 // Define the root of the project for pathing
 const projectRoot = path.join(__dirname, '..');
 

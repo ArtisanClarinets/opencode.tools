@@ -139,7 +139,7 @@ export class ResearchAgent {
   }
 
   private generateRunId(): string {
-    return `research-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+    return `research-${Date.now()}-${uuidv4().substring(0, 8)}`;
   }
 
   private async gatherCompanyData(input: ResearchInput, suffix: string = ''): Promise<SearchResult[]> {
