@@ -1,15 +1,16 @@
 export interface LLMResponse {
   content: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 export interface LLMProvider {
-  generate(prompt: string, context?: any): Promise<LLMResponse>;
+  generate(prompt: string, context?: unknown): Promise<LLMResponse>;
   analyze(content: string, criteria: string): Promise<LLMResponse>;
 }
 
 export class MockLLMProvider implements LLMProvider {
-  async generate(prompt: string, context?: any): Promise<LLMResponse> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async generate(prompt: string, _context?: unknown): Promise<LLMResponse> {
     // Simulate latency (skip in test)
     if (process.env.NODE_ENV !== 'test') {
       await new Promise(resolve => setTimeout(resolve, 500));

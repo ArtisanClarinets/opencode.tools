@@ -1,6 +1,12 @@
 import axios from 'axios';
 import { SearchProvider, SearchResult } from './types';
 
+interface GoogleSearchItem {
+  link: string;
+  title: string;
+  snippet: string;
+}
+
 export class GoogleSearchProvider implements SearchProvider {
   name = 'GoogleCustomSearch';
   private apiKey: string;
@@ -35,7 +41,7 @@ export class GoogleSearchProvider implements SearchProvider {
         }
       });
 
-      return (response.data.items || []).map((item: any) => ({
+      return (response.data.items || []).map((item: GoogleSearchItem) => ({
         url: item.link,
         title: item.title,
         snippet: item.snippet,

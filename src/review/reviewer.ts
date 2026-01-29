@@ -5,7 +5,7 @@ export interface Reviewer {
   id: string;
   name: string;
   role: 'methodology' | 'citations' | 'adversarial' | 'editor';
-  review(content: any, rubric: Rubric): Promise<ReviewResult>;
+  review(content: unknown, rubric: Rubric): Promise<ReviewResult>;
 }
 
 export class AutoReviewer implements Reviewer {
@@ -21,10 +21,10 @@ export class AutoReviewer implements Reviewer {
     this.evaluator = new RubricEvaluator();
   }
 
-  async review(content: any, rubric: Rubric): Promise<ReviewResult> {
+  async review(content: unknown, rubric: Rubric): Promise<ReviewResult> {
     // In a real system, this would call an LLM to evaluate the content against the rubric.
     // Here we simulate a passing review with some randomness or logic based on content.
-    
+
     const scores: ReviewScore[] = rubric.criteria.map(c => ({
       criteriaId: c.id,
       score: 0.9, // Mock high score

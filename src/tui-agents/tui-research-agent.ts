@@ -1,10 +1,11 @@
-import { PhdResearchWorkflow } from '../workflows/phd-research-workflow';
+import { PhdResearchWorkflow, PhdResearchResult } from '../workflows/phd-research-workflow';
 import { ResearchInput } from '../../agents/research/types';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as readline from 'readline';
 import { promisify } from 'util';
+import { ReviewResult } from '../types/review';
 
-const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
 const mkdir = promisify(fs.mkdir);
 
@@ -44,9 +45,10 @@ export class TUIResearchAgent {
       // Display summary
       this.displayResultsSummary(result, outputPath);
       
-    } catch (error: any) {
-      console.error('❌ Research failed:', error.message);
-      throw error;
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      console.error('❌ Research failed:', err.message);
+      throw err;
     }
   }
 
@@ -106,7 +108,6 @@ export class TUIResearchAgent {
   private async tuiPrompt(message: string): Promise<string> {
     // This is a placeholder - in real TUI, this would use the TUI's prompt system
     return new Promise((resolve) => {
-      const readline = require('readline');
       const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout
@@ -141,7 +142,7 @@ export class TUIResearchAgent {
   /**
    * Save research results to files
    */
-  private async saveResults(result: any, companyName: string): Promise<string> {
+  private async saveResults(result: PhdResearchResult, companyName: string): Promise<string> {
     // Ensure artifacts directory exists
     if (!fs.existsSync(this.artifactsDir)) {
       await mkdir(this.artifactsDir, { recursive: true });
@@ -157,9 +158,9 @@ export class TUIResearchAgent {
     await writeFile(`${basePath}.json`, JSON.stringify(result, null, 2));
     
     // Save individual components
-    await writeFile(`${basePath}-dossier.json`, JSON.stringify(result.dossier, null, 2));
-    await writeFile(`${basePath}-sources.json`, JSON.stringify(result.sources, null, 2));
-    await writeFile(`${basePath}-meta.json`, JSON.stringify(result.meta, null, 2));
+    await writeFile(`${basePath}-dossier.json`, JSON.stringify(result.research.dossier, null, 2));
+    await writeFile(`${basePath}-sources.json`, JSON.stringify(result.research.sources, null, 2));
+    await writeFile(`${basePath}-meta.json`, JSON.stringify(result.research.meta, null, 2));
     
     return basePath;
   }
@@ -167,7 +168,7 @@ export class TUIResearchAgent {
   /**
    * Display research results summary
    */
-  private displayResultsSummary(result: any, outputPath: string): void {
+  private displayResultsSummary(result: PhdResearchResult, outputPath: string): void {
     if (result.approved) {
         console.log('\n✅ PhD Research Workflow completed successfully!');
     } else {
@@ -176,13 +177,10 @@ export class TUIResearchAgent {
 
     console.log(`📁 Results saved to: ${outputPath}`);
     console.log('\n📊 Summary:');
-    // Adapt to nested structure if result is PhdResearchResult, or ResearchOutput if called from saveResults which flattens it?
-    // saveResults saves the whole object.
 
-    // Check structure
-    const dossier = result.research ? result.research.dossier : result.dossier;
-    const sources = result.research ? result.research.sources : result.sources;
-    const meta = result.research ? result.research.meta : result.meta;
+    const dossier = result.research.dossier;
+    const sources = result.research.sources;
+    const meta = result.research.meta;
     const council = result.councilReview;
     const summary = result.summary;
 
@@ -197,7 +195,7 @@ export class TUIResearchAgent {
     if (council) {
         console.log('\n🏛️  Council Review:');
         console.log(`   • Approved: ${council.approved ? 'Yes' : 'No'}`);
-        council.results.forEach((r: any) => {
+        council.results.forEach((r: ReviewResult) => {
             console.log(`   • ${r.reviewerId}: ${r.passed ? '✅' : '❌'} (${r.comments})`);
         });
     }
@@ -230,7 +228,7 @@ export interface ResearchParams {
 export interface ResearchResult {
   success: boolean;
   outputPath: string;
-  dossier: any;
-  sources: any[];
-  meta: any;
+  dossier: unknown;
+  sources: unknown[];
+  meta: unknown;
 }

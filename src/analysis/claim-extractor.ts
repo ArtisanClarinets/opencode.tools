@@ -1,10 +1,9 @@
-import { Claim, EvidencePassage } from '../types/research';
-import { PassageIndex } from '../retrieval/passage-index';
+import { Claim } from '../types/research';
 
 export class ClaimExtractor {
   // This would typically use an LLM
   // For now, we'll use a heuristic or mock
-  
+
   async extractClaims(text: string): Promise<Claim[]> {
     // Mock extraction: treat sentences with "is" or "has" as claims
     const sentences = text.split(/[.!?]+/).map(s => s.trim()).filter(s => s.length > 20);

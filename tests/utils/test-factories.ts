@@ -5,8 +5,8 @@
  * for all agents and components.
  */
 
-import { ResearchInput, ResearchOutput, ClientBrief, Source, ProvenanceMeta } from '../../agents/research/types';
-import { IAgent, BacklogItem, ProjectScaffoldResult } from '../../agents/types';
+import { ResearchInput, ResearchOutput } from '../../agents/research/types';
+import { BacklogItem, ProjectScaffoldResult } from '../../agents/types';
 
 // ====================
 // Research Agent Factories

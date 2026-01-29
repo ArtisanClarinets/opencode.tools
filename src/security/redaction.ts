@@ -29,7 +29,7 @@ export class Redactor {
     return redacted;
   }
 
-  redactObject(obj: any): any {
+  redactObject(obj: unknown): unknown {
     if (typeof obj === 'string') {
       return this.redact(obj);
     }
@@ -37,11 +37,12 @@ export class Redactor {
       return obj.map(item => this.redactObject(item));
     }
     if (typeof obj === 'object' && obj !== null) {
-      const newObj: any = {};
-      for (const key in obj) {
+      const newObj: Record<string, unknown> = {};
+      const record = obj as Record<string, unknown>;
+      for (const key in record) {
         // Redact keys if they contain secrets (unlikely but possible)
         // Redact values
-        newObj[key] = this.redactObject(obj[key]);
+        newObj[key] = this.redactObject(record[key]);
       }
       return newObj;
     }

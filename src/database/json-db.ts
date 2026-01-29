@@ -39,19 +39,26 @@ export class JsonDatabase implements Database {
     }
   }
 
+  // Helper function to validate researchId
+  private isValidResearchId(researchId: string): boolean {
+    // Allow only alphanumeric characters, underscores, and dashes
+    return /^[a-zA-Z0-9_-]+$/.test(researchId);
+  }
+
   async saveResearch(record: ResearchRecord): Promise<void> {
     this.data[record.id] = record;
     this.save();
   }
 
   async getResearch(id: string): Promise<ResearchRecord | null> {
-// Validate id before access to prevent prototype pollution and unsafe property access
-// If ID format restriction is needed, uncomment and adjust the regex below
-// if (!/^[a-zA-Z0-9_-]+$/.test(id)) { return null; }
-if (!Object.prototype.hasOwnProperty.call(this.data, id)) {
-  return null;
-}
-return this.data[id];
+    // Validate id before access to prevent prototype pollution and unsafe property access
+    if (!this.isValidResearchId(id)) {
+      return null;
+    }
+    if (!Object.prototype.hasOwnProperty.call(this.data, id)) {
+      return null;
+    }
+    return this.data[id];
   }
 
   async getAllResearch(): Promise<ResearchRecord[]> {
@@ -59,40 +66,10 @@ return this.data[id];
   }
 
   async addFinding(researchId: string, finding: ResearchFinding): Promise<void> {
-// Helper function to validate researchId
-private isValidResearchId(researchId: string): boolean {
-  // Allow only alphanumeric characters, underscores, and dashes
-  return /^[a-zA-Z0-9_-]+$/.test(researchId);
-}
-
-async addFinding(researchId: string, finding: ResearchFinding): Promise<void> {
-  if (!this.isValidResearchId(researchId)) {
-    throw new Error('Invalid researchId');
-  }
-  const record = this.data[researchId];
-  if (record) {
-    record.findings.push(finding);
-    this.save();
-  } else {
-    throw new Error(`Research record ${researchId} not found`);
-  }
-}
-
-async updateStatus(researchId: string, status: ResearchRecord['status']): Promise<void> {
-  if (!this.isValidResearchId(researchId)) {
-    throw new Error('Invalid researchId');
-  }
-  const record = this.data[researchId];
-  if (record) {
-    record.status = status;
-    if (status === 'completed') {
-      record.completedAt = new Date().toISOString();
+    if (!this.isValidResearchId(researchId)) {
+      throw new Error('Invalid researchId');
     }
-    this.save();
-  } else {
-    throw new Error(`Research record ${researchId} not found`);
-  }
-}
+    const record = this.data[researchId];
     if (record) {
       record.findings.push(finding);
       this.save();
@@ -102,11 +79,10 @@ async updateStatus(researchId: string, status: ResearchRecord['status']): Promis
   }
 
   async updateStatus(researchId: string, status: ResearchRecord['status']): Promise<void> {
-// Validate researchId before using it as an object key to prevent prototype pollution and unsafe property access
-if (!/^[a-zA-Z0-9_-]+$/.test(researchId)) {
-  throw new Error("Invalid researchId");
-}
-const record = this.data[researchId];
+    if (!this.isValidResearchId(researchId)) {
+      throw new Error("Invalid researchId");
+    }
+    const record = this.data[researchId];
     if (record) {
       record.status = status;
       if (status === 'completed') {

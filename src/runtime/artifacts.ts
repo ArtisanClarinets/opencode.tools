@@ -20,11 +20,11 @@ export class ArtifactManager {
     relativePath: string,
     content: string | Buffer,
     type: string,
-    metadata: Record<string, any> = {}
+    metadata: Record<string, unknown> = {}
   ): Promise<ArtifactRecord> {
     const fullPath = path.join(this.artifactsDir, relativePath);
     const dir = path.dirname(fullPath);
-    
+
     if (!fs.existsSync(dir)) {
       await fs.promises.mkdir(dir, { recursive: true });
     }
@@ -40,7 +40,7 @@ export class ArtifactManager {
     await fs.promises.writeFile(fullPath, contentToWrite);
 
     const hash = crypto.createHash('sha256').update(contentToWrite).digest('hex');
-    
+
     const record: ArtifactRecord = {
       id: crypto.randomUUID(),
       path: path.relative(this.runDir, fullPath),

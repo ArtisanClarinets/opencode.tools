@@ -8,7 +8,7 @@ export interface WebPage {
   title: string;
   content: string; // Markdown or text
   html: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export class WebFetcher {
@@ -23,7 +23,7 @@ export class WebFetcher {
 
       const html = response.data;
       const $ = cheerio.load(html);
-      
+
       // Remove scripts, styles, etc.
       $('script').remove();
       $('style').remove();

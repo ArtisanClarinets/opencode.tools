@@ -1,6 +1,7 @@
 import winston from 'winston';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as os from 'os';
 
 // Ensure logs directory exists
 const logDir = 'logs';
@@ -18,7 +19,7 @@ export const logger = winston.createLogger({
   defaultMeta: {
     service: 'opencode-tools',
     version: process.env.npm_package_version || '1.0.0',
-    hostname: require('os').hostname()
+    hostname: os.hostname()
   },
   transports: [
     new winston.transports.File({

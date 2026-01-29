@@ -58,3 +58,10 @@ export interface ProvenanceMeta {
   timestamp: string;
   runId: string;
 }
+
+export interface SearchResult {
+  query: string;
+  content: string;
+  url: string;
+  timestamp: string;
+}

@@ -6,6 +6,7 @@
  */
 
 import { researchTools } from './index';
+import * as readline from 'readline';
 
 /**
  * Research Agent TUI Command
@@ -64,12 +65,16 @@ export const researchCommand = {
   }
 };
 
+interface TuiRegistry {
+  registerCommand(command: typeof researchCommand): void;
+}
+
 /**
  * Register Research Agent with OpenCode TUI
  * 
  * Call this function from the main TUI application to register the Research Agent
  */
-export function registerResearchAgentWithTUI(tuiRegistry: any): void {
+export function registerResearchAgentWithTUI(tuiRegistry: TuiRegistry): void {
   tuiRegistry.registerCommand(researchCommand);
 }
 
@@ -81,7 +86,6 @@ export function registerResearchAgentWithTUI(tuiRegistry: any): void {
 async function tuiPrompt(message: string): Promise<string> {
   // This would be replaced with actual TUI prompt
   return new Promise((resolve) => {
-    const readline = require('readline');
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout
@@ -100,6 +104,19 @@ async function tuiFilePicker(message: string): Promise<string | null> {
   return path || null;
 }
 
+interface TuiContext {
+    tools: {
+        register(tool: {
+            id: string;
+            name: string;
+            category: string;
+            description: string;
+            handlers: Record<string, unknown>;
+            menuItems: unknown[];
+        }): void;
+    }
+}
+
 /**
  * Alternative: Direct TUI integration pattern
  * 
@@ -109,7 +126,7 @@ export const tuiIntegration = {
   /**
    * Initialize Research Agent in TUI context
    */
-  initialize(tuiContext: any) {
+  initialize(tuiContext: TuiContext) {
     // Register the research agent tool
     tuiContext.tools.register({
       id: 'research-agent',
@@ -142,20 +159,7 @@ export const tuiIntegration = {
    * Get Research Agent instance for direct TUI access
    */
   getAgent() {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     return new (require('./tui-agents').TUIResearchAgent)();
   }
 };
-
-/**
- * Example TUI integration usage:
- * 
- * // In main TUI application
- * import { tuiIntegration } from 'opencode-tools/src/tui-commands';
- * 
- * // Initialize Research Agent
- * tuiIntegration.initialize(tuiContext);
- * 
- * // Access Research Agent directly
- * const agent = tuiIntegration.getAgent();
- * await agent.runInteractive();
- */

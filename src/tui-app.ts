@@ -1,4 +1,5 @@
 import { registerTUITools } from './index';
+import * as readline from 'readline';
 
 /**
  * OpenCode TUI Application Entry Point
@@ -13,7 +14,6 @@ async function main() {
   console.log('\nWelcome! Select a tool to begin:\n');
 
   const tools = registerTUITools();
-  const readline = require('readline');
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
@@ -22,7 +22,8 @@ async function main() {
   const ask = (query: string): Promise<string> => new Promise(resolve => rl.question(query, resolve));
 
   try {
-    while (true) {
+    let running = true;
+    while (running) {
       // Display tools menu
       tools.forEach((tool, index) => {
         console.log(`${index + 1}. ${tool.name}`);
@@ -44,14 +45,18 @@ async function main() {
           } else {
             console.log('Tool handler not fully implemented for interactive mode.');
           }
-        } catch (error: any) {
-          console.error('Error running tool:', error.message);
+        } catch (error: unknown) {
+           if (error instanceof Error) {
+            console.error('Error running tool:', error.message);
+          } else {
+            console.error('Error running tool:', String(error));
+          }
         }
         console.log('\n----------------------------------------\n');
 
       } else if (index === tools.length) {
         console.log('Goodbye!');
-        break;
+        running = false;
       } else {
         console.log('Invalid selection. Please try again.\n');
       }

@@ -1,5 +1,5 @@
 import { ResearchAgent } from '../../agents/research/research-agent';
-import { SummarizationAgent } from '../../agents/summarization/summarization-agent';
+import { SummarizationAgent, SummarizationOutput } from '../../agents/summarization/summarization-agent';
 import { LLMCouncil } from '../review/council';
 import { CitationVerifier, SummaryReviewer, DataValidator } from '../review/validators';
 import { ResearchInput, ResearchOutput } from '../../agents/research/types';
@@ -8,11 +8,12 @@ import { ResearchGatekeeper } from '../governance/gatekeeper';
 import { logger } from '../runtime/logger';
 import { OpenAILLMProvider } from '../runtime/openai-provider';
 import { MockLLMProvider } from '../runtime/llm';
+import { ReviewResult } from '../types/review';
 
 export interface PhdResearchResult {
   research: ResearchOutput;
-  summary: any;
-  councilReview: any;
+  summary: SummarizationOutput;
+  councilReview: { approved: boolean; results: ReviewResult[] };
   approved: boolean;
 }
 

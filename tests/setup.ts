@@ -2,6 +2,7 @@
 import { jest } from '@jest/globals';
 
 // Mock console methods to reduce noise in tests
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (global as any).console = {
   ...console,
   log: jest.fn(),
@@ -10,6 +11,7 @@ import { jest } from '@jest/globals';
 };
 
 // Global test utilities
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (global as any).testUtils = {
   createMockBrief: () => ({
     company: 'TestCorp',
@@ -20,7 +22,9 @@ import { jest } from '@jest/globals';
     timeline: '6 months'
   }),
   
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createMockResearchInput: () => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     brief: (global as any).testUtils.createMockBrief(),
     keywords: ['test', 'mock', 'unit'],
     urls: ['https://example.com'],

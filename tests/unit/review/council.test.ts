@@ -12,7 +12,8 @@ class MockMember implements CouncilMember {
     this.shouldPass = shouldPass;
   }
 
-  async review(content: any) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async review(_content: unknown) {
     return {
       reviewerId: this.name,
       rubricId: 'test',

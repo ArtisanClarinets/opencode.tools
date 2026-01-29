@@ -1,4 +1,4 @@
-import { Claim, EvidencePassage, CitationAnalysis } from '../types/research';
+import { Claim, CitationAnalysis } from '../types/research';
 import { PassageIndex } from '../retrieval/passage-index';
 
 export class CitationScorer {
@@ -15,7 +15,7 @@ export class CitationScorer {
     for (const claim of claims) {
       // Try to find evidence in the index
       const matches = this.index.search(claim.text, 3);
-      
+
       if (matches.length > 0) {
         // Attach evidence
         claim.evidence = matches.map(m => ({

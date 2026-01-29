@@ -34,7 +34,7 @@ export interface ArtifactRecord {
   type: string;
   hash: string;
   createdAt: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface GateResult {
@@ -48,12 +48,12 @@ export interface GateResult {
 export const ToolCallSchema = z.object({
   id: z.string(),
   toolId: z.string(),
-  args: z.any(),
+  args: z.unknown(),
   timestamp: z.string(),
   durationMs: z.number(),
   success: z.boolean(),
-  output: z.any().optional(),
-  error: z.any().optional(),
+  output: z.unknown().optional(),
+  error: z.unknown().optional(),
   outputHash: z.string().optional()
 });
 

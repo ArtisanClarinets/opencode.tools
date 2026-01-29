@@ -1,7 +1,6 @@
 // C:\Users\drpt0\iCloudDrive\Developer\Projects\Active\opencode.tools\agents\research\index.ts
 
 import * as fs from 'fs';
-import * as path from 'path';
 import { ResearchAgent } from './research-agent';
 import { ResearchInput, ResearchOutput } from './types';
 

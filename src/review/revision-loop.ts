@@ -11,9 +11,9 @@ export class RevisionLoop {
     this.policyEngine = policyEngine;
   }
 
-  async runReview(gateId: string, content: any, rubric: Rubric): Promise<boolean> {
+  async runReview(gateId: string, content: unknown, rubric: Rubric): Promise<boolean> {
     console.log(`Starting review loop for gate ${gateId}...`);
-    
+
     const results: ReviewResult[] = [];
 
     for (const reviewer of this.reviewers) {

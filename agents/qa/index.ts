@@ -3,7 +3,8 @@ import { IAgent, TestPlanResult, StaticAnalysisReport } from '../types';
 
 
 export class QAAgent implements IAgent {
-    public async prototype(codebasePath: string): Promise<TestPlanResult> {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    public async prototype(_codebasePath: string): Promise<TestPlanResult> {
         // Mock codebase/feature being analyzed: User Profile Creation
         const featureName = "User Profile Creation API";
 

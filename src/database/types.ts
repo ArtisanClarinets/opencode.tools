@@ -4,7 +4,7 @@ export interface ResearchFinding {
   content: string;
   timestamp: string;
   relevanceScore: number;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 export interface ResearchRecord {
@@ -15,7 +15,7 @@ export interface ResearchRecord {
   completedAt?: string;
   findings: ResearchFinding[];
   summary?: string;
-  reviews?: any[];
+  reviews?: unknown[];
 }
 
 export interface Database {

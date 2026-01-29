@@ -14,7 +14,7 @@ export interface TUITool {
   name: string;
   description: string;
   category: 'research' | 'documentation' | 'codegen' | 'qa' | 'delivery';
-  handler: (args: any) => Promise<any>;
+  handler: (args: unknown) => Promise<unknown>;
   parameters?: TUIParameter[];
 }
 
@@ -23,7 +23,7 @@ export interface TUIParameter {
   type: 'string' | 'number' | 'boolean' | 'array';
   required: boolean;
   description: string;
-  default?: any;
+  default?: unknown;
 }
 
 /**
@@ -38,23 +38,24 @@ export function registerTUITools(): TUITool[] {
     name: 'Research Agent',
     description: 'Automated client and industry research with competitor analysis',
     category: 'research',
-    handler: async (args: ResearchArgs) => {
+    handler: async (args: unknown) => {
+      const researchArgs = args as ResearchArgs;
       const agent = new TUIResearchAgentExtended();
       
-      if (args.mode === 'interactive') {
+      if (researchArgs.mode === 'interactive') {
         await agent.runInteractive();
         return { success: true, message: 'Research completed interactively' };
-      } else if (args.mode === 'brief' && args.briefPath) {
-        return await agent.runWithBriefFile(args.briefPath, args.outputPath);
-      } else if (args.mode === 'quick' && args.company && args.industry) {
+      } else if (researchArgs.mode === 'brief' && researchArgs.briefPath) {
+        return await agent.runWithBriefFile(researchArgs.briefPath);
+      } else if (researchArgs.mode === 'quick' && researchArgs.company && researchArgs.industry) {
         const params: ResearchParams = {
-          company: args.company,
-          industry: args.industry,
-          description: args.description,
-          goals: args.goals,
-          constraints: args.constraints,
-          timeline: args.timeline,
-          keywords: args.keywords
+          company: researchArgs.company,
+          industry: researchArgs.industry,
+          description: researchArgs.description,
+          goals: researchArgs.goals,
+          constraints: researchArgs.constraints,
+          timeline: researchArgs.timeline,
+          keywords: researchArgs.keywords
         };
         return await agent.runWithParams(params);
       } else {
@@ -96,7 +97,7 @@ export class TUIResearchAgentExtended extends TUIResearchAgent {
   /**
    * Run research from a brief file (TUI-accessible)
    */
-  async runWithBriefFile(briefPath: string, outputPath?: string): Promise<any> {
+  async runWithBriefFile(briefPath: string, _outputPath?: string): Promise<unknown> {
     const briefContent = await import('fs').then(fs => 
       fs.promises.readFile(briefPath, 'utf-8')
     );
@@ -120,7 +121,7 @@ export class TUIResearchAgentExtended extends TUIResearchAgent {
   /**
    * Run research with parameters (TUI-accessible)
    */
-  async runWithParams(params: ResearchParams): Promise<any> {
+  async runWithParams(params: ResearchParams): Promise<unknown> {
     return super.runWithParams(params);
   }
 }

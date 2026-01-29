@@ -1,4 +1,3 @@
-import { ToolCallRecord } from '../types/run';
 import { ToolCache } from './cache';
 
 export class ReplayManager {
@@ -14,7 +13,7 @@ export class ReplayManager {
     return this.mode === 'replay';
   }
 
-  async getReplay(toolId: string, args: any, version: string): Promise<any | null> {
+  async getReplay(toolId: string, args: unknown, version: string): Promise<unknown | null> {
     if (!this.isReplay()) return null;
     const key = this.cache.getCacheKey(toolId, args, version);
     return await this.cache.get(key);

@@ -1,5 +1,5 @@
 import { CouncilMember } from './council';
-import { ReviewResult, ReviewScore } from '../types/review';
+import { ReviewResult } from '../types/review';
 import { LLMProvider, MockLLMProvider } from '../runtime/llm';
 
 abstract class BaseValidator implements CouncilMember {
@@ -11,7 +11,7 @@ abstract class BaseValidator implements CouncilMember {
     this.llm = llm || new MockLLMProvider();
   }
 
-  abstract review(content: any): Promise<ReviewResult>;
+  abstract review(content: unknown): Promise<ReviewResult>;
 
   protected parseLLMResponse(responseContent: string): { valid: boolean; score: number; comment: string; issues?: string[] } {
     try {
@@ -48,7 +48,7 @@ export class CitationVerifier extends BaseValidator {
   name = 'CitationVerifier';
   role = 'Citation Verification';
 
-  async review(content: any): Promise<ReviewResult> {
+  async review(content: unknown): Promise<ReviewResult> {
     const response = await this.llm.analyze(JSON.stringify(content), 'citation verification');
     const parsed = this.parseLLMResponse(response.content);
     return this.createResult(parsed.valid, parsed.score, parsed.comment, 'citations');
@@ -59,7 +59,7 @@ export class SummaryReviewer extends BaseValidator {
   name = 'SummaryReviewer';
   role = 'Summary Verification';
 
-  async review(content: any): Promise<ReviewResult> {
+  async review(content: unknown): Promise<ReviewResult> {
     const response = await this.llm.analyze(JSON.stringify(content), 'summary verification');
     const parsed = this.parseLLMResponse(response.content);
     return this.createResult(parsed.valid, parsed.score, parsed.comment, 'summary');
@@ -70,7 +70,7 @@ export class DataValidator extends BaseValidator {
   name = 'DataValidator';
   role = 'Data Validity Check';
 
-  async review(content: any): Promise<ReviewResult> {
+  async review(content: unknown): Promise<ReviewResult> {
     const response = await this.llm.analyze(JSON.stringify(content), 'data validity');
     const parsed = this.parseLLMResponse(response.content);
     return this.createResult(parsed.valid, parsed.score, parsed.comment, 'data-validity');

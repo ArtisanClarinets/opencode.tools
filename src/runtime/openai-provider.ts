@@ -10,7 +10,8 @@ export class OpenAILLMProvider implements LLMProvider {
     this.model = model;
   }
 
-  async generate(prompt: string, context?: any): Promise<LLMResponse> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async generate(prompt: string, _context?: unknown): Promise<LLMResponse> {
     try {
       const response = await axios.post(
         'https://api.openai.com/v1/chat/completions',
@@ -38,9 +39,14 @@ export class OpenAILLMProvider implements LLMProvider {
           usage: response.data.usage
         }
       };
-    } catch (error: any) {
-      console.error('OpenAI API Error:', error.response?.data || error.message);
-      throw new Error(`OpenAI generation failed: ${error.message}`);
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        console.error('OpenAI API Error:', error.response?.data || error.message);
+        throw new Error(`OpenAI generation failed: ${error.message}`);
+      }
+      const err = error as Error;
+      console.error('OpenAI API Error:', err.message);
+      throw new Error(`OpenAI generation failed: ${err.message}`);
     }
   }
 

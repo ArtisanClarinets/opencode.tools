@@ -1,5 +1,3 @@
-import * as fs from 'fs';
-import * as path from 'path';
 import * as crypto from 'crypto';
 import { ArtifactManager } from '../runtime/artifacts';
 import { WebPage } from '../search/fetcher';
@@ -14,7 +12,7 @@ export class EvidenceStore {
   async add(page: WebPage): Promise<string> {
     const hash = crypto.createHash('sha256').update(page.url).digest('hex');
     const docId = `doc-${hash.substring(0, 12)}`;
-    
+
     // Store content
     await this.artifactManager.store(
       `evidence/docs/${docId}/content.txt`,

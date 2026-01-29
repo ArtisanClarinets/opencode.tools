@@ -6,7 +6,7 @@
  */
 
 import { registerTUITools } from './tui-integration';
-import { TUIResearchAgent } from './tui-agents';
+import { TUIResearchAgent, ResearchParams } from './tui-agents';
 
 // Export the tool registration function
 export { registerTUITools };
@@ -28,7 +28,7 @@ export function getAvailableTools() {
 /**
  * Execute a specific tool by ID (called by TUI)
  */
-export async function executeTool(toolId: string, args: any): Promise<any> {
+export async function executeTool(toolId: string, args: unknown): Promise<unknown> {
   const tools = registerTUITools();
   const tool = tools.find(t => t.id === toolId);
   
@@ -36,7 +36,8 @@ export async function executeTool(toolId: string, args: any): Promise<any> {
     throw new Error(`Tool not found: ${toolId}`);
   }
   
-  return await tool.handler(args);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return await tool.handler(args as any);
 }
 
 /**
@@ -54,7 +55,7 @@ export const researchTools = {
   /**
    * Run research from brief file
    */
-  async fromBrief(briefPath: string, outputPath?: string) {
+  async fromBrief(briefPath: string) {
     const agent = new TUIResearchAgent();
     // Implementation would handle file reading
     const params = await loadBriefFromFile(briefPath);
@@ -77,8 +78,8 @@ export const researchTools = {
 /**
  * Helper function to load brief from file
  */
-async function loadBriefFromFile(briefPath: string): Promise<any> {
+async function loadBriefFromFile(briefPath: string): Promise<ResearchParams> {
   const fs = await import('fs');
   const content = await fs.promises.readFile(briefPath, 'utf-8');
-  return JSON.parse(content);
+  return JSON.parse(content) as ResearchParams;
 }

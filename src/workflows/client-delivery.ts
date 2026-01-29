@@ -15,9 +15,9 @@ import { Exporter } from '../deliverables/exporter';
 import { ResearchRubric } from '../governance/rubrics/research-rubric';
 
 export class ClientDeliveryWorkflow {
-  async run(briefPath: string) {
+  async run() {
     console.log('🚀 Starting Client Delivery Workflow...');
-    
+
     // 1. Init Runtime
     const runStore = new RunStore();
     const toolWrapper = new ToolWrapper(runStore);
@@ -32,7 +32,7 @@ export class ClientDeliveryWorkflow {
     const index = new PassageIndex();
     const claimExtractor = new ClaimExtractor();
     const citationScorer = new CitationScorer(index);
-    
+
     const policyEngine = new PolicyEngine(runStore);
     policyEngine.registerGate({
       id: 'research-finalize',
@@ -53,17 +53,17 @@ export class ClientDeliveryWorkflow {
 
       // 4. Research Phase
       console.log('🔍 Phase: Research');
-      const searchResults = await toolWrapper.execute('search', 'v1', { query: `${brief.company} ${brief.industry}` }, async (args) => {
+      const searchResults = await toolWrapper.execute('search', 'v1', { query: `${brief.company} ${brief.industry}` }, async (args: { query: string }) => {
         return await searchProvider.search(args.query);
       });
 
       for (const result of searchResults) {
         // Fetch & Store
-        const page = await toolWrapper.execute('fetch', 'v1', { url: result.url }, async (args) => {
+        const page = await toolWrapper.execute('fetch', 'v1', { url: result.url }, async (args: { url: string }) => {
           return await fetcher.fetch(args.url);
         });
         const docId = await evidenceStore.add(page);
-        
+
         // Index
         const passages = chunker.chunk(page.content, docId);
         index.add(passages);
@@ -72,15 +72,15 @@ export class ClientDeliveryWorkflow {
       // 5. Analysis Phase
       console.log('🧠 Phase: Analysis');
       // Mock generating a dossier text from research
-      const dossierText = `Acme Corp is a leader in Widgets. They have 50% market share.`; 
-      
+      const dossierText = `Acme Corp is a leader in Widgets. They have 50% market share.`;
+
       const claims = await claimExtractor.extractClaims(dossierText);
       const citationAnalysis = citationScorer.scoreClaims(claims);
 
       // 6. Review Phase
       console.log('⚖️ Phase: Review');
       const passed = await revisionLoop.runReview('research-finalize', { dossier: dossierText, analysis: citationAnalysis }, ResearchRubric);
-      
+
       if (!passed) {
         throw new Error('Research Gate Failed');
       }
@@ -89,18 +89,18 @@ export class ClientDeliveryWorkflow {
       console.log('📦 Phase: Deliverables');
       // Save Dossier
       await runStore.getArtifactManager().store('deliverables/dossier.md', dossierText, 'text/markdown');
-      
+
       // Export
       const runDir = runStore.getContext().baseDir;
       const zipPath = path.join(runDir, 'delivery-bundle.zip');
       await exporter.zipDirectory(path.join(runDir, 'artifacts'), zipPath);
-      
+
       console.log(`✅ Workflow Complete. Bundle: ${zipPath}`);
       await runStore.complete();
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Workflow Failed:', error);
-      await runStore.fail(error);
+      await runStore.fail(error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }

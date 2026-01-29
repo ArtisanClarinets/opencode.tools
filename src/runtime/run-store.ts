@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import { RunContext, RunManifest, ToolConfig } from '../types/run';
+import { RunContext } from '../types/run';
 import { AuditLogger } from './audit';
 import { ArtifactManager } from './artifacts';
 
@@ -59,7 +59,8 @@ export class RunStore {
     await this.saveManifest();
   }
 
-  async fail(error: Error): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async fail(_error: Error): Promise<void> {
     this.context.manifest.status = 'failed';
     this.context.manifest.endTime = new Date().toISOString();
     // Log error to manifest or separate error log

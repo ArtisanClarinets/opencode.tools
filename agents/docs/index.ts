@@ -2,7 +2,6 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { ResearchDossier } from '../research/types';
 
 export interface Documents {
     prd: string;
@@ -12,11 +11,9 @@ export interface Documents {
 /**
  * Mocks the Documentation Agent which consumes a Research Dossier and a Brief
  * to produce a Product Requirements Document (PRD) and Statement of Work (SOW).
- * @param dossier The structured dossier from the Research Agent.
- * @param brief The original client brief.
  * @returns An object containing the generated PRD and SOW content in Markdown.
  */
-export async function generateDocuments(dossier: ResearchDossier, brief: string): Promise<Documents> {
+export async function generateDocuments(): Promise<Documents> {
     // In a real scenario, this would involve LLM reasoning and prompt templating.
     // For the prototype, we load the golden PRD output and simulate the SOW.
 

@@ -19,13 +19,13 @@ export class Exporter {
 
     return new Promise((resolve, reject) => {
       output.on('close', () => resolve(zipPath));
-      archive.on('error', (err: any) => reject(err));
+      archive.on('error', (err: unknown) => reject(err));
 
       archive.pipe(output);
       resolve(zipPath);
     });
   }
-  
+
   async zipDirectory(sourceDir: string, outPath: string): Promise<void> {
     const archive = archiver('zip', { zlib: { level: 9 } });
     const stream = fs.createWriteStream(outPath);
@@ -33,7 +33,7 @@ export class Exporter {
     return new Promise((resolve, reject) => {
       archive
         .directory(sourceDir, false)
-        .on('error', (err: any) => reject(err))
+        .on('error', (err: unknown) => reject(err))
         .pipe(stream);
 
       stream.on('close', () => resolve());

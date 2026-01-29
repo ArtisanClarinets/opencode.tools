@@ -3,7 +3,7 @@ import { ReviewResult } from '../types/review';
 export interface CouncilMember {
   name: string;
   role: string;
-  review(content: any): Promise<ReviewResult>;
+  review(content: unknown): Promise<ReviewResult>;
 }
 
 export class LLMCouncil {
@@ -13,7 +13,7 @@ export class LLMCouncil {
     this.members.push(member);
   }
 
-  async review(content: any): Promise<{ approved: boolean; results: ReviewResult[] }> {
+  async review(content: unknown): Promise<{ approved: boolean; results: ReviewResult[] }> {
     if (this.members.length === 0) {
       return { approved: true, results: [] };
     }

@@ -12,7 +12,7 @@ export class ToolCache {
     }
   }
 
-  getCacheKey(toolId: string, args: any, version: string): string {
+  getCacheKey(toolId: string, args: unknown, version: string): string {
     const hash = crypto.createHash('sha256')
       .update(toolId)
       .update(JSON.stringify(args))
@@ -21,7 +21,7 @@ export class ToolCache {
     return hash;
   }
 
-  async get(key: string): Promise<any | null> {
+  async get(key: string): Promise<unknown | null> {
     const cachePath = path.join(this.cacheDir, `${key}.json`);
     if (fs.existsSync(cachePath)) {
       const content = await fs.promises.readFile(cachePath, 'utf-8');
@@ -30,7 +30,7 @@ export class ToolCache {
     return null;
   }
 
-  async set(key: string, value: any): Promise<void> {
+  async set(key: string, value: unknown): Promise<void> {
     const cachePath = path.join(this.cacheDir, `${key}.json`);
     await fs.promises.writeFile(cachePath, JSON.stringify(value, null, 2));
   }

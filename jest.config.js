@@ -18,7 +18,8 @@ module.exports = {
     '^@tools/(.*)$': '<rootDir>/tools/$1',
     '^@tests/(.*)$': '<rootDir>/tests/$1',
     '^@utils/(.*)$': '<rootDir>/tests/utils/$1',
-    '^@fixtures/(.*)$': '<rootDir>/tests/fixtures/$1'
+    '^@fixtures/(.*)$': '<rootDir>/tests/fixtures/$1',
+    '^uuid$': '<rootDir>/tests/__mocks__/uuid.ts'
   },
   collectCoverageFrom: [
     'src/**/*.ts',

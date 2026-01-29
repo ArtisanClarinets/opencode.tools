@@ -5,7 +5,6 @@
  */
 
 import { jest } from '@jest/globals';
-import * as path from 'path';
 
 // ====================
 // Global Test Configuration
@@ -37,6 +36,7 @@ afterAll(() => {
 
 // Extend Jest matchers
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jest {
     interface Matchers<R> {
       toBeValidResearchOutput(): R;
@@ -50,14 +50,15 @@ declare global {
 
 // Custom matchers
 expect.extend({
-  toBeValidResearchOutput(received) {
-    const pass = received && 
-      typeof received === 'object' &&
-      received.dossier &&
-      received.sources &&
-      received.meta &&
-      typeof received.dossier.companySummary === 'string' &&
+  toBeValidResearchOutput(received: unknown) {
+    const isObject = (val: unknown): val is Record<string, unknown> =>
+      typeof val === 'object' && val !== null;
+
+    const pass = isObject(received) &&
+      isObject(received.dossier) &&
       Array.isArray(received.sources) &&
+      isObject(received.meta) &&
+      typeof received.dossier.companySummary === 'string' &&
       typeof received.meta.runId === 'string';
 
     if (pass) {
@@ -73,13 +74,16 @@ expect.extend({
     }
   },
 
-  toBeValidUrl(received) {
+  toBeValidUrl(received: unknown) {
     try {
-      new URL(received);
-      return {
-        message: () => `expected ${received} not to be a valid URL`,
-        pass: true,
-      };
+      if (typeof received === 'string') {
+        new URL(received);
+        return {
+          message: () => `expected ${received} not to be a valid URL`,
+          pass: true,
+        };
+      }
+      throw new Error();
     } catch {
       return {
         message: () => `expected ${received} to be a valid URL`,
@@ -88,9 +92,9 @@ expect.extend({
     }
   },
 
-  toBeValidEmail(received) {
+  toBeValidEmail(received: unknown) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const pass = emailRegex.test(received);
+    const pass = typeof received === 'string' && emailRegex.test(received);
     
     if (pass) {
       return {
@@ -105,9 +109,9 @@ expect.extend({
     }
   },
 
-  toBeValidISODate(received) {
+  toBeValidISODate(received: unknown) {
     const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
-    const pass = isoDateRegex.test(received) && !isNaN(Date.parse(received));
+    const pass = typeof received === 'string' && isoDateRegex.test(received) && !isNaN(Date.parse(received));
     
     if (pass) {
       return {
@@ -122,7 +126,7 @@ expect.extend({
     }
   },
 
-  toBeArrayOfValidSources(received) {
+  toBeArrayOfValidSources(received: unknown) {
     if (!Array.isArray(received)) {
       return {
         message: () => `expected ${received} to be an array`,
@@ -130,13 +134,14 @@ expect.extend({
       };
     }
 
-    const validSources = received.every(source => 
-      source &&
-      typeof source.url === 'string' &&
-      typeof source.title === 'string' &&
-      typeof source.relevance === 'string' &&
-      typeof source.accessedAt === 'string'
-    );
+    const validSources = received.every((source: unknown) => {
+        if (typeof source !== 'object' || source === null) return false;
+        const s = source as Record<string, unknown>;
+        return typeof s.url === 'string' &&
+               typeof s.title === 'string' &&
+               typeof s.relevance === 'string' &&
+               typeof s.accessedAt === 'string';
+    });
 
     if (validSources) {
       return {
@@ -229,6 +234,7 @@ export const createMockFunctions = {
   // Mock webfetch responses
   webfetch: {
     success: (content: string = 'Mock web content with relevant information') => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return jest.fn<any>().mockResolvedValue({
         content,
         url: 'https://example.com',
@@ -238,10 +244,12 @@ export const createMockFunctions = {
     },
 
     failure: (error: string = 'Service unavailable') => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return jest.fn<any>().mockRejectedValue(new Error(error));
     },
 
     timeout: (delay: number = 5000) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return jest.fn<any>().mockImplementation(() =>
         new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Request timeout')), delay)
@@ -253,18 +261,22 @@ export const createMockFunctions = {
   // Mock file system operations
   filesystem: {
     readSuccess: (content: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return jest.fn<any>().mockResolvedValue(content);
     },
 
     readFailure: (error: string = 'File not found') => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return jest.fn<any>().mockRejectedValue(new Error(error));
     },
 
     writeSuccess: () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return jest.fn<any>().mockResolvedValue(undefined);
     },
 
     writeFailure: (error: string = 'Permission denied') => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return jest.fn<any>().mockRejectedValue(new Error(error));
     }
   }
@@ -306,7 +318,7 @@ export const cleanupTestEnvironment = () => {
 // ====================
 
 export const performanceUtils = {
-  measureExecutionTime: async (fn: () => Promise<any>): Promise<{ result: any; duration: number }> => {
+  measureExecutionTime: async (fn: () => Promise<unknown>): Promise<{ result: unknown; duration: number }> => {
     const start = process.hrtime.bigint();
     const result = await fn();
     const end = process.hrtime.bigint();
@@ -351,9 +363,8 @@ export const securityTestUtils = {
 
   // Test for common vulnerabilities
   testForVulnerabilities(input: string, vulnerabilityType: string) {
-    // @ts-ignore
-    const vectors = this.attackVectors[vulnerabilityType as keyof typeof this.attackVectors] || [];
-    // @ts-ignore
+    const type = vulnerabilityType as keyof typeof this.attackVectors;
+    const vectors = this.attackVectors[type] || [];
     return vectors.some(vector => input.includes(vector));
   }
 };

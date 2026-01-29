@@ -1,1 +1,0 @@
-{"version":3,"file":"rubric.d.ts","sourceRoot":"","sources":["../../../src/governance/rubric.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,MAAM,EAAE,WAAW,EAAE,YAAY,EAAE,MAAM,iBAAiB,CAAC;AAEpE,qBAAa,eAAe;IAC1B,QAAQ,CAAC,MAAM,EAAE,MAAM,EAAE,MAAM,EAAE,WAAW,EAAE,EAAE,UAAU,EAAE,MAAM,EAAE,QAAQ,EAAE,MAAM,GAAG,YAAY;CAiCpG"}

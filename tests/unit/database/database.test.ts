@@ -1,6 +1,5 @@
 import { JsonDatabase } from '../../../src/database/json-db';
 import * as fs from 'fs';
-import * as path from 'path';
 
 describe('JsonDatabase', () => {
   const testDir = 'test-data';

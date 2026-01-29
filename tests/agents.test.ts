@@ -20,12 +20,6 @@ describe('Phase 2 Agents: Research and Documentation', () => {
         constraints: ['Legacy systems'],
         timeline: '3 months'
     });
-    let dossierMarkdown: string;
-
-    // Load golden files once
-    beforeAll(() => {
-        dossierMarkdown = fs.readFileSync(path.join(projectRoot, 'tests', 'golden', 'research', 'dossier-output.md'), 'utf-8');
-    });
 
     test('Research Agent: gatherDossier returns structured data', async () => {
         const result = await gatherDossier(brief);
@@ -50,7 +44,7 @@ describe('Phase 2 Agents: Research and Documentation', () => {
             recommendations: []
         };
 
-        const documents = await generateDocuments(mockDossier, brief);
+        const documents = await generateDocuments();
 
         expect(documents).toBeDefined();
         expect(documents.prd).toBeDefined();
