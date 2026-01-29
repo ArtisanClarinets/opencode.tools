@@ -74,12 +74,22 @@ class JsonDatabase {
         this.save();
     }
     async getResearch(id) {
-        return this.data[id] || null;
+        if (!Object.prototype.hasOwnProperty.call(this.data, id)) {
+            return null;
+        }
+        return this.data[id];
     }
     async getAllResearch() {
         return Object.values(this.data);
     }
+    isValidResearchId(researchId) {
+        // Allow only alphanumeric characters, underscores, and dashes
+        return /^[a-zA-Z0-9_-]+$/.test(researchId);
+    }
     async addFinding(researchId, finding) {
+        if (!this.isValidResearchId(researchId)) {
+            throw new Error('Invalid researchId');
+        }
         const record = this.data[researchId];
         if (record) {
             record.findings.push(finding);
@@ -90,6 +100,9 @@ class JsonDatabase {
         }
     }
     async updateStatus(researchId, status) {
+        if (!this.isValidResearchId(researchId)) {
+            throw new Error('Invalid researchId');
+        }
         const record = this.data[researchId];
         if (record) {
             record.status = status;

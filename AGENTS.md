@@ -65,16 +65,13 @@ npm run test:all
 ```
 
 ### Agent-Specific Commands
+
+All agents are accessed via the main TUI application:
 ```bash
-# Research agent
-npm run research -- --brief "path/to/brief.json" --output "artifacts/"
-
-# Documentation agent
-npm run docs -- --input "research-dossier.json" --type "prd" --output "project-prd.md"
-
-# Code generation agent
-npm run codegen -- --architecture "architecture.json" --feature "user-auth"
+npm run tui
 ```
+
+For testing individual agents during development, refer to their specific test suites (e.g., `tests/agents/research-agent.test.ts`).
 
 ---
 

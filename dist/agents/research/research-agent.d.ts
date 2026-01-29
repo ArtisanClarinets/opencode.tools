@@ -1,6 +1,10 @@
 import { ResearchInput, ResearchOutput } from './types';
 import { Database } from '../../src/database/types';
 import { ResearchGatekeeper } from '../../src/governance/gatekeeper';
+export declare class ResearchError extends Error {
+    context?: Record<string, any> | undefined;
+    constructor(message: string, context?: Record<string, any> | undefined);
+}
 export declare class ResearchAgent {
     private readonly agentName;
     private readonly promptVersion;
@@ -17,6 +21,7 @@ export declare class ResearchAgent {
     private searchWeb;
     private extractCompetitors;
     private extractTechStack;
+    private mergeTechStack;
     private generateCompanySummary;
     private generateIndustryOverview;
     private identifyRisks;

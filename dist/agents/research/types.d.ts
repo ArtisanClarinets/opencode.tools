@@ -1,17 +1,27 @@
-export interface ResearchInput {
-    brief: ClientBrief;
-    keywords?: string[];
-    urls?: string[];
-    priorNotes?: string;
-}
-export interface ClientBrief {
-    company: string;
-    industry: string;
-    description: string;
-    goals: string[];
-    constraints?: string[];
-    timeline?: string;
-}
+import { z } from 'zod';
+export declare const ClientBriefSchema: z.ZodObject<{
+    company: z.ZodString;
+    industry: z.ZodString;
+    description: z.ZodString;
+    goals: z.ZodArray<z.ZodString>;
+    constraints: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    timeline: z.ZodOptional<z.ZodString>;
+}, z.core.$strip>;
+export declare const ResearchInputSchema: z.ZodObject<{
+    brief: z.ZodObject<{
+        company: z.ZodString;
+        industry: z.ZodString;
+        description: z.ZodString;
+        goals: z.ZodArray<z.ZodString>;
+        constraints: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        timeline: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>;
+    keywords: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    urls: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    priorNotes: z.ZodOptional<z.ZodString>;
+}, z.core.$strip>;
+export type ResearchInput = z.infer<typeof ResearchInputSchema>;
+export type ClientBrief = z.infer<typeof ClientBriefSchema>;
 export interface ResearchOutput {
     dossier: ResearchDossier;
     sources: Source[];
