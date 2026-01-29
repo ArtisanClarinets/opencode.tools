@@ -67,6 +67,7 @@ async function main() {
 }
 
 // Start the TUI
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 if (require.main === module) {
   main().catch(err => {
     console.error('Fatal error:', err);
