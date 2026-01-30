@@ -298,5 +298,233 @@
         "relevanceScore": 1
       }
     ]
+  },
+  "aaac27a3-2f4f-46c0-b6bb-25141c9c9b26": {
+    "id": "aaac27a3-2f4f-46c0-b6bb-25141c9c9b26",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "9d7c0ce8-5504-4f69-a482-648772a5c5a7",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "7b1c59aa-0a77-4c60-80b7-dcc86ffe0c0e": {
+    "id": "7b1c59aa-0a77-4c60-80b7-dcc86ffe0c0e",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "ab20caa2-dbe7-45b9-9be2-f84f13efa411",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "c155fb73-509c-4a58-840d-5219a2318f16": {
+    "id": "c155fb73-509c-4a58-840d-5219a2318f16",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "75e42858-b981-489e-81c8-5ecb848c0060",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "5764ca2f-8378-4202-b2b8-02d13c9318c0": {
+    "id": "5764ca2f-8378-4202-b2b8-02d13c9318c0",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "9da87da2-d887-453e-a328-238f1cbf5e20",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "a688534e-c758-42b0-a0c6-2c23d37f1d9e": {
+    "id": "a688534e-c758-42b0-a0c6-2c23d37f1d9e",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "886f3e1b-fd99-4aaf-9aab-9fe0b339509f",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "cda9398b-8b2d-4937-9aa7-44eaaa515c10": {
+    "id": "cda9398b-8b2d-4937-9aa7-44eaaa515c10",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "e527071e-9b87-4b02-a4c1-63e4ebb858a3",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "96688231-ee61-4d73-aba8-4ee5ad70f83c": {
+    "id": "96688231-ee61-4d73-aba8-4ee5ad70f83c",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "65360a75-e6c3-4f7b-92d1-ba3408803419",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "0afbfde6-4591-4d13-a373-0f2730747c9e": {
+    "id": "0afbfde6-4591-4d13-a373-0f2730747c9e",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "46182fc5-5322-4555-9fb1-5433deec36c0",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "3e7cacc1-8401-4e41-8f0c-b60e2535229a": {
+    "id": "3e7cacc1-8401-4e41-8f0c-b60e2535229a",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "39ef3a0e-e535-49f9-940e-94d78608c899",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "6b070128-4a27-4225-9ac4-3fa6c6b0e31a": {
+    "id": "6b070128-4a27-4225-9ac4-3fa6c6b0e31a",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "e105ba42-00a4-4151-85a8-31dd27cecb40",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
+  },
+  "f6c1f06d-9343-479a-b262-6aba98136788": {
+    "id": "f6c1f06d-9343-479a-b262-6aba98136788",
+    "topic": "Acme Corp",
+    "status": "in_progress",
+    "startedAt": "2024-01-01T00:00:00.000Z",
+    "findings": [
+      {
+        "id": "0de6d8ec-7d12-4634-92d7-c01f58bbb94c",
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=Acme%20Corp%20company%20overview",
+        "content": "Research: Acme Corp company overview",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      },
+      {
+        "id": "db1029be-8505-431b-b821-99499702b291",
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=Acme%20Corp%20about%20us",
+        "content": "Research: Acme Corp about us",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      },
+      {
+        "id": "f9a07fa6-0ce1-4564-820b-1e37d4da08ad",
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=Acme%20Corp%20mission%20vision",
+        "content": "Research: Acme Corp mission vision",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      },
+      {
+        "id": "d85b8091-8a25-41bd-a771-a51ada4bbd0f",
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=Acme%20Corp%20company%20overview%20depth%202",
+        "content": "Research: Acme Corp company overview depth 2",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      },
+      {
+        "id": "35a76033-7a43-4f15-829f-17d44ddea431",
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=Acme%20Corp%20about%20us%20depth%202",
+        "content": "Research: Acme Corp about us depth 2",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      },
+      {
+        "id": "aaabdfbc-5bef-48e0-b3b8-7ff7c48f1893",
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=Acme%20Corp%20mission%20vision%20depth%202",
+        "content": "Research: Acme Corp mission vision depth 2",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      },
+      {
+        "id": "c5016e4d-9df5-481c-b002-ee8891bbc18c",
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=Acme%20Corp%20company%20overview%20depth%203",
+        "content": "Research: Acme Corp company overview depth 3",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      },
+      {
+        "id": "94618a15-6a6e-4e00-a2f1-d395fee5b856",
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=Acme%20Corp%20about%20us%20depth%203",
+        "content": "Research: Acme Corp about us depth 3",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      },
+      {
+        "id": "6c7b18a0-6281-4b75-8c5c-10a8b37ee4ee",
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=Acme%20Corp%20mission%20vision%20depth%203",
+        "content": "Research: Acme Corp mission vision depth 3",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      },
+      {
+        "id": "b2577713-14b7-4c49-9da8-19e4404884ac",
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=Construction%20Tech%20industry%20trends%202024",
+        "content": "Research: Construction Tech industry trends 2024",
+        "timestamp": "2024-01-01T00:00:00.000Z",
+        "relevanceScore": 1
+      }
+    ]
   }
 }
