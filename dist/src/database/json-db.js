@@ -74,12 +74,29 @@ class JsonDatabase {
         this.save();
     }
     async getResearch(id) {
-        return this.data[id] || null;
+        // Validate id before access to prevent prototype pollution and unsafe property access
+        // If ID format restriction is needed, uncomment and adjust the regex below
+        // if (!/^[a-zA-Z0-9_-]+$/.test(id)) { return null; }
+        if (!Object.prototype.hasOwnProperty.call(this.data, id)) {
+            return null;
+        }
+        return this.data[id];
     }
     async getAllResearch() {
         return Object.values(this.data);
     }
     async addFinding(researchId, finding) {
+        // Helper function to validate researchId
+    }
+    // Helper function to validate researchId
+    isValidResearchId(researchId) {
+        // Allow only alphanumeric characters, underscores, and dashes
+        return /^[a-zA-Z0-9_-]+$/.test(researchId);
+    }
+    async addFinding(researchId, finding) {
+        if (!this.isValidResearchId(researchId)) {
+            throw new Error('Invalid researchId');
+        }
         const record = this.data[researchId];
         if (record) {
             record.findings.push(finding);
@@ -90,6 +107,9 @@ class JsonDatabase {
         }
     }
     async updateStatus(researchId, status) {
+        if (!this.isValidResearchId(researchId)) {
+            throw new Error('Invalid researchId');
+        }
         const record = this.data[researchId];
         if (record) {
             record.status = status;
@@ -102,6 +122,33 @@ class JsonDatabase {
             throw new Error(`Research record ${researchId} not found`);
         }
     }
+    if(record) {
+        record.findings.push(finding);
+        this.save();
+    }
 }
 exports.JsonDatabase = JsonDatabase;
+{
+    throw new Error(`Research record ${researchId} not found`);
+}
+async;
+updateStatus(researchId, string, status, types_1.ResearchRecord['status']);
+Promise < void  > {
+    // Validate researchId before using it as an object key to prevent prototype pollution and unsafe property access
+    if() { }
+} /  ^ [a - zA - Z0 - 9 - ] + $ / .test(researchId);
+{
+    throw new Error("Invalid researchId");
+}
+const record = this.data[researchId];
+if (record) {
+    record.status = status;
+    if (status === 'completed') {
+        record.completedAt = new Date().toISOString();
+    }
+    this.save();
+}
+else {
+    throw new Error(`Research record ${researchId} not found`);
+}
 //# sourceMappingURL=json-db.js.map
