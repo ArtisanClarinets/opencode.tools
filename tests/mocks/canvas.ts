@@ -1,0 +1,25 @@
+jest.mock('canvas', () => ({
+  createCanvas: jest.fn().mockImplementation((width: number, height: number) => ({
+    width,
+    height,
+    getContext: jest.fn().mockReturnValue({
+      canvas: { width, height },
+      fillRect: jest.fn(),
+      fillText: jest.fn(),
+      beginPath: jest.fn(),
+      rect: jest.fn(),
+      fill: jest.fn(),
+      stroke: jest.fn(),
+      moveTo: jest.fn(),
+      lineTo: jest.fn(),
+      arc: jest.fn(),
+      quadraticCurveTo: jest.fn(),
+      bezierCurveTo: jest.fn(),
+      clearRect: jest.fn(),
+      setLineDash: jest.fn(),
+      save: jest.fn(),
+      restore: jest.fn(),
+    }),
+    toBuffer: jest.fn().mockReturnValue(Buffer.from('mock chart image')),
+  })),
+}));

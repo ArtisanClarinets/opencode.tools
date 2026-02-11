@@ -1,4 +1,6 @@
 import { TUIResearchAgent } from './tui-agents';
+import { TUIArchitectureAgent } from './tui-agents/tui-architecture-agent';
+import { TUICodeGenAgent } from './tui-agents/tui-codegen-agent';
 import { ResearchParams } from './tui-agents';
 
 /**
@@ -70,6 +72,32 @@ export function registerTUITools(): TUITool[] {
         default: 'interactive'
       }
     ]
+  });
+
+  // Register Architecture Agent
+  tools.push({
+    id: 'architecture-agent',
+    name: 'Architecture Agent',
+    description: 'System design and backlog generation',
+    category: 'documentation',
+    handler: async () => {
+      const agent = new TUIArchitectureAgent();
+      await agent.runInteractive();
+      return { success: true };
+    }
+  });
+
+  // Register CodeGen Agent
+  tools.push({
+    id: 'codegen-agent',
+    name: 'CodeGen Agent',
+    description: 'Feature scaffolding and code generation',
+    category: 'codegen',
+    handler: async () => {
+      const agent = new TUICodeGenAgent();
+      await agent.runInteractive();
+      return { success: true };
+    }
   });
   
   return tools;

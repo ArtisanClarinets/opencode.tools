@@ -1,24 +1,57 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.normalizeSource = normalizeSource;
+const html_to_text_1 = require("html-to-text");
+const crypto = __importStar(require("crypto"));
 /**
  * Normalizes and processes raw source content for consistency and deduplication.
- * Includes canonical URL normalization, content hashing, duplicate detection, and HTML -> clean text extraction.
- * @param rawContent Raw HTML or text content.
- * @param originalUrl The original URL.
- * @returns Normalized content and metadata.
  */
 async function normalizeSource(rawContent, originalUrl) {
-    // TODO: Implement all A5 requirements.
-    console.log("[STUB] Normalizing source from " + originalUrl + ". Content length: " + rawContent.length);
-    const hash = 'mock-hash-123';
+    const cleanText = (0, html_to_text_1.convert)(rawContent, {
+        wordwrap: 130
+    });
+    const contentHash = crypto.createHash('sha256').update(cleanText).digest('hex');
+    const canonicalUrl = new URL(originalUrl).href.toLowerCase();
     return {
         success: true,
         content: JSON.stringify({
-            canonicalUrl: originalUrl.toLowerCase(),
-            contentHash: hash,
-            cleanText: "Cleaned content from " + originalUrl,
-            isDuplicate: false,
+            canonicalUrl,
+            contentHash,
+            cleanText,
+            isDuplicate: false, // In a real system, we would check against a database of hashes
             language: 'en'
         })
     };

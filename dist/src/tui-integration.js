@@ -36,6 +36,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.TUIResearchAgentExtended = void 0;
 exports.registerTUITools = registerTUITools;
 const tui_agents_1 = require("./tui-agents");
+const tui_architecture_agent_1 = require("./tui-agents/tui-architecture-agent");
+const tui_codegen_agent_1 = require("./tui-agents/tui-codegen-agent");
 /**
  * Register TUI tools with OpenCode
  */
@@ -81,6 +83,30 @@ function registerTUITools() {
                 default: 'interactive'
             }
         ]
+    });
+    // Register Architecture Agent
+    tools.push({
+        id: 'architecture-agent',
+        name: 'Architecture Agent',
+        description: 'System design and backlog generation',
+        category: 'documentation',
+        handler: async () => {
+            const agent = new tui_architecture_agent_1.TUIArchitectureAgent();
+            await agent.runInteractive();
+            return { success: true };
+        }
+    });
+    // Register CodeGen Agent
+    tools.push({
+        id: 'codegen-agent',
+        name: 'CodeGen Agent',
+        description: 'Feature scaffolding and code generation',
+        category: 'codegen',
+        handler: async () => {
+            const agent = new tui_codegen_agent_1.TUICodeGenAgent();
+            await agent.runInteractive();
+            return { success: true };
+        }
     });
     return tools;
 }
