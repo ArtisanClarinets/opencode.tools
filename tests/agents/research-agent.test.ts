@@ -1,4 +1,4 @@
-import { ResearchAgent } from '../../agents/research/research-agent';
+import { ResearchAgent, ResearchError } from '../../agents/research/research-agent';
 import { ResearchInput } from '../../agents/research/types';
 import * as webfetchModule from '../../tools/webfetch';
 
@@ -63,6 +63,17 @@ describe('ResearchAgent', () => {
       expect(result.dossier).toBeDefined();
       expect(result.sources).toBeDefined();
       expect(result.meta).toBeDefined();
+    });
+
+    it('should throw ResearchError for invalid input', async () => {
+        const invalidInput: any = {
+            brief: {
+                // Missing company and industry
+                description: 'Invalid brief'
+            }
+        };
+
+        await expect(agent.execute(invalidInput)).rejects.toThrow(ResearchError);
     });
 
     it('should include company summary in dossier', async () => {
@@ -238,7 +249,8 @@ describe('ResearchAgent', () => {
     });
 
     it('should handle empty input gracefully', async () => {
-      const input: ResearchInput = {
+      // In the new version, empty input should fail validation
+      const input: any = {
         brief: {
           company: '',
           industry: '',
@@ -248,11 +260,8 @@ describe('ResearchAgent', () => {
         }
       };
 
-      const result = await agent.execute(input);
-
-      expect(result).toBeDefined();
-      expect(result.dossier).toBeDefined();
-      expect(result.meta).toBeDefined();
+      // Expect validation error
+      await expect(agent.execute(input)).rejects.toThrow(ResearchError);
     });
   });
 });

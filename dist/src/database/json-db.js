@@ -85,6 +85,10 @@ class JsonDatabase {
     async getAllResearch() {
         return Object.values(this.data);
     }
+    isValidResearchId(researchId) {
+        // Allow only alphanumeric characters, underscores, and dashes
+        return /^[a-zA-Z0-9_-]+$/.test(researchId);
+    }
     async addFinding(researchId, finding) {
         // Helper function to validate researchId
     }
