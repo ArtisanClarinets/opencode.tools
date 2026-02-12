@@ -225,15 +225,15 @@ export class PDFACompliance {
     });
   }
 
-  private ensureColorSpace(pdfDoc: PDFDocument): void {
+  private ensureColorSpace(_pdfDoc: PDFDocument): void {
     logger.debug('Color space ensured for PDF/A');
   }
 
-  private async ensureFontEmbedding(pdfDoc: PDFDocument): Promise<void> {
+  private async ensureFontEmbedding(_pdfDoc: PDFDocument): Promise<void> {
     logger.debug('Font embedding checked');
   }
 
-  private ensureLinearized(pdfDoc: PDFDocument): void {
+  private ensureLinearized(_pdfDoc: PDFDocument): void {
     logger.debug('Linearization check (placeholder)');
   }
 }

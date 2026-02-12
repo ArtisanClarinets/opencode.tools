@@ -127,7 +127,16 @@ describe('PDF Generator E2E Workflows', () => {
       input.charts = Array.from({ length: 15 }, (_, i) => ({
         id: `chart-${i}`,
         type: 'bar' as const,
-        data: { labels: ['A', 'B'], datasets: [{ label: 'Data', data: [1, 2] }] },
+        title: `Chart ${i}`,
+        data: { 
+          labels: ['A', 'B'], 
+          datasets: [{ label: 'Data', data: [1, 2] }] 
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+        },
       }));
       
       const agent = new PDFGeneratorAgent();

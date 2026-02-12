@@ -14,7 +14,9 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.mainMenuOptions = exports.PDFMenu = exports.pageSizes = exports.availableFonts = exports.presetSchemes = exports.StyleConfigurator = exports.AssetUploader = exports.diagramTemplates = exports.DiagramBuilder = exports.ChartBuilder = exports.PDFInteractiveWizard = exports.TUIPDFAgent = void 0;
+exports.mainMenuOptions = exports.PDFMenu = exports.pageSizes = exports.availableFonts = exports.presetSchemes = exports.StyleConfigurator = exports.AssetUploader = exports.diagramTemplates = exports.DiagramBuilder = exports.ChartBuilder = exports.PDFInteractiveWizard = exports.TUIPDFAgent = exports.TUIResearchAgent = void 0;
+var tui_research_agent_1 = require("./tui-research-agent");
+Object.defineProperty(exports, "TUIResearchAgent", { enumerable: true, get: function () { return tui_research_agent_1.TUIResearchAgent; } });
 var tui_pdf_agent_1 = require("./tui-pdf-agent");
 Object.defineProperty(exports, "TUIPDFAgent", { enumerable: true, get: function () { return tui_pdf_agent_1.TUIPDFAgent; } });
 var pdf_interactive_wizard_1 = require("./pdf-interactive-wizard");

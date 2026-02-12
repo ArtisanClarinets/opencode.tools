@@ -3,7 +3,7 @@ import { BaseError } from '../../../src/runtime/errors';
 export class PDFGenerationError extends BaseError {
   constructor(
     message: string,
-    public context?: Record<string, any>,
+    public context?: Record<string, unknown>,
     public cause?: Error
   ) {
     super(`PDF Generation Error: ${message}`);
@@ -65,7 +65,7 @@ export class TemplateError extends BaseError {
 export class LayoutError extends BaseError {
   constructor(
     message: string,
-    public context?: Record<string, any>,
+    public context?: Record<string, unknown>,
     public cause?: Error
   ) {
     super(`Layout Error: ${message}`);
@@ -87,7 +87,7 @@ export class FontError extends BaseError {
 export class OutputError extends BaseError {
   constructor(
     message: string,
-    public context?: Record<string, any>,
+    public context?: Record<string, unknown>,
     public cause?: Error
   ) {
     super(`Output Error: ${message}`);

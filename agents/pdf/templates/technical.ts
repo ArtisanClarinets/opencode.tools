@@ -2,6 +2,9 @@ import PDFDocument from 'pdfkit';
 import { PDFStyling, PDFSection, TextStyle } from '../types';
 import { PageLayout } from '../rendering/page-layout';
 
+// Type alias for PDFDocument instance
+type PDFDoc = InstanceType<typeof PDFDocument>;
+
 export interface TechnicalTemplateConfig {
   primaryColor: string;
   secondaryColor: string;
@@ -261,13 +264,13 @@ export class TechnicalTemplate {
     };
   }
 
-  applyToDocument(doc: PDFDocument, pageWidth: number, pageHeight: number): void {
+  applyToDocument(doc: PDFDoc, pageWidth: number, pageHeight: number): void {
     doc.fillColor(this.config.backgroundColor);
     doc.rect(0, 0, pageWidth, pageHeight).fill();
   }
 
   renderHeader(
-    doc: PDFDocument,
+    doc: PDFDoc,
     text: string,
     pageWidth: number,
     margins: { top: number; left: number; right: number }
@@ -289,7 +292,7 @@ export class TechnicalTemplate {
   }
 
   renderFooter(
-    doc: PDFDocument,
+    doc: PDFDoc,
     pageNumber: number,
     totalPages: number,
     pageWidth: number,
@@ -308,7 +311,7 @@ export class TechnicalTemplate {
     doc.stroke();
 
     const pageNumberText = `${pageNumber}`;
-    const textWidth = doc.widthOfStringAtSize(pageNumberText, 8);
+    const textWidth = doc.widthOfString(pageNumberText);
     
     doc.text(
       pageNumberText,
@@ -319,7 +322,7 @@ export class TechnicalTemplate {
   }
 
   renderSectionTitle(
-    doc: PDFDocument,
+    doc: PDFDoc,
     title: string,
     level: number,
     currentY: number,
@@ -352,7 +355,7 @@ export class TechnicalTemplate {
   }
 
   renderBodyText(
-    doc: PDFDocument,
+    doc: PDFDoc,
     text: string,
     currentY: number,
     contentWidth: number
@@ -382,7 +385,7 @@ export class TechnicalTemplate {
   }
 
   renderCodeBlock(
-    doc: PDFDocument,
+    doc: PDFDoc,
     code: string,
     currentY: number,
     contentWidth: number,
@@ -424,7 +427,7 @@ export class TechnicalTemplate {
   }
 
   renderNote(
-    doc: PDFDocument,
+    doc: PDFDoc,
     text: string,
     currentY: number,
     contentWidth: number,
@@ -477,7 +480,7 @@ export class TechnicalTemplate {
     return currentY + boxHeight + 12;
   }
 
-  renderPageBreak(doc: PDFDocument): void {
+  renderPageBreak(doc: PDFDoc): void {
     doc.addPage();
   }
 

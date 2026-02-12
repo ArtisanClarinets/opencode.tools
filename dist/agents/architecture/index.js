@@ -22,7 +22,7 @@ class ArchitectureAgent {
             backlog
         };
     }
-    generateMermaidDiagram(content) {
+    generateMermaidDiagram(_content) {
         return `graph TD
     User[User Interface] --> API[API Gateway]
     API --> Auth[Auth Service]
@@ -34,7 +34,7 @@ class ArchitectureAgent {
     style DB fill:#dfd,stroke:#333
     `;
     }
-    generateBacklog(content) {
+    generateBacklog(_content) {
         return {
             epics: [
                 {

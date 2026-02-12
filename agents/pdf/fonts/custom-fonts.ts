@@ -1,4 +1,4 @@
-import { FontConfig, FontAsset } from '../assets/asset-config';
+import { FontConfig } from '../assets/asset-config';
 
 /**
  * Custom font configuration options

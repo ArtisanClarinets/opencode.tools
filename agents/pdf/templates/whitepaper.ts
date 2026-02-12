@@ -2,6 +2,9 @@ import PDFDocument from 'pdfkit';
 import { PDFStyling, PDFSection, TextStyle } from '../types';
 import { PageLayout } from '../rendering/page-layout';
 
+// Type alias for PDFDocument instance
+type PDFDoc = InstanceType<typeof PDFDocument>;
+
 export interface WhitepaperTemplateConfig {
   primaryColor: string;
   secondaryColor: string;
@@ -20,6 +23,7 @@ export interface WhitepaperTemplateConfig {
     left: number;
     right: number;
   };
+  paddingBottom?: number;
 }
 
 export class WhitepaperTemplate {
@@ -241,7 +245,7 @@ export class WhitepaperTemplate {
     };
   }
 
-  applyToCoverPage(doc: PDFDocument, pageWidth: number, pageHeight: number): void {
+  applyToCoverPage(doc: PDFDoc, pageWidth: number, pageHeight: number): void {
     doc.rect(0, 0, pageWidth, pageHeight).fill(this.config.coverBackgroundColor);
     
     doc.fillColor('#FFFFFF');
@@ -251,13 +255,13 @@ export class WhitepaperTemplate {
     doc.opacity(1);
   }
 
-  applyToDocument(doc: PDFDocument, pageWidth: number, pageHeight: number): void {
+  applyToDocument(doc: PDFDoc, pageWidth: number, pageHeight: number): void {
     doc.fillColor(this.config.backgroundColor);
     doc.rect(0, 0, pageWidth, pageHeight).fill();
   }
 
   renderHeader(
-    doc: PDFDocument,
+    doc: PDFDoc,
     text: string,
     pageWidth: number,
     margins: { top: number; left: number; right: number }
@@ -273,7 +277,7 @@ export class WhitepaperTemplate {
     
     for (let i = 0; i < parts.length; i++) {
       const partText = i < parts.length - 1 ? parts[i] : `Page ${doc.bufferedPageRange().count}`;
-      const textWidth = doc.widthOfStringAtSize(partText, 9);
+      const textWidth = doc.widthOfString(partText);
       
       doc.text(partText, xPosition, margins.top - 15, {
         align: 'left',
@@ -284,7 +288,7 @@ export class WhitepaperTemplate {
   }
 
   renderFooter(
-    doc: PDFDocument,
+    doc: PDFDoc,
     pageNumber: number,
     totalPages: number,
     pageWidth: number,
@@ -303,7 +307,7 @@ export class WhitepaperTemplate {
     doc.stroke();
 
     const pageNumberText = `${pageNumber}`;
-    const textWidth = doc.widthOfStringAtSize(pageNumberText, 9);
+    const textWidth = doc.widthOfString(pageNumberText);
     
     doc.text(
       pageNumberText,
@@ -313,7 +317,7 @@ export class WhitepaperTemplate {
     );
 
     const disclaimer = '© Copyright. All rights reserved.';
-    const disclaimerWidth = doc.widthOfStringAtSize(disclaimer, 8);
+    const disclaimerWidth = doc.widthOfString(disclaimer);
     doc.fontSize(8);
     doc.fillColor('#94A3B8');
     doc.text(disclaimer, margins.left, footerLineY + 15, {
@@ -322,7 +326,7 @@ export class WhitepaperTemplate {
   }
 
   renderSectionTitle(
-    doc: PDFDocument,
+    doc: PDFDoc,
     title: string,
     level: number,
     currentY: number,
@@ -364,7 +368,7 @@ export class WhitepaperTemplate {
   }
 
   renderBodyText(
-    doc: PDFDocument,
+    doc: PDFDoc,
     text: string,
     currentY: number,
     contentWidth: number
@@ -394,7 +398,7 @@ export class WhitepaperTemplate {
   }
 
   renderHighlightBox(
-    doc: PDFDocument,
+    doc: PDFDoc,
     text: string,
     currentY: number,
     contentWidth: number,
@@ -426,7 +430,7 @@ export class WhitepaperTemplate {
     return currentY + boxHeight + 16;
   }
 
-  renderPageBreak(doc: PDFDocument): void {
+  renderPageBreak(doc: PDFDoc): void {
     doc.addPage();
   }
 

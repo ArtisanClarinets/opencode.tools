@@ -1,76 +1,223 @@
+#!/usr/bin/env ts-node
+/**
+ * OpenCode Tools Native Integration Script
+ * 
+ * This script runs during npm install to:
+ * 1. Build the TypeScript project
+ * 2. Register the CLI globally
+ * 3. Integrate with OpenCode if available
+ * 4. Set up system prompt
+ */
+
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { execSync } from 'child_process';
 
-/**
- * OpenCode Native Integration Script
- * 
- * This script ensures OpenCode Tools are integrated directly into the
- * global OpenCode TUI by deploying configuration to standard locations.
- */
+const logger = {
+  info: (msg: string) => console.log(`[INFO] ${msg}`),
+  error: (msg: string) => console.error(`[ERROR] ${msg}`),
+  success: (msg: string) => console.log(`[SUCCESS] ${msg}`)
+};
 
-async function main() {
-    console.log('🚀 Integrating OpenCode Tools natively...');
-
-    const homeDir = os.homedir();
-    const currentProjectDir = process.cwd().replace(/\\/g, '/');
-    const opencodeJsonPath = path.join(currentProjectDir, 'opencode.json');
-    const globalOpencodeJsonPath = path.join(homeDir, 'opencode.json');
-    const agentsDir = path.join(homeDir, '.agents');
-
-    // 1. Load the project configuration
-    if (!fs.existsSync(opencodeJsonPath)) {
-        console.error('❌ Error: opencode.json not found in project root.');
-        process.exit(1);
-    }
-
-    const config = JSON.parse(fs.readFileSync(opencodeJsonPath, 'utf-8'));
-
-    // 2. Fix the MCP server path to be absolute to this installation
-    const fixPath = (cmd: string[]) => cmd.map(arg => arg.replace('{project_root}', currentProjectDir));
-
-    if (config.mcp['opencode-tools']) {
-        config.mcp['opencode-tools'].command = fixPath(config.mcp['opencode-tools'].command);
-    }
-    if (config.mcp['discovery.session.export']) {
-        config.mcp['discovery.session.export'].command = fixPath(config.mcp['discovery.session.export'].command);
-    }
-
-    // 3. Deploy to ~/opencode.json (Global Config)
-    console.log(`📝 Deploying global config to ${globalOpencodeJsonPath}...`);
-    fs.writeFileSync(globalOpencodeJsonPath, JSON.stringify(config, null, 2));
-
-    // 4. Deploy to ~/.agents/ (Additional Tools/Skills)
-    if (!fs.existsSync(agentsDir)) {
-        console.log(`📁 Creating agents directory: ${agentsDir}...`);
-        fs.mkdirSync(agentsDir, { recursive: true });
-    }
-
-    console.log(`📦 Deploying agent definitions to ${agentsDir}...`);
-    for (const [agentId, agentConfig] of Object.entries(config.agent)) {
-        const agentFile = path.join(agentsDir, `${agentId}.json`);
-        const wrappedAgent = {
-            agent: {
-                [agentId]: agentConfig
-            }
-        };
-        fs.writeFileSync(agentFile, JSON.stringify(wrappedAgent, null, 2));
-        console.log(`   ✅ ${agentId} deployed.`);
-    }
-
-    // 5. Deploy MCP skills to ~/.agents/skills (if supported)
-    const skillsDir = path.join(agentsDir, 'skills');
-    if (!fs.existsSync(skillsDir)) {
-        fs.mkdirSync(skillsDir, { recursive: true });
-    }
-    fs.copyFileSync(opencodeJsonPath, path.join(skillsDir, 'opencode-tools.json'));
-
-    console.log('\n✅ Native integration complete!');
-    console.log('✨ You can now use these agents directly in your native OpenCode TUI:');
-    Object.keys(config.agent).forEach(id => console.log(`   - opencode --agent ${id}`));
+interface IntegrationConfig {
+  opancodeDir: string;
+  systemPromptPath: string;
+  cliPath: string;
 }
 
-main().catch(err => {
-    console.error('❌ Integration failed:', err);
+function getOpenCodeDirectory(): string | null {
+  // Try to find OpenCode installation
+  const possiblePaths = [
+    path.join(process.env.APPDATA || '', 'OpenCode'),
+    path.join(process.env.HOME || '', '.opencode'),
+    path.join(process.env.HOME || '', 'OpenCode'),
+    '/usr/local/share/opencode',
+    '/opt/opencode'
+  ];
+
+  for (const dir of possiblePaths) {
+    if (fs.existsSync(dir)) {
+      return dir;
+    }
+  }
+
+  return null;
+}
+
+function integrateWithOpenCode(config: IntegrationConfig): void {
+  logger.info('Checking for OpenCode installation...');
+  
+  const opencodeDir = getOpenCodeDirectory();
+  if (!opencodeDir) {
+    logger.info('OpenCode not found. CLI will be available as standalone tool.');
+    return;
+  }
+
+  logger.success(`Found OpenCode at: ${opencodeDir}`);
+
+  // Install system prompt
+  const promptsDir = path.join(opencodeDir, 'prompts');
+  if (!fs.existsSync(promptsDir)) {
+    fs.mkdirSync(promptsDir, { recursive: true });
+  }
+
+  const systemPromptDest = path.join(promptsDir, 'opencode-tools-system.md');
+  const systemPromptSrc = path.join(__dirname, '..', 'opencode-system-prompt.md');
+  
+  if (fs.existsSync(systemPromptSrc)) {
+    fs.copyFileSync(systemPromptSrc, systemPromptDest);
+    logger.success(`System prompt installed to: ${systemPromptDest}`);
+  }
+
+  // Register MCP server configuration
+  const mcpConfigPath = path.join(opencodeDir, 'mcp.json');
+  const mcpConfig = fs.existsSync(mcpConfigPath) 
+    ? JSON.parse(fs.readFileSync(mcpConfigPath, 'utf-8'))
+    : { servers: {} };
+
+  mcpConfig.servers['opencode-tools'] = {
+    name: 'OpenCode Tools',
+    type: 'stdio',
+    command: 'opencode-tools',
+    args: ['mcp'],
+    description: 'Complete developer team automation'
+  };
+
+  fs.writeFileSync(mcpConfigPath, JSON.stringify(mcpConfig, null, 2));
+  logger.success('MCP server configuration updated');
+}
+
+function setupGlobalCLI(): void {
+  logger.info('Setting up global CLI...');
+  
+  const packageRoot = path.join(__dirname, '..');
+  const cliPath = path.join(packageRoot, 'dist', 'cli.js');
+  
+  if (!fs.existsSync(cliPath)) {
+    logger.error(`CLI not found at: ${cliPath}`);
+    logger.info('Run "npm run build" first');
+    return;
+  }
+
+  // Make CLI executable
+  try {
+    fs.chmodSync(cliPath, 0o755);
+    logger.success('CLI permissions set');
+  } catch (error) {
+    logger.error(`Failed to set CLI permissions: ${error}`);
+  }
+
+  // Create symlink if needed (Unix systems)
+  if (process.platform !== 'win32') {
+    try {
+      const globalBin = '/usr/local/bin';
+      if (fs.existsSync(globalBin)) {
+        const symlinkPath = path.join(globalBin, 'opencode-tools');
+        if (!fs.existsSync(symlinkPath)) {
+          fs.symlinkSync(cliPath, symlinkPath);
+          logger.success(`Symlink created: ${symlinkPath} -> ${cliPath}`);
+        }
+      }
+    } catch (error) {
+      logger.info('Note: Could not create global symlink. Use "npm link" or install globally.');
+    }
+  }
+}
+
+/**
+ * Register any bundled plugin manifests found under the repository's 'vantus_agents' directory into
+ * the OpenCode installation (if available).
+ */
+function registerBundledPlugins(packageRoot: string, opencodeDir: string): void {
+  try {
+    const agentsDir = path.join(packageRoot, 'vantus_agents');
+    if (!fs.existsSync(agentsDir)) return;
+
+    const entries = fs.readdirSync(agentsDir, { withFileTypes: true });
+    const registered: string[] = [];
+
+    for (const e of entries) {
+      if (!e.isDirectory()) continue;
+      const manifestPath = path.join(agentsDir, e.name, 'manifest.json');
+      if (!fs.existsSync(manifestPath)) continue;
+
+      try {
+        const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+        // Copy manifest into opencode's plugins directory
+        const pluginsDir = path.join(opencodeDir, 'plugins');
+        if (!fs.existsSync(pluginsDir)) fs.mkdirSync(pluginsDir, { recursive: true });
+
+        const destPath = path.join(pluginsDir, `${manifest.id.replace(/[^a-z0-9_.-]/gi, '_')}.json`);
+        fs.writeFileSync(destPath, JSON.stringify(manifest, null, 2));
+        registered.push(manifest.id);
+      } catch (err) {
+        // ignore malformed manifest
+      }
+    }
+
+    if (registered.length > 0) {
+      console.log(`Registered bundled plugins in OpenCode: ${registered.join(', ')}`);
+    }
+  } catch (err) {
+    // best-effort only
+  }
+}
+
+function displayWelcomeMessage(): void {
+  console.log(`
+╔═══════════════════════════════════════════════════════════════╗
+║                                                               ║
+║              OpenCode Tools - Installation Complete           ║
+║                                                               ║
+╠═══════════════════════════════════════════════════════════════╣
+║                                                               ║
+║  Available commands:                                          ║
+║  • opencode-tools research <company>    - Research agent      ║
+║  • opencode-tools docs <input>          - Documentation       ║
+║  • opencode-tools architect <prd>       - Architecture        ║
+║  • opencode-tools pdf <config>          - PDF generation      ║
+║  • opencode-tools tui                   - Interactive TUI     ║
+║  • opencode-tools orchestrate           - Full team mode      ║
+║                                                               ║
+║  Short alias: oct <command>                                   ║
+║                                                               ║
+╚═══════════════════════════════════════════════════════════════╝
+  `);
+}
+
+function main(): void {
+  logger.info('OpenCode Tools Native Integration');
+  logger.info('=================================\n');
+
+  try {
+    // Setup global CLI
+    setupGlobalCLI();
+
+    // Integrate with OpenCode if available
+    const config: IntegrationConfig = {
+      opancodeDir: getOpenCodeDirectory() || '',
+      systemPromptPath: '',
+      cliPath: path.join(__dirname, '..', 'dist', 'cli.js')
+    };
+    integrateWithOpenCode(config);
+
+    // Discover and register bundled plugin manifests under vantus_agents
+    registerBundledPlugins(process.cwd(), config.opancodeDir || path.join(os.homedir(), '.opencode'));
+
+    // Display welcome
+    displayWelcomeMessage();
+
+    logger.success('Integration complete!');
+  } catch (error) {
+    logger.error(`Integration failed: ${error}`);
     process.exit(1);
-});
+  }
+}
+
+// Run main if called directly
+if (require.main === module) {
+  main();
+}
+
+export { integrateWithOpenCode, setupGlobalCLI };

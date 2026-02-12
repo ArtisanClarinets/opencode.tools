@@ -1,18 +1,67 @@
 # OpenCode Tools
 
-Automated client project research, documentation, and code generation toolkit.
+# OpenCode Tools
+
+**A Complete Apple-Level Engineering Team in a Single Package**
+
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/opencode/ai-tool)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
+Automated client project research, documentation, and code generation toolkit with self-iterative orchestration.
 
 ## Overview
 
-OpenCode Tools is a comprehensive suite of autonomous agents designed to streamline client project workflows:
+OpenCode Tools is a comprehensive suite of autonomous agents that acts as your complete development team:
 
-- **Research Agent**: Automated client and industry research
-- **Documentation Agent**: PRD, SOW, and delivery requirements generation
-- **Code Generation Agent**: Project scaffolding and feature implementation
-- **QA Agent**: Test planning and automated testing
-- **Delivery Agent**: Project handoff and deployment support
+- **Research Agent**: Automated client and industry intelligence gathering
+- **Documentation Agent**: World-class PRD, SOW, and specification generation  
+- **Architecture Agent**: System design and backlog creation
+- **PDF Agent**: Professional document generation with charts and diagrams
+- **Code Generation Agent**: Full-stack project scaffolding and implementation
+- **Orchestrator Agent**: Self-iterative coordination of all agents
+
+## Global Installation
+
+```bash
+# Install globally from npm (when published)
+npm install -g opencode-tools
+
+# Or install from source
+git clone https://github.com/opencode/ai-tool.git
+cd opencode-tools
+npm install -g .
+```
 
 ## Quick Start
+
+### Command Line Interface
+
+```bash
+# Research a company
+opencode-tools research "Acme Corp" --industry "fintech"
+
+# Generate documentation
+opencode-tools docs ./research-output.json
+
+# Create architecture
+opencode-tools architect ./prd.md
+
+# Launch interactive TUI
+opencode-tools tui
+
+# Full orchestration mode (all phases)
+opencode-tools orchestrate --project "MyApp" --mode full
+```
+
+### Short Alias
+
+```bash
+# All commands work with 'oct' shorthand
+oct research "Acme Corp"
+oct orchestrate --project "MyApp"
+```
+
+### Local Development
 
 ```bash
 # Install dependencies
@@ -21,8 +70,11 @@ npm install
 # Build the project
 npm run build
 
-# Run the interactive TUI (Text User Interface)
+# Run the interactive TUI
 npm run tui
+
+# Run tests
+npm test
 ```
 
 ## Project Structure

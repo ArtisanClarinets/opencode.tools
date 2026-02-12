@@ -1,3 +1,5 @@
+export { TUIResearchAgent } from './tui-research-agent';
+export type { ResearchParams, ResearchResult } from './tui-research-agent';
 export { TUIPDFAgent } from './tui-pdf-agent';
 export { PDFInteractiveWizard } from './pdf-interactive-wizard';
 export { ChartBuilder } from './chart-builder';

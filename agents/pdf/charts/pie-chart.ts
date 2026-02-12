@@ -20,7 +20,8 @@ export function createPieChartConfig(
   options?: Partial<PieChartOptions>
 ): ChartConfig {
   const colors = generateChartColors(labels.length);
-  const textColors = colors.map(color => getContrastColor(color));
+  // Text colors for accessibility - used for label rendering
+  colors.map(color => getContrastColor(color));
 
   const config: ChartConfig = {
     id: `pie-chart-${Date.now()}`,

@@ -19,7 +19,7 @@ class DocumentationAgent {
         logger_1.logger.info('Documentation Agent completed', { agent: this.agentName });
         return { prd, sow };
     }
-    constructPRD(dossier, brief) {
+    constructPRD(dossier, _brief) {
         return `
 # Product Requirements Document (PRD)
 

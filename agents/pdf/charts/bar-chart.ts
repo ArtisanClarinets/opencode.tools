@@ -1,12 +1,9 @@
-import { ChartConfig, ChartType } from '../graphics/chart-config';
+import { ChartConfig } from '../graphics/chart-config';
 import {
   generateChartColors,
   getDefaultFontFamily,
-  getDefaultFontSize,
   getDefaultFontColor,
-  calculateChartDimensions,
-  formatLabel,
-  validateDataPoints
+  formatLabel
 } from './chart-helpers';
 
 export interface BarChartOptions {
@@ -97,7 +94,7 @@ export function createBarChartConfig(
       labels: labels.map(label => formatLabel(label)),
       datasets: chartDatasets
     },
-    options: chartOptions as any,
+    options: chartOptions,
     width: 800,
     height: 400,
     style: {

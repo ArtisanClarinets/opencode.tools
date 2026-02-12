@@ -38,6 +38,8 @@ exports.registerTUITools = registerTUITools;
 const tui_agents_1 = require("./tui-agents");
 const tui_architecture_agent_1 = require("./tui-agents/tui-architecture-agent");
 const tui_codegen_agent_1 = require("./tui-agents/tui-codegen-agent");
+const child_process_1 = require("child_process");
+const discovery_1 = require("./plugins/discovery");
 /**
  * Register TUI tools with OpenCode
  */
@@ -108,6 +110,51 @@ function registerTUITools() {
             return { success: true };
         }
     });
+    // Discover bundled plugin manifests and register them as TUI tools (read-only discovery)
+    const manifests = (0, discovery_1.discoverBundledPlugins)();
+    for (const manifest of manifests) {
+        try {
+            const toolId = manifest.id || `plugin:${manifest.name}`;
+            const toolName = manifest.name || toolId;
+            const description = `Plugin adapterType=${manifest.adapterType} capabilities=${(manifest.capabilities || []).join(', ')} license=${manifest.license || 'unknown'}`;
+            tools.push({
+                id: toolId,
+                name: toolName,
+                description,
+                category: 'research',
+                handler: async (args) => {
+                    // By default return manifest metadata. To execute the plugin set args.run = true
+                    if (!args || !args.run) {
+                        return { manifest };
+                    }
+                    // Execution requested - run the entryPoint.cmd if provided (best-effort)
+                    const cmd = manifest.entryPoint?.cmd || [];
+                    if (!Array.isArray(cmd) || cmd.length === 0) {
+                        throw new Error('No executable command declared in plugin manifest');
+                    }
+                    const child = (0, child_process_1.spawn)(cmd[0], cmd.slice(1), { stdio: ['pipe', 'pipe', 'pipe'] });
+                    let stdout = '';
+                    let stderr = '';
+                    child.stdout.on('data', d => (stdout += d.toString()));
+                    child.stderr.on('data', d => (stderr += d.toString()));
+                    const exitCode = await new Promise((resolve) => child.on('close', resolve));
+                    if (exitCode !== 0) {
+                        throw new Error(`Plugin process exited with code=${exitCode} stderr=${stderr}`);
+                    }
+                    // Try parsing JSON output, otherwise return raw stdout
+                    try {
+                        return JSON.parse(stdout);
+                    }
+                    catch (err) {
+                        return { stdout, stderr };
+                    }
+                }
+            });
+        }
+        catch (err) {
+            // ignore malformed manifest
+        }
+    }
     return tools;
 }
 /**

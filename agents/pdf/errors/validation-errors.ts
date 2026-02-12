@@ -15,7 +15,7 @@ export class InputValidationError extends BaseError {
   constructor(
     message: string,
     public field?: string,
-    public value?: any,
+    public value?: unknown,
     public expectedType?: string
   ) {
     super(`Input Validation Error: ${message}`);
@@ -27,7 +27,7 @@ export class SchemaValidationError extends BaseError {
   constructor(
     message: string,
     public schemaPath?: string,
-    public validationDetails?: Record<string, any>
+    public validationDetails?: Record<string, unknown>
   ) {
     super(`Schema Validation Error: ${message}`);
     this.name = 'SchemaValidationError';

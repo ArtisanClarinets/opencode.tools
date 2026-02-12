@@ -45,7 +45,7 @@ export const createPDFInputWithSections = (sectionCount: number = 10): PDFInput 
     sections.push({
       id: `section-${i}`,
       title: `Section ${i}`,
-      level: i <= 4 ? String(i) : '1' as '1' | '2' | '3' | '4',
+      level: (i <= 4 ? String(i) : '1') as '1' | '2' | '3' | '4',
       content: `Content for section ${i}. This is some sample text that will be rendered in the PDF document.`,
     });
   }
@@ -129,6 +129,9 @@ export const createPDFInputWithSecurity = (): PDFInput => {
         copy: true,
         modify: true,
         annotate: true,
+        formFields: true,
+        contentAccessibility: true,
+        documentAssembly: true,
       },
     },
   });

@@ -37,6 +37,7 @@ export interface TextStyle {
   lineHeight?: number;
   textAlign?: 'left' | 'center' | 'right' | 'justify';
   textDecoration?: 'none' | 'underline' | 'overline' | 'line-through';
+  paddingBottom?: number;
 }
 
 export interface ParagraphStyle extends TextStyle {

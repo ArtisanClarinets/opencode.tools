@@ -1,45 +1,23 @@
-export { StandardTemplate, createStandardTemplate, StandardTemplateConfig } from './standard';
-export { WhitepaperTemplate, createWhitepaperTemplate, WhitepaperTemplateConfig } from './whitepaper';
-export { TechnicalTemplate, createTechnicalTemplate, TechnicalTemplateConfig } from './technical';
+export type { 
+  StandardTemplateConfig,
+  WhitepaperTemplateConfig, 
+  TechnicalTemplateConfig,
+  TemplateConfig,
+  TemplateType 
+} from './types';
 
-export type TemplateConfig = 
-  | StandardTemplateConfig 
-  | WhitepaperTemplateConfig 
-  | TechnicalTemplateConfig;
+export { 
+  createTemplate,
+  getTemplateName,
+  getTemplateStyling
+} from './template-registry';
 
-export type TemplateType = 'standard' | 'whitepaper' | 'technical';
+// Re-export template classes
+export { StandardTemplate } from './standard';
+export { WhitepaperTemplate } from './whitepaper';
+export { TechnicalTemplate } from './technical';
 
-export function createTemplate(
-  type: TemplateType,
-  config?: Partial<TemplateConfig>
-): StandardTemplate | WhitepaperTemplate | TechnicalTemplate {
-  switch (type) {
-    case 'standard':
-      return new StandardTemplate(config as Partial<StandardTemplateConfig>);
-    case 'whitepaper':
-      return new WhitepaperTemplate(config as Partial<WhitepaperTemplateConfig>);
-    case 'technical':
-      return new TechnicalTemplate(config as Partial<TechnicalTemplateConfig>);
-    default:
-      return new StandardTemplate(config as Partial<StandardTemplateConfig>);
-  }
-}
-
-export function getTemplateName(template: StandardTemplate | WhitepaperTemplate | TechnicalTemplate): string {
-  return template.getTemplateName();
-}
-
-export function getTemplateStyling(
-  template: StandardTemplate | WhitepaperTemplate | TechnicalTemplate
-) {
-  return template.getStyling();
-}
-
-export {
-  StandardTemplate,
-  WhitepaperTemplate,
-  TechnicalTemplate,
-  createStandardTemplate,
-  createWhitepaperTemplate,
-  createTechnicalTemplate,
-};
+// Re-export template creation functions
+export { createStandardTemplate } from './standard';
+export { createWhitepaperTemplate } from './whitepaper';
+export { createTechnicalTemplate } from './technical';

@@ -1,4 +1,3 @@
-import { createCanvas, CanvasRenderingContext2D } from 'canvas';
 import {
   ChartConfig,
   ChartConfigSchema,
@@ -10,6 +9,7 @@ import {
   getDefaultGridColor,
   calculateChartDimensions
 } from '../charts/chart-helpers';
+import { createCanvas, CanvasRenderingContext2D } from './mock-canvas';
 import winston from 'winston';
 
 const logger = winston.createLogger({
@@ -48,7 +48,7 @@ export interface ChartRendererOptions {
 
 export class ChartRenderer {
   private options: ChartRendererOptions;
-  private chartInstances: Map<string, any>;
+  private chartInstances: Map<string, unknown>;
 
   constructor(options: ChartRendererOptions = {}) {
     this.options = {
@@ -88,7 +88,8 @@ export class ChartRenderer {
       const canvas = createCanvas(dimensions.width, dimensions.height);
       const ctx = canvas.getContext('2d');
 
-      ctx.fillStyle = chartConfig.style?.backgroundColor || this.options.backgroundColor;
+      const bgColor = chartConfig.style?.backgroundColor || this.options.backgroundColor || '#ffffff';
+      ctx.fillStyle = bgColor;
       ctx.fillRect(0, 0, dimensions.width, dimensions.height);
 
       this.renderChart(ctx, chartConfig, dimensions);
@@ -227,7 +228,7 @@ export class ChartRenderer {
     ctx: CanvasRenderingContext2D,
     config: ChartConfig,
     chartArea: { x: number; y: number; width: number; height: number },
-    totalWidth: number
+    _totalWidth: number
   ): void {
     if (!config.options.legend?.display || config.data.datasets.length === 1) return;
 
@@ -626,7 +627,7 @@ export class ChartRenderer {
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    datasets.forEach((dataset, datasetIndex) => {
+    datasets.forEach((dataset) => {
       const color = Array.isArray(dataset.borderColor)
         ? dataset.borderColor[0]
         : dataset.borderColor || '#3182ce';

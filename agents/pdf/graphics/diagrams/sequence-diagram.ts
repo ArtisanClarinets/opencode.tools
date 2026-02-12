@@ -38,9 +38,7 @@ export function createSequenceDiagramDefinition(config: SequenceConfig): string 
   }
 
   if (config.messages) {
-    const noteAdded = false;
     for (const msg of config.messages) {
-      const direction = msg.direction || '->';
       const solidLine = msg.type === 'dotted' ? '-->' : '->>';
       const messageStr = `${msg.from}${solidLine}${msg.to}: ${msg.message}\n`;
       definition += `  ${messageStr}`;

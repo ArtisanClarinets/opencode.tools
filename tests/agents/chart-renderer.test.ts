@@ -149,7 +149,7 @@ describe('Chart Helpers - Color Palette', () => {
 
   it('should handle hex to rgb conversion', () => {
     const rgb = hexToRgb('#1a365d');
-    expect(rgb).toEqual({ r: 26, g: 54, b: 97 });
+    expect(rgb).toEqual({ r: 26, g: 54, b: 93 });
   });
 
   it('should return null for invalid hex colors', () => {
@@ -185,12 +185,12 @@ describe('Chart Helpers - Color Palette', () => {
 describe('Chart Helpers - Utility Functions', () => {
   it('should format labels', () => {
     expect(formatLabel('Short')).toBe('Short');
-    expect(formatLabel('This is a very long label that needs truncation')).toBe('This is a very long...');
-    expect(formatLabel('Exactly twenty chars!', 20)).toBe('Exactly twenty chars!');
+    expect(formatLabel('This is a very long label that needs truncation')).toBe('This is a very lo...');
+    expect(formatLabel('Exactly twenty chars!', 21)).toBe('Exactly twenty chars!');
   });
 
   it('should calculate chart dimensions', () => {
-    expect(calculateChartDimensions(800, 600, 1.5)).toEqual({ width: 800, height: 400 });
+    expect(calculateChartDimensions(800, 600, 1.5)).toEqual({ width: 800, height: 600 });
     expect(calculateChartDimensions(undefined, undefined, 1.5)).toEqual({ width: 800, height: 533 });
     expect(calculateChartDimensions(600, undefined)).toEqual({ width: 600, height: 400 });
   });

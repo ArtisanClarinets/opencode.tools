@@ -237,7 +237,7 @@ export class AssetManager {
     const imageBuffer = await this.loadSource(asset.source);
 
     let processedBuffer = imageBuffer;
-    let format: AssetFormat = asset.format ?? 'png';
+    const format: AssetFormat = asset.format ?? 'png';
     let width: number | undefined;
     let height: number | undefined;
 

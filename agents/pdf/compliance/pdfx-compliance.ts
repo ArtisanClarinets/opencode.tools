@@ -118,14 +118,14 @@ export class PDFXCompliance {
     const issues: PDFXIssue[] = [];
 
     try {
-      const pdfDoc = PDFDocument.load(pdfBuffer);
+      const pdfDoc = await PDFDocument.load(pdfBuffer);
 
-      const title = pdfDoc.getTitle();
-      const author = pdfDoc.getAuthor();
-      const creator = pdfDoc.getCreator();
-      const producer = pdfDoc.getProducer();
-      const creationDate = pdfDoc.getCreationDate();
-      const modificationDate = pdfDoc.getModificationDate();
+      const title = await pdfDoc.getTitle();
+      const author = await pdfDoc.getAuthor();
+      const creator = await pdfDoc.getCreator();
+      const producer = await pdfDoc.getProducer();
+      const creationDate = await pdfDoc.getCreationDate();
+      const modificationDate = await pdfDoc.getModificationDate();
 
       if (!title) {
         issues.push({
@@ -175,7 +175,7 @@ export class PDFXCompliance {
         });
       }
 
-      const pages = pdfDoc.getPages();
+      const pages = await pdfDoc.getPages();
       if (pages.length === 0) {
         issues.push({
           type: 'error',

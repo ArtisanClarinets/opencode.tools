@@ -1,7 +1,10 @@
 import PDFDocument from 'pdfkit';
+
+// Type alias for PDFDocument instance
+type PDFDoc = InstanceType<typeof PDFDocument>;
 import fs from 'fs';
 import path from 'path';
-import { logger } from '../../src/runtime/logger';
+import { logger } from 'src/runtime/logger';
 
 interface FontMetrics {
   family: string;
@@ -60,7 +63,7 @@ export class FontManager {
     logger.info('FontManager initialized');
   }
 
-  async registerDefaultFonts(doc: PDFDocument): Promise<void> {
+  async registerDefaultFonts(doc: PDFDoc): Promise<void> {
     logger.debug('Registering default PDFKit fonts');
 
     for (const font of DEFAULT_FONTS) {
@@ -98,7 +101,7 @@ export class FontManager {
     return registeredFont;
   }
 
-  async registerCustomFont(doc: PDFDocument, fontFamily: string): Promise<void> {
+  async registerCustomFont(doc: PDFDoc, fontFamily: string): Promise<void> {
     logger.info('Registering custom font family', { fontFamily });
 
     const fontExtensions = ['.ttf', '.otf', '.woff', '.woff2'];
@@ -150,7 +153,7 @@ export class FontManager {
   }
 
   async registerFontFromFile(
-    doc: PDFDocument,
+    doc: PDFDoc,
     fontPath: string,
     fontName?: string
   ): Promise<void> {
@@ -478,7 +481,7 @@ export class FontManager {
   }
 
   async embedFont(
-    doc: PDFDocument,
+    doc: PDFDoc,
     fontName: string,
     text: string
   ): Promise<void> {

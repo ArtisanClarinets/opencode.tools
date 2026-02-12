@@ -5,15 +5,13 @@ import {
   DiagramConfig,
   DiagramType,
   MermaidOptions,
-  DiagramRenderingError,
   createDiagramError,
   logger
 } from './diagram-config';
 import {
   initializeMermaid,
   parseDiagram,
-  generateSVG,
-  validateMermaidSyntax
+  generateSVG
 } from './mermaid-utils';
 
 export class DiagramEngine {

@@ -21,6 +21,7 @@ export const TextStyleSchema = z.object({
   marginTop: z.number().optional(),
   marginBottom: z.number().optional(),
   padding: z.number().optional(),
+  paddingBottom: z.number().optional(),
   borderWidth: z.number().optional(),
   borderColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
   borderStyle: z.enum(['none', 'solid', 'dashed', 'dotted']).optional(),

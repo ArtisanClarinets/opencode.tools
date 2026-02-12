@@ -143,7 +143,6 @@ export function calculateLabelPositions(
   fontSize: number = 12
 ): number[] {
   const positions: number[] = [];
-  const totalChars = labels.reduce((sum, label) => sum + label.length, 0);
   const spacing = Math.min(availableWidth / labels.length, fontSize * 3);
 
   for (let i = 0; i < labels.length; i++) {
@@ -192,17 +191,18 @@ export function validateDataPoints(
   chartType: string
 ): { valid: boolean; error?: string } {
   if (chartType === 'scatter' || chartType === 'bubble') {
-    const hasValidStructure = (item: any): item is { x: number; y: number } => {
-      return typeof item === 'object' && typeof item.y === 'number' && typeof item.x === 'number';
-    };
     const firstPoint = data[0];
-    if (!hasValidStructure(firstPoint)) {
+    if (typeof firstPoint !== 'object' || firstPoint === null) {
+      return { valid: false, error: `${chartType} charts require objects with x and y properties` };
+    }
+    const point = firstPoint as { x?: number; y?: number };
+    if (typeof point.y !== 'number' || typeof point.x !== 'number') {
       return { valid: false, error: `${chartType} charts require objects with x and y properties` };
     }
   }
 
   for (let i = 0; i < data.length; i++) {
-    const value = typeof data[i] === 'number' ? data[i] : (data[i] as any).y;
+    const value = typeof data[i] === 'number' ? data[i] : Number((data[i] as { y?: number }).y);
     if (typeof value !== 'number' || isNaN(value)) {
       return { valid: false, error: `Invalid data point at index ${i}` };
     }

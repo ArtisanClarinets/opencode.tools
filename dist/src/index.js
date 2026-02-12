@@ -50,7 +50,24 @@ Object.defineProperty(exports, "TUIResearchAgent", { enumerable: true, get: func
  * Get all available TUI tools
  */
 function getAvailableTools() {
-    return (0, tui_integration_1.registerTUITools)();
+    // Also include discovered plugin manifests as metadata
+    const tools = (0, tui_integration_1.registerTUITools)();
+    try {
+        const { discoverBundledPlugins, discoverSystemPlugins } = require('./plugins/discovery');
+        const manifests = discoverBundledPlugins();
+        for (const m of manifests) {
+            tools.push({ id: m.id, name: m.name, description: `Discovered plugin (${m.adapterType})`, category: 'research', handler: async () => ({ manifest: m }) });
+        }
+        // Also include any plugins already registered in the user's OpenCode home
+        const system = discoverSystemPlugins();
+        for (const m of system) {
+            tools.push({ id: m.id, name: m.name, description: `System-registered plugin (${m.adapterType})`, category: 'research', handler: async () => ({ manifest: m }) });
+        }
+    }
+    catch (err) {
+        // ignore
+    }
+    return tools;
 }
 /**
  * Execute a specific tool by ID (called by TUI)

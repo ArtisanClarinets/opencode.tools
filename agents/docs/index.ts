@@ -28,7 +28,7 @@ export class DocumentationAgent {
         return { prd, sow };
     }
 
-    private constructPRD(dossier: ResearchDossier, brief: string): string {
+    private constructPRD(dossier: ResearchDossier, _brief: string): string {
         return `
 # Product Requirements Document (PRD)
 

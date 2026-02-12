@@ -41,7 +41,7 @@ export class ArchitectureAgent {
         };
     }
 
-    private generateMermaidDiagram(content: string): string {
+    private generateMermaidDiagram(_content: string): string {
         return `graph TD
     User[User Interface] --> API[API Gateway]
     API --> Auth[Auth Service]
@@ -54,7 +54,7 @@ export class ArchitectureAgent {
     `;
     }
 
-    private generateBacklog(content: string) {
+    private generateBacklog(_content: string) {
         return {
             epics: [
                 {

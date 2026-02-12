@@ -29,10 +29,10 @@ export declare const researchTools: {
     /**
      * Run research from brief file
      */
-    fromBrief(briefPath: string, outputPath?: string): Promise<any>;
+    fromBrief(briefPath: string, outputPath?: string): Promise<import("./tui-agents").ResearchResult>;
     /**
      * Run quick research
      */
-    quick(company: string, industry: string, description?: string): Promise<any>;
+    quick(company: string, industry: string, description?: string): Promise<import("./tui-agents").ResearchResult>;
 };
 //# sourceMappingURL=index.d.ts.map

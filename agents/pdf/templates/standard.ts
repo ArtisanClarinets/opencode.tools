@@ -2,6 +2,9 @@ import PDFDocument from 'pdfkit';
 import { PDFStyling, PDFSection, TextStyle } from '../types';
 import { PageLayout } from '../rendering/page-layout';
 
+// Type alias for PDFDocument instance
+type PDFDoc = InstanceType<typeof PDFDocument>;
+
 export interface StandardTemplateConfig {
   primaryColor: string;
   secondaryColor: string;
@@ -227,13 +230,13 @@ export class StandardTemplate {
     };
   }
 
-  applyToDocument(doc: PDFDocument, pageWidth: number, pageHeight: number): void {
+  applyToDocument(doc: PDFDoc, pageWidth: number, pageHeight: number): void {
     doc.fillColor(this.config.backgroundColor);
     doc.rect(0, 0, pageWidth, pageHeight).fill();
   }
 
   renderHeader(
-    doc: PDFDocument,
+    doc: PDFDoc,
     text: string,
     pageWidth: number,
     margins: { top: number; left: number; right: number }
@@ -249,7 +252,7 @@ export class StandardTemplate {
   }
 
   renderFooter(
-    doc: PDFDocument,
+    doc: PDFDoc,
     pageNumber: number,
     totalPages: number,
     pageWidth: number,
@@ -261,7 +264,7 @@ export class StandardTemplate {
     doc.fillColor('#6B7280');
     
     const pageNumberText = `Page ${pageNumber} of ${totalPages}`;
-    const textWidth = doc.widthOfStringAtSize(pageNumberText, 10);
+    const textWidth = doc.widthOfString(pageNumberText);
     
     doc.text(
       pageNumberText,
@@ -272,7 +275,7 @@ export class StandardTemplate {
   }
 
   renderSectionTitle(
-    doc: PDFDocument,
+    doc: PDFDoc,
     title: string,
     level: number,
     currentY: number,
@@ -295,7 +298,7 @@ export class StandardTemplate {
   }
 
   renderBodyText(
-    doc: PDFDocument,
+    doc: PDFDoc,
     text: string,
     currentY: number,
     contentWidth: number
@@ -324,7 +327,7 @@ export class StandardTemplate {
     return newY + (style.marginBottom || 0);
   }
 
-  renderPageBreak(doc: PDFDocument): void {
+  renderPageBreak(doc: PDFDoc): void {
     doc.addPage();
   }
 
