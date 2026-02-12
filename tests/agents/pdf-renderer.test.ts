@@ -1,9 +1,79 @@
-import { PDFRenderer } from '../../agents/pdf/rendering/pdf-renderer';
-import { FontManager } from '../../agents/pdf/rendering/font-manager';
-import { PageLayout } from '../../agents/pdf/rendering/page-layout';
-import { StandardTemplate } from '../../agents/pdf/templates/standard';
-import { WhitepaperTemplate } from '../../agents/pdf/templates/whitepaper';
-import { TechnicalTemplate } from '../../agents/pdf/templates/technical';
+// Register non-hoisted mocks at runtime so we control module loading order.
+// Use jest.doMock with factories that return our manual __mocks__ implementations.
+jest.doMock('pdfkit', () => require('../../__mocks__/pdfkit'));
+jest.doMock('pdf-lib', () => require('../../__mocks__/pdf-lib'));
+
+// We'll load the modules that depend on pdfkit/pdf-lib only after the mocks are
+// registered using jest.isolateModules to avoid import hoisting issues.
+let PDFRenderer: any;
+let FontManager: any;
+let PageLayout: any;
+let StandardTemplate: any;
+let WhitepaperTemplate: any;
+let TechnicalTemplate: any;
+
+let runtimePDFDoc: any = null;
+
+// Load mocked pdfkit and the production modules in an isolated module registry
+jest.isolateModules(() => {
+  const PDFKit = require('pdfkit');
+  try {
+    const ctor = (typeof PDFKit === 'function') ? PDFKit : (PDFKit && PDFKit.default) ? PDFKit.default : null;
+    if (ctor && typeof ctor.__getDoc === 'function') {
+      runtimePDFDoc = ctor.__getDoc();
+    } else if (ctor && typeof ctor === 'function') {
+      runtimePDFDoc = ctor();
+    } else if (PDFKit && typeof PDFKit === 'object' && typeof PDFKit.__getDoc === 'function') {
+      runtimePDFDoc = PDFKit.__getDoc();
+    } else if (PDFKit && typeof PDFKit === 'object') {
+      runtimePDFDoc = PDFKit;
+    }
+  } catch (e) {
+    runtimePDFDoc = null;
+  }
+
+  // Fallback safe mock if runtimePDFDoc is not provided by the manual mock
+  if (!runtimePDFDoc) {
+    const pages: any[] = [{ width: 612, height: 792, drawRectangle: () => {} }];
+    runtimePDFDoc = {
+      pages,
+      page: pages[0],
+      x: 50,
+      y: 72,
+      _lastLineHeight: 12,
+      font() { return this; },
+      fontSize(sz: number) { this._lastLineHeight = sz; return this; },
+      widthOfString(str: string) { return Math.max(20, (str?.length || 10) * 6); },
+      text(str: string, x?: number, y?: number) { if (typeof y === 'number') { this.x = x; this.y = y; } else { this.y = (this.y || 0) + (this._lastLineHeight || 12); } return this; },
+      rect() { return this; },
+      fillColor() { return this; },
+      fill() { return this; },
+      addPage(opts?: any) { const size = Array.isArray(opts?.size) ? opts.size : [612, 792]; const p = { width: size[0], height: size[1], drawRectangle: () => {} }; pages.push(p); this.page = p; return p; },
+      bufferedPageRange() { return { count: pages.length }; },
+      switchToPage(i: number) { this.page = pages[i]; return this; },
+      registerFont() { return this; },
+      save() { return this; },
+      on(event: string, cb: Function) { if (event === 'data') setImmediate(() => cb(Buffer.from('chunk'))); if (event === 'end') setImmediate(() => cb()); return this; },
+      openImage() { return { width: 600, height: 400 }; },
+      image() { return this; },
+      ref(obj?: any) { return { ref: { toString: () => '1 0 R' }, obj: obj || {} }; },
+      catalog: { obj: {} },
+      pageIndex(n: number) { return n; },
+    };
+  }
+
+  // Require production modules under the isolated registry so they pick up our mocks
+  PDFRenderer = require('../../agents/pdf/rendering/pdf-renderer').PDFRenderer;
+  FontManager = require('../../agents/pdf/rendering/font-manager').FontManager;
+  PageLayout = require('../../agents/pdf/rendering/page-layout').PageLayout;
+  StandardTemplate = require('../../agents/pdf/templates/standard').StandardTemplate;
+  WhitepaperTemplate = require('../../agents/pdf/templates/whitepaper').WhitepaperTemplate;
+  TechnicalTemplate = require('../../agents/pdf/templates/technical').TechnicalTemplate;
+});
+
+// Export the runtime doc for other test helpers if needed
+export const mockPDFDoc: any = runtimePDFDoc;
+
 import { PDFInput, PageLayoutSchema } from '../../agents/pdf/types';
 import {
   createValidPDFInput,
@@ -18,32 +88,16 @@ import {
 
 const fs = require('fs');
 
-jest.mock('pdfkit', () => {
-  return {
-    default: jest.fn().mockImplementation(() => ({
-      page: { width: 612, height: 792 },
-      font: jest.fn().mockReturnThis(),
-      text: jest.fn().mockReturnThis(),
-      rect: jest.fn().mockReturnThis(),
-      fillColor: jest.fn().mockReturnThis(),
-      fill: jest.fn().mockReturnThis(),
-      addPage: jest.fn().mockReturnThis(),
-      bufferedPageRange: jest.fn().mockReturnValue({ count: 5 }),
-      switchToPage: jest.fn().mockReturnThis(),
-      registerFont: jest.fn().mockReturnThis(),
-      save: jest.fn().mockResolvedValue(Buffer.from([])),
-      on: jest.fn().mockReturnThis(),
-      openImage: jest.fn().mockReturnValue({ width: 400, height: 300 }),
-      catalog: { obj: {} },
-      x: 50,
-      y: 700,
-    })),
-    __esModule: true,
-  };
-});
+// Provide jest mocks for fs functions used by the renderer tests
+(fs as any).existsSync = jest.fn();
+(fs as any).readFileSync = jest.fn();
+(fs as any).writeFileSync = jest.fn();
+(fs as any).mkdirSync = jest.fn();
+
+// (pdfkit mock already provided above and applied via jest.doMock)
 
 describe('PDFRenderer', () => {
-  let renderer: PDFRenderer;
+  let renderer: any;
 
   beforeEach(() => {
     renderer = new PDFRenderer();
@@ -205,7 +259,7 @@ describe('PDFRenderer', () => {
       await renderer.createDocument(input, layout);
 
       const entries = renderer.getTOCEntries();
-      entries.forEach(entry => {
+      entries.forEach((entry: any) => {
         expect(entry.pageNumber).toBeGreaterThan(0);
       });
     });
@@ -234,7 +288,7 @@ describe('PDFRenderer', () => {
       await renderer.createDocument(input, layout);
 
       const bookmarks = renderer.getBookmarks();
-      const chapter1 = bookmarks.find(b => b.id === '1');
+      const chapter1 = bookmarks.find((b: any) => b.id === '1');
       expect(chapter1).toBeDefined();
     });
   });
@@ -312,7 +366,8 @@ describe('PDFRenderer', () => {
         pageNumbers: true,
       }));
 
-      expect(layout.contentWidth).toBe(612 - 72 - 108);
+      // Left and right margins are 1.5 inches each -> 108 points each
+      expect(layout.contentWidth).toBe(612 - 108 - 108);
       expect(layout.contentHeight).toBe(792 - 72 - 72);
     });
 
@@ -335,7 +390,7 @@ describe('PDFRenderer', () => {
 });
 
 describe('FontManager', () => {
-  let fontManager: FontManager;
+  let fontManager: any;
 
   beforeEach(() => {
     fontManager = new FontManager();
@@ -353,17 +408,15 @@ describe('FontManager', () => {
 
   describe('registerDefaultFonts', () => {
     it('should register default fonts without throwing', async () => {
-      const mockDoc = {
-        registerFont: jest.fn(),
-      };
-      await expect(fontManager.registerDefaultFonts(mockDoc as unknown as typeof mockDoc)).resolves.not.toThrow();
+      const mockDoc = {} as PDFKit.PDFDocument;
+      await expect(fontManager.registerDefaultFonts(mockDoc)).resolves.not.toThrow();
     });
   });
 
   describe('getFontNames', () => {
     it('should return registered font names', async () => {
-      const mockDoc = { registerFont: jest.fn() };
-      await fontManager.registerDefaultFonts(mockDoc as unknown as typeof mockDoc);
+      const mockDoc = {} as PDFKit.PDFDocument;
+      await fontManager.registerDefaultFonts(mockDoc);
       const fontNames = fontManager.getFontNames();
       expect(fontNames).toContain('Helvetica');
       expect(fontNames).toContain('Helvetica-Bold');
@@ -413,14 +466,14 @@ describe('FontManager', () => {
 });
 
 describe('PageLayout', () => {
-  let pageLayout: PageLayout;
+  let pageLayout: any;
 
   beforeEach(() => {
     pageLayout = new PageLayout();
   });
 
   afterEach(() => {
-    pageLayout = null as unknown as PageLayout;
+    pageLayout = null as unknown as any;
   });
 
   describe('constructor', () => {
@@ -537,7 +590,7 @@ describe('PageLayout', () => {
 
 describe('Templates', () => {
   describe('StandardTemplate', () => {
-    let template: StandardTemplate;
+    let template: any;
 
     beforeEach(() => {
       template = new StandardTemplate();
@@ -583,7 +636,7 @@ describe('Templates', () => {
   });
 
   describe('WhitepaperTemplate', () => {
-    let template: WhitepaperTemplate;
+    let template: any;
 
     beforeEach(() => {
       template = new WhitepaperTemplate();
@@ -609,7 +662,7 @@ describe('Templates', () => {
   });
 
   describe('TechnicalTemplate', () => {
-    let template: TechnicalTemplate;
+    let template: any;
 
     beforeEach(() => {
       template = new TechnicalTemplate();
