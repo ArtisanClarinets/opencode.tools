@@ -1,26 +1,63 @@
 /**
- * Interface for a captured QA/Discovery item.
+ * Interface for a captured discovery item.
  */
 export interface DiscoveryItem {
     id: string;
     type: 'question' | 'decision' | 'constraint' | 'risk' | 'acceptance_criteria';
     content: string;
     rationale?: string;
+    source?: string;
 }
 /**
- * C1: TUI “QA Session” recorder
- * Starts a new discovery session and prepares for capturing structured input.
+ * Project stack information
  */
-export declare function startSession(clientName: string): Promise<{
-    sessionId: string;
-    status: string;
-}>;
+export interface ProjectStack {
+    languages: string[];
+    frameworks: string[];
+    databases: string[];
+    cloudServices: string[];
+    buildTools: string[];
+    testingFrameworks: string[];
+    packageManagers: string[];
+}
 /**
- * Exports the structured discovery session artifact.
- * @param sessionId The ID of the session to export.
+ * Project structure information
  */
-export declare function exportSession(sessionId: string): Promise<{
+export interface ProjectStructure {
+    rootFiles: string[];
+    sourceDirectories: string[];
+    testDirectories: string[];
+    configFiles: string[];
+    totalFiles: number;
+    totalLinesOfCode: number;
+}
+/**
+ * Analysis result
+ */
+export interface DiscoveryResult {
+    sessionId: string;
+    projectPath: string;
+    stack: ProjectStack;
+    structure: ProjectStructure;
+    securityFindings: string[];
+    risks: DiscoveryItem[];
+    recommendations: string[];
+    artifacts: DiscoveryItem[];
+}
+/**
+ * Start a new discovery session - analyzes a project directory
+ */
+export declare function startSession(clientName: string, projectPath?: string): Promise<DiscoveryResult>;
+/**
+ * Export discovery session artifact
+ */
+export declare function exportSession(sessionId: string, result: DiscoveryResult): Promise<{
     filePath: string;
     artifacts: DiscoveryItem[];
+    summary: string;
 }>;
+/**
+ * Quick stack detection
+ */
+export declare function detectStack(projectPath?: string): Promise<ProjectStack>;
 //# sourceMappingURL=discovery.d.ts.map

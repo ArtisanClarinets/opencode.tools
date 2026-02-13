@@ -40,6 +40,10 @@ const tui_architecture_agent_1 = require("./tui-agents/tui-architecture-agent");
 const tui_codegen_agent_1 = require("./tui-agents/tui-codegen-agent");
 const child_process_1 = require("child_process");
 const discovery_1 = require("./plugins/discovery");
+const plugin_loader_1 = require("./cowork/plugin-loader");
+const command_registry_1 = require("./cowork/registries/command-registry");
+const agent_registry_1 = require("./cowork/registries/agent-registry");
+const cowork_orchestrator_1 = require("./cowork/orchestrator/cowork-orchestrator");
 /**
  * Register TUI tools with OpenCode
  */
@@ -154,6 +158,73 @@ function registerTUITools() {
         catch (err) {
             // ignore malformed manifest
         }
+    }
+    // ============================================================
+    // Cowork Plugin System
+    // ============================================================
+    // Load Cowork plugins and register commands/agents
+    try {
+        const plugins = (0, plugin_loader_1.loadAllPlugins)();
+        const commandRegistry = command_registry_1.CommandRegistry.getInstance();
+        const agentRegistry = agent_registry_1.AgentRegistry.getInstance();
+        // Register plugins with registries
+        for (const plugin of plugins) {
+            commandRegistry.registerMany(plugin.commands);
+            agentRegistry.registerMany(plugin.agents);
+        }
+        // Register Cowork commands as TUI tools
+        const commands = commandRegistry.list();
+        for (const cmd of commands) {
+            tools.push({
+                id: `cowork:command:${cmd.id}`,
+                name: cmd.name,
+                description: cmd.description,
+                category: 'cowork',
+                handler: async (args) => {
+                    const orchestrator = new cowork_orchestrator_1.CoworkOrchestrator();
+                    return await orchestrator.execute(cmd.id, args._ ?? []);
+                },
+                parameters: [
+                    {
+                        name: 'args',
+                        type: 'array',
+                        required: false,
+                        description: cmd.argumentHint || 'Command arguments'
+                    }
+                ]
+            });
+        }
+        // Register Cowork agents as TUI tools
+        const agents = agentRegistry.list();
+        for (const agent of agents) {
+            tools.push({
+                id: `cowork:agent:${agent.id}`,
+                name: agent.name,
+                description: agent.description,
+                category: 'cowork',
+                handler: async (args) => {
+                    const orchestrator = new cowork_orchestrator_1.CoworkOrchestrator();
+                    return await orchestrator.spawnAgent(agent.id, args.task || 'Execute agent task', args.context);
+                },
+                parameters: [
+                    {
+                        name: 'task',
+                        type: 'string',
+                        required: true,
+                        description: 'Task prompt for the agent'
+                    },
+                    {
+                        name: 'context',
+                        type: 'array',
+                        required: false,
+                        description: 'Additional context data'
+                    }
+                ]
+            });
+        }
+    }
+    catch (err) {
+        console.warn('Failed to load Cowork plugins:', err);
     }
     return tools;
 }

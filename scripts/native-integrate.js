@@ -3,6 +3,9 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
+// Check for opt-in flag
+const AUTO_INTEGRATE = process.env.OPENCODE_AUTO_INTEGRATE === '1';
+
 const logger = {
   info: (m) => console.log('[INFO] ' + m),
   error: (m) => console.error('[ERROR] ' + m),
@@ -24,6 +27,14 @@ function getOpenCodeDirectory() {
 }
 
 function integrateWithOpenCode(packageRoot) {
+  // Check for opt-in flag
+  if (!AUTO_INTEGRATE) {
+    logger.info('OpenCode auto-integration is disabled by default.');
+    logger.info('To enable, run with: OPENCODE_AUTO_INTEGRATE=1 npm install');
+    logger.info('Or use: opencode-tools integrate');
+    return;
+  }
+  
   const opencodeDir = getOpenCodeDirectory();
   if (!opencodeDir) {
     logger.info('OpenCode not found; skipping integration');
@@ -104,9 +115,25 @@ function registerBundledPlugins(packageRoot, opencodeDir) {
   if (registered.length > 0) logger.success(`Registered bundled plugins in OpenCode: ${registered.join(', ')}`);
 }
 
-function main() {
+function main(args = []) {
   const packageRoot = process.cwd();
-  try { integrateWithOpenCode(packageRoot); logger.success('Integration complete!'); } catch (err) { logger.error('Integration failed: ' + err); process.exit(1); }
+  
+  // Check for manual integration flag
+  const manual = args.includes('--manual') || args.includes('-m');
+  
+  if (manual || AUTO_INTEGRATE) {
+    try { 
+      integrateWithOpenCode(packageRoot); 
+      logger.success('Integration complete!'); 
+    } catch (err) { 
+      logger.error('Integration failed: ' + err); 
+      process.exit(1); 
+    }
+  } else {
+    logger.info('OpenCode auto-integration is disabled by default.');
+    logger.info('To enable, run with: OPENCODE_AUTO_INTEGRATE=1 npm install');
+    logger.info('Or use: opencode-tools integrate');
+  }
 }
 
 if (require.main === module) main();

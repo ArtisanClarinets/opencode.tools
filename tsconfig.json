@@ -25,7 +25,8 @@
     "src/**/*",
     "agents/**/*",
     "tools/**/*",
-    "examples/**/*"
+    "examples/**/*",
+    "scripts/**/*"
   ],
   "exclude": [
     "node_modules",

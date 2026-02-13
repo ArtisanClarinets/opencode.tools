@@ -39,7 +39,7 @@ export class ToolWrapper {
     // Validate Input (Redaction/Security check on args could go here)
     // For now, we assume args are safe or will be redacted in logs.
     
-    let result: TResult;
+    let result: TResult | undefined;
     let error: any;
     let success = false;
 
@@ -64,7 +64,7 @@ export class ToolWrapper {
         timestamp: new Date().toISOString(),
         durationMs: duration,
         success,
-        output: result!,
+        output: result, // Can be undefined if tool threw before returning
         error: error ? { message: error.message, stack: error.stack } : undefined
       };
 

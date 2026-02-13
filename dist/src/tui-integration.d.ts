@@ -11,7 +11,7 @@ export interface TUITool {
     id: string;
     name: string;
     description: string;
-    category: 'research' | 'documentation' | 'codegen' | 'qa' | 'delivery';
+    category: 'research' | 'documentation' | 'codegen' | 'qa' | 'delivery' | 'cowork';
     handler: (args: any) => Promise<any>;
     parameters?: TUIParameter[];
 }

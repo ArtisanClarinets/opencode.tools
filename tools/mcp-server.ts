@@ -160,13 +160,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 /**
  * Start the server
  */
-async function main() {
+export async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("OpenCode Tools MCP server running on stdio");
 }
 
-main().catch((error) => {
-  console.error("Fatal error in MCP server:", error);
-  process.exit(1);
-});
+// Run main if called directly (not imported)
+if (require.main === module) {
+  main().catch((error) => {
+    console.error("Fatal error in MCP server:", error);
+    process.exit(1);
+  });
+}
