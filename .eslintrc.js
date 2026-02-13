@@ -8,7 +8,8 @@ module.exports = {
   root: true,
   parser: '@typescript-eslint/parser',
   parserOptions: {
-    project: './tsconfig.json',
+    // Use a dedicated tsconfig for eslint so tests and d.ts files are included
+    project: './tsconfig.eslint.json',
     tsconfigRootDir: __dirname,
     sourceType: 'module',
     ecmaVersion: 2022
