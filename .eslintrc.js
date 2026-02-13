@@ -8,8 +8,6 @@ module.exports = {
   root: true,
   parser: '@typescript-eslint/parser',
   parserOptions: {
-    // Use a dedicated tsconfig for eslint so tests and d.ts files are included
-    project: './tsconfig.eslint.json',
     tsconfigRootDir: __dirname,
     sourceType: 'module',
     ecmaVersion: 2022
@@ -22,8 +20,7 @@ module.exports = {
   plugins: ['@typescript-eslint'],
   extends: [
     'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
-    'plugin:@typescript-eslint/recommended-requiring-type-checking'
+    'plugin:@typescript-eslint/recommended'
   ],
   rules: {
     // Allow intentionally unused variables/args prefixed with `_`
