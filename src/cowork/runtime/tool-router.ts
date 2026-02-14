@@ -40,7 +40,13 @@ export class ToolRouter {
         parameters: { type: 'object', properties: { path: { type: 'string' } } },
         handler: async ({ path }) => {
             const fs = require('fs');
-            return fs.readFileSync(path, 'utf8');
+  const pathModule = require('path'); // Ensure path is required at the top of the handler
+  const BASE_DIR = '/app/restricted/'; // Restrict file reads to a safe directory
+  const fullPath = pathModule.normalize(pathModule.join(BASE_DIR, path));
+  if (!fullPath.startsWith(BASE_DIR)) {
+      throw new Error('Invalid path');
+  }
+  return fs.readFileSync(fullPath, 'utf8');
         }
     });
   }
