@@ -4,6 +4,7 @@
  * This file registers the Research Agent as a TUI-accessible command.
  * Import this into the main OpenCode TUI to make the Research Agent available.
  */
+import { TUIResearchAgent } from './tui-agents';
 /**
  * Research Agent TUI Command
  *
@@ -47,7 +48,7 @@ export declare const tuiIntegration: {
     /**
      * Get Research Agent instance for direct TUI access
      */
-    getAgent(): any;
+    getAgent(): TUIResearchAgent;
 };
 /**
  * Example TUI integration usage:
@@ -61,5 +62,5 @@ export declare const tuiIntegration: {
  * // Access Research Agent directly
  * const agent = tuiIntegration.getAgent();
  * await agent.runInteractive();
- */ 
+ */
 //# sourceMappingURL=tui-commands.d.ts.map
