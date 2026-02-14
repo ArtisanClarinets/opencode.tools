@@ -1,5 +1,6 @@
 import { ToolPermissionGate } from '../permissions/tool-gate';
 import { logger } from '../../runtime/logger';
+import * as path from 'path';
 
 /**
  * Tool Definition
@@ -28,7 +29,7 @@ export class ToolRouter {
         name: 'fs.list',
         description: 'List files in a directory',
         parameters: { type: 'object', properties: { path: { type: 'string' } } },
-        handler: async ({ path }) => {
+        handler: async ({ path: inputPath }) => {
             const fs = require('fs');
   // Securely resolve and validate the supplied path to prevent directory traversal
   const pathModule = require('path');
@@ -68,7 +69,7 @@ export class ToolRouter {
         name: 'fs.read',
         description: 'Read a file',
         parameters: { type: 'object', properties: { path: { type: 'string' } } },
-        handler: async ({ path }) => {
+        handler: async ({ path: inputPath }) => {
             const fs = require('fs');
   const pathModule = require('path'); // Ensure path is required at the top of the handler
   const BASE_DIR = '/app/restricted/'; // Restrict file reads to a safe directory

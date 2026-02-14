@@ -4,6 +4,7 @@ import { z } from 'zod';
 import * as fs from 'fs';
 import * as path from 'path';
 import { logger } from '../runtime/logger';
+import { execFileSync } from 'child_process';
 
 export class ProjectDeliveryWorkflow {
     private orchestrator: CoworkOrchestrator;
@@ -65,9 +66,9 @@ export class ProjectDeliveryWorkflow {
             await this.orchestrator.spawnAgent('codegen', 'Implement features based on architecture', { features: projectInit.brief.features });
 
             // QA Gates
-            const buildPassed = await this.runGate('build', 'npm run build');
-            const lintPassed = await this.runGate('lint', 'npm run lint');
-            const testPassed = await this.runGate('unit', 'npm test');
+            const buildPassed = await this.runGate('build', ['run', 'build']);
+            const lintPassed = await this.runGate('lint', ['run', 'lint']);
+            const testPassed = await this.runGate('unit', ['test']);
 
             // Bespoke Gate (Simulation)
             const bespokePassed = true; // implement bespoke check logic here
@@ -94,11 +95,12 @@ export class ProjectDeliveryWorkflow {
         logger.info('🎉 Project Delivery Complete!');
     }
 
-    private async runGate(name: string, command: string): Promise<boolean> {
-        logger.info(`Running Gate: ${name} (${command})`);
+    private async runGate(name: string, args: string[]): Promise<boolean> {
+        logger.info(`Running Gate: ${name} (npm ${args.join(' ')})`);
         try {
-            const { execSync } = require('child_process');
-            execSync(command, { stdio: 'ignore', cwd: this.projectDir });
+            // Use execFileSync to avoid shell injection vulnerabilities
+            // Ensure npm is in PATH
+            execFileSync('npm', args, { stdio: 'ignore', cwd: this.projectDir });
             logger.info(`Gate ${name} Passed`);
             return true;
         } catch (e) {
