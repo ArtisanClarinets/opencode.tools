@@ -46,7 +46,7 @@ const getOrchestrator = () => {
                 id: 'help',
                 name: 'help',
                 description: 'Show available commands',
-                body: 'Help command',
+                body: 'Help command', handler: async () => ({ success: true }),
             });
         }
         if (!registry.has('status')) {
@@ -54,7 +54,7 @@ const getOrchestrator = () => {
                 id: 'status',
                 name: 'status',
                 description: 'Show orchestrator status',
-                body: 'Status command',
+                body: 'Status command', handler: async () => ({ success: true }),
             });
         }
         if (!registry.has('spawn')) {
@@ -62,7 +62,7 @@ const getOrchestrator = () => {
                 id: 'spawn',
                 name: 'spawn',
                 description: 'Spawn an agent: spawn <agentId> <task>',
-                body: 'Spawn command',
+                body: 'Spawn command', handler: async () => ({ success: true }),
             });
         }
     }
