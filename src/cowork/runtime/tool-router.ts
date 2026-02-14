@@ -1,5 +1,6 @@
 import { ToolPermissionGate } from '../permissions/tool-gate';
 import { logger } from '../../runtime/logger';
+import * as path from 'path';
 
 /**
  * Tool Definition
@@ -28,16 +29,13 @@ export class ToolRouter {
         name: 'fs.list',
         description: 'List files in a directory',
         parameters: { type: 'object', properties: { path: { type: 'string' } } },
-        handler: async ({ path }) => {
+        handler: async ({ path: inputPath }) => {
             const fs = require('fs');
-  // Securely resolve and validate the supplied path to prevent directory traversal
-  const pathModule = require('path');
-  const basePath = '/app/restricted/'; // Set your intended base directory
-  const target = pathModule.normalize(pathModule.join(basePath, path || ''));
-  if (!target.startsWith(basePath)) {
-      throw new Error("Invalid path specified!");
-  }
-  return fs.readdirSync(target);
+            const safePath = path.resolve(process.cwd(), inputPath || '.');
+            if (!safePath.startsWith(process.cwd())) {
+                throw new Error('Access denied: Path outside project directory');
+            }
+            return fs.readdirSync(safePath);
         }
     });
 
@@ -45,15 +43,13 @@ export class ToolRouter {
         name: 'fs.read',
         description: 'Read a file',
         parameters: { type: 'object', properties: { path: { type: 'string' } } },
-        handler: async ({ path }) => {
+        handler: async ({ path: inputPath }) => {
             const fs = require('fs');
-  const pathModule = require('path'); // Ensure path is required at the top of the handler
-  const BASE_DIR = '/app/restricted/'; // Restrict file reads to a safe directory
-  const fullPath = pathModule.normalize(pathModule.join(BASE_DIR, path));
-  if (!fullPath.startsWith(BASE_DIR)) {
-      throw new Error('Invalid path');
-  }
-  return fs.readFileSync(fullPath, 'utf8');
+            const safePath = path.resolve(process.cwd(), inputPath);
+            if (!safePath.startsWith(process.cwd())) {
+                throw new Error('Access denied: Path outside project directory');
+            }
+            return fs.readFileSync(safePath, 'utf8');
         }
     });
   }
