@@ -30,7 +30,14 @@ export class ToolRouter {
         parameters: { type: 'object', properties: { path: { type: 'string' } } },
         handler: async ({ path }) => {
             const fs = require('fs');
-            return fs.readdirSync(path || '.');
+  // Securely resolve and validate the supplied path to prevent directory traversal
+  const pathModule = require('path');
+  const basePath = '/app/restricted/'; // Set your intended base directory
+  const target = pathModule.normalize(pathModule.join(basePath, path || ''));
+  if (!target.startsWith(basePath)) {
+      throw new Error("Invalid path specified!");
+  }
+  return fs.readdirSync(target);
         }
     });
 
