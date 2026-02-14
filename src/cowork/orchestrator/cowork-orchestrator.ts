@@ -151,7 +151,7 @@ export class CoworkOrchestrator {
     }
 
     // Parse command body for agent references
-    const agentTasks = this.parseAgentReferences(command.body);
+    const agentTasks = this.parseAgentReferences(command.body || '');
 
     let results: AgentResult[];
 

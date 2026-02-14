@@ -7,8 +7,19 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { CoworkPlugin, CoworkPluginManifest } from './types';
+import * as os from 'os';
+import { CoworkPlugin, CoworkPluginManifest, AgentDefinition } from './types';
 import { logger } from '../runtime/logger';
+
+const PLUGINS_DIR = path.join(os.homedir(), '.config', 'opencode', 'cowork', 'plugins');
+
+function readJsonFile<T>(filePath: string): T | null {
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Get the bundled plugins directory path
@@ -46,7 +57,8 @@ export function loadNativeAgents(): AgentDefinition[] {
   }
   
   const agents: AgentDefinition[] = [];
-  for (const [id, agentConfig] of Object.entries(config.agents)) {
+  for (const [id, rawConfig] of Object.entries(config.agents)) {
+    const agentConfig = rawConfig as any;
     // Convert tool map to array
     const tools: string[] = [];
     if (agentConfig.tools) {

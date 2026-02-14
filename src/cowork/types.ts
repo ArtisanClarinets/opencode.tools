@@ -21,6 +21,8 @@ export interface CoworkCommand {
   description: string;
   handler: (args: string[]) => Promise<CoworkCommandResult>;
   argumentHint?: string;
+  body?: string;
+  allowedTools?: string[];
 }
 
 export interface CoworkCommandResult {
@@ -36,6 +38,7 @@ export interface CoworkAgent {
   description: string;
   tools?: string[];
   model?: string;
+  body?: string;
   execute: (task: string, context?: unknown) => Promise<CoworkAgentResult>;
 }
 
@@ -72,4 +75,56 @@ export interface RegistryEntry<T> {
   item: T;
   registeredAt: Date;
   source?: string;
+}
+
+export type HookEvent = 'command:start' | 'command:complete' | 'command:error' | 'agent:start' | 'agent:complete' | 'agent:error' | string;
+
+export interface HookDefinition {
+    id?: string;
+    name: string;
+    events: HookEvent[];
+    command: string;
+    timeoutMs?: number;
+}
+
+export interface HookContext {
+    event: HookEvent;
+    [key: string]: unknown;
+}
+
+export interface HookDecision {
+    decision: 'allow' | 'deny' | 'block';
+    message?: string;
+}
+
+export interface CommandDefinition {
+    id: string;
+    name: string;
+    description: string;
+    body?: string;
+    allowedTools?: string[];
+    model?: string;
+    argumentHint?: string;
+}
+
+export interface AgentDefinition {
+    id: string;
+    name: string;
+    description: string;
+    body?: string;
+    tools?: string[];
+    model?: string;
+    color?: string;
+    steps?: any[];
+    interactive?: boolean;
+    repl?: boolean;
+    execute?: (answers: any, log: any) => Promise<any>;
+    onInput?: (input: string, log: any) => Promise<void>;
+}
+
+export interface SkillDefinition {
+    id: string;
+    name: string;
+    body?: string;
+    description?: string;
 }
