@@ -53,3 +53,11 @@ declare global {
 // ====================
 
 export {};
+
+// Mock uuid library for ESM compatibility
+
+// Mock uuid library for ESM compatibility
+jest.mock('uuid', () => ({
+  v4: jest.fn(() => '123e4567-e89b-12d3-a456-426614174000'), // Valid UUID
+  v5: jest.fn(() => '123e4567-e89b-12d3-a456-426614174000'),
+}));

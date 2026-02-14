@@ -1,0 +1,154 @@
+import { ToolPermissionGate } from '../permissions/tool-gate';
+import { logger } from '../../runtime/logger';
+import * as path from 'path';
+
+/**
+ * Tool Definition
+ */
+export interface ToolDefinition {
+  name: string;
+  description: string;
+  parameters: any; // JSON schema
+  handler: (args: any) => Promise<any>;
+}
+
+/**
+ * Tool Router
+ * Executes tools and checks permissions
+ */
+export class ToolRouter {
+  private tools: Map<string, ToolDefinition>;
+  private permissionGate: ToolPermissionGate;
+
+  constructor() {
+    this.tools = new Map<string, ToolDefinition>();
+    this.permissionGate = new ToolPermissionGate();
+
+    // Register some basic tools
+    this.register({
+        name: 'fs.list',
+        description: 'List files in a directory',
+        parameters: { type: 'object', properties: { path: { type: 'string' } } },
+        handler: async ({ path: inputPath }) => {
+            const fs = require('fs');
+  // Securely resolve and validate the supplied path to prevent directory traversal
+  const pathModule = require('path');
+  const basePath = '/app/restricted/'; // Set your intended base directory
+  const target = pathModule.normalize(pathModule.join(basePath, path || ''));
+  if (!target.startsWith(basePath)) {
+      throw new Error("Invalid path specified!");
+  }
+  // Securely resolve and validate the supplied path to prevent directory traversal
+  const pathModule = require('path');
+  const basePath = '/app/restricted/'; // Set your intended base directory
+  const target = pathModule.normalize(pathModule.join(basePath, path || ''));
+  if (!target.startsWith(basePath)) {
+      throw new Error("Invalid path specified!");
+  }
+  // Securely list files in a directory, restricting to a base directory to prevent path traversal attacks
+  const pathModule = require('path');
+  const basePath = '/app/restricted/'; // Define a restricted base directory
+
+  handler: async ({ path }) => {
+      const fs = require('fs');
+      // Join the user-supplied path (if any) to the base directory
+      const dirPath = path ? pathModule.join(basePath, path) : basePath;
+      // Normalize the resulting path
+      const normPath = pathModule.normalize(dirPath);
+      // Ensure the normalized path is still within the base directory
+      if (!normPath.startsWith(basePath)) {
+          throw new Error('Invalid path');
+      }
+      // Safely list files in the directory
+      return fs.readdirSync(normPath);
+  }
+        }
+    });
+
+     this.register({
+        name: 'fs.read',
+        description: 'Read a file',
+        parameters: { type: 'object', properties: { path: { type: 'string' } } },
+        handler: async ({ path: inputPath }) => {
+            const fs = require('fs');
+  const pathModule = require('path'); // Ensure path is required at the top of the handler
+  const BASE_DIR = '/app/restricted/'; // Restrict file reads to a safe directory
+  const fullPath = pathModule.normalize(pathModule.join(BASE_DIR, path));
+  if (!fullPath.startsWith(BASE_DIR)) {
+      throw new Error('Invalid path');
+  }
+  const pathModule = require('path'); // Ensure path is required at the top of the handler
+  const BASE_DIR = '/app/restricted/'; // Restrict file reads to a safe directory
+  const fullPath = pathModule.normalize(pathModule.join(BASE_DIR, path));
+  if (!fullPath.startsWith(BASE_DIR)) {
+      throw new Error('Invalid path');
+  }
+  const pathModule = require('path');
+  const basePath = '/app/restricted/';
+
+  // ... inside your handler:
+  handler: async ({ path }) => {
+      const fs = require('fs');
+      // Join the user-supplied path with the base directory
+      const joinedPath = pathModule.join(basePath, path);
+      // Normalize to remove any '..' or similar traversal elements
+      const fullPath = pathModule.normalize(joinedPath);
+      // Verify that the resolved path is still within the base directory
+      if (!fullPath.startsWith(basePath)) {
+          throw new Error('Invalid file path');
+      }
+      return fs.readFileSync(fullPath, 'utf8');
+  }
+        }
+    });
+  }
+
+  /**
+   * Register a tool
+   */
+  public register(tool: ToolDefinition) {
+    this.tools.set(tool.name, tool);
+  }
+
+  /**
+   * Execute a tool
+   */
+  public async execute(agentId: string, toolName: string, args: any): Promise<any> {
+    const tool = this.tools.get(toolName);
+    if (!tool) {
+      throw new Error(`Tool "${toolName}" not found`);
+    }
+
+    // Check permissions
+    if (!this.permissionGate.checkToolAccess('agent', agentId, toolName)) {
+      throw new Error(`Agent "${agentId}" does not have permission to execute "${toolName}"`);
+    }
+
+    logger.info(`Agent ${agentId} executing ${toolName}`, args);
+    try {
+      const result = await tool.handler(args);
+      return result;
+    } catch (error: any) {
+      logger.error(`Tool execution failed: ${error.message}`, { toolName, args });
+      throw error;
+    }
+  }
+
+  /**
+   * Get tool definitions for LLM
+   */
+  public getDefinitions(): any[] {
+    return Array.from(this.tools.values()).map(t => ({
+      name: t.name,
+      description: t.description,
+      parameters: t.parameters
+    }));
+  }
+
+  /**
+   * Set allowlist for an agent
+   */
+  public setAllowlist(agentId: string, allowedTools: string[]) {
+      this.permissionGate.setAgentAllowlist(agentId, allowedTools);
+  }
+}

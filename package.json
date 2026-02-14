@@ -49,6 +49,7 @@
   "author": "OpenCode Tools Team",
   "license": "MIT",
   "devDependencies": {
+    "@jest/globals": "^30.2.0",
     "@types/ink-gradient": "^2.0.4",
     "@types/jest": "^29.5.14",
     "@types/js-yaml": "^4.0.9",
@@ -66,6 +67,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.26.0",
     "@types/archiver": "^7.0.0",
+    "@types/handlebars": "^4.1.0",
     "@types/html-to-text": "^9.0.4",
     "@types/ink": "^0.5.2",
     "@types/react": "^17.0.38",
@@ -73,6 +75,7 @@
     "axios": "^1.6.0",
     "cheerio": "^1.2.0",
     "commander": "^11.0.0",
+    "handlebars": "^4.7.8",
     "html-to-text": "^9.0.5",
     "husky": "^9.1.7",
     "ink": "^3.2.0",
