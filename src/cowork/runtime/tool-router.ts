@@ -37,6 +37,13 @@ export class ToolRouter {
   if (!target.startsWith(basePath)) {
       throw new Error("Invalid path specified!");
   }
+  // Securely resolve and validate the supplied path to prevent directory traversal
+  const pathModule = require('path');
+  const basePath = '/app/restricted/'; // Set your intended base directory
+  const target = pathModule.normalize(pathModule.join(basePath, path || ''));
+  if (!target.startsWith(basePath)) {
+      throw new Error("Invalid path specified!");
+  }
   return fs.readdirSync(target);
         }
     });
