@@ -1,0 +1,8 @@
+{
+  "id": "dev-team",
+  "name": "Dev Team",
+  "version": "1.0.0",
+  "description": "Default development team workflows and agents",
+  "author": "OpenCode Tools Team",
+  "license": "MIT"
+}

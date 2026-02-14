@@ -6,6 +6,7 @@
  */
 
 import { registerTUITools } from './tui-integration';
+import { discoverBundledPlugins, discoverSystemPlugins } from './plugins/discovery';
 import { TUIResearchAgent } from './tui-agents';
 
 // Export the tool registration function
@@ -25,7 +26,6 @@ export function getAvailableTools() {
   // Also include discovered plugin manifests as metadata
   const tools = registerTUITools();
   try {
-    const { discoverBundledPlugins, discoverSystemPlugins } = require('./plugins/discovery');
     const manifests = discoverBundledPlugins();
     for (const m of manifests) {
       tools.push({ id: m.id, name: m.name, description: `Discovered plugin (${m.adapterType})`, category: 'research', handler: async () => ({ manifest: m }) });
