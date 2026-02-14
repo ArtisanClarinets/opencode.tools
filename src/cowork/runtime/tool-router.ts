@@ -44,7 +44,23 @@ export class ToolRouter {
   if (!target.startsWith(basePath)) {
       throw new Error("Invalid path specified!");
   }
-  return fs.readdirSync(target);
+  // Securely list files in a directory, restricting to a base directory to prevent path traversal attacks
+  const pathModule = require('path');
+  const basePath = '/app/restricted/'; // Define a restricted base directory
+
+  handler: async ({ path }) => {
+      const fs = require('fs');
+      // Join the user-supplied path (if any) to the base directory
+      const dirPath = path ? pathModule.join(basePath, path) : basePath;
+      // Normalize the resulting path
+      const normPath = pathModule.normalize(dirPath);
+      // Ensure the normalized path is still within the base directory
+      if (!normPath.startsWith(basePath)) {
+          throw new Error('Invalid path');
+      }
+      // Safely list files in the directory
+      return fs.readdirSync(normPath);
+  }
         }
     });
 
