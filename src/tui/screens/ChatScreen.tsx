@@ -162,6 +162,7 @@ export const ChatScreen: React.FC = () => {
         onSendMessage={handleSendMessage}
         prompt={`${agent?.name || 'Agent'}> `}
         placeholder={session.status === 'running' ? 'Agent is running...' : 'Type your answer...'}
+        disabled={session.status === 'running'}
       />
     </Box>
   );
