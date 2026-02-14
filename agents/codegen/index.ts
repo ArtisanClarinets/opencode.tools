@@ -11,7 +11,7 @@ export class CodeGenAgent {
      * In a production environment, this integrates with LLM to generate code
      * and uses Desktop-Commander to write files.
      */
-    public async prototype(backlogItem: BacklogItem): Promise<ProjectScaffoldResult> {
+    public async execute(backlogItem: BacklogItem): Promise<ProjectScaffoldResult> {
         const { title, techStack } = backlogItem;
         logger.info('CodeGen Agent started', { agent: this.agentName, feature: title });
 

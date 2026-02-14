@@ -28,7 +28,7 @@
     "lint:fix": "eslint src/**/*.ts agents/**/*.ts tests/**/*.ts --fix",
     "verify:system": "ts-node scripts/verify-full-system.ts",
     "run:delivery": "ts-node scripts/run-delivery.ts",
-    "postinstall": "npm run build && node dist/scripts/postinstall.js",
+    "postinstall": "npm run build && node dist/scripts/post-install.js",
     "verify:mcp": "ts-node scripts/verify-mcp-tools.ts",
     "verify:global": "ts-node scripts/research-global-opencode.ts",
     "integrate": "ts-node scripts/native-integrate.ts",
@@ -49,6 +49,8 @@
   "author": "OpenCode Tools Team",
   "license": "MIT",
   "devDependencies": {
+    "@jest/globals": "^30.2.0",
+    "@types/ink-gradient": "^2.0.4",
     "@types/jest": "^29.5.14",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.19.33",
@@ -65,6 +67,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.26.0",
     "@types/archiver": "^7.0.0",
+    "@types/handlebars": "^4.1.0",
     "@types/html-to-text": "^9.0.4",
     "@types/ink": "^0.5.2",
     "@types/react": "^17.0.38",
@@ -72,6 +75,7 @@
     "axios": "^1.6.0",
     "cheerio": "^1.2.0",
     "commander": "^11.0.0",
+    "handlebars": "^4.7.8",
     "html-to-text": "^9.0.5",
     "husky": "^9.1.7",
     "ink": "^3.2.0",
@@ -94,6 +98,21 @@
     "uuid": "^13.0.0",
     "winston": "^3.19.0",
     "zod": "^4.3.6"
+  },
+  "files": [
+    "dist/**/*",
+    "templates/**/*",
+    "prompts/**/*",
+    "mcp/**/*",
+    "docs/**/*",
+    "opencode.json",
+    "opencode-system-prompt.md",
+    "README.md",
+    "AGENTS.md",
+    "INTEGRATION_GUIDE.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
   },
   "directories": {
     "doc": "docs",

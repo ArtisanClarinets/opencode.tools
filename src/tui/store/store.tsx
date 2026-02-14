@@ -1,25 +1,14 @@
 import * as React from 'react';
-import * as fs from 'fs';
-import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import { Session, Message } from '../types';
+import { Session, Message, AgentActivity } from '../types';
+import { sessionStore } from '../utils/session-store';
 
-const DATA_DIR = path.join(process.env.HOME || process.cwd(), '.opencode-tools');
-const SESSIONS_FILE = path.join(DATA_DIR, 'sessions.json');
-
-// Ensure directory exists
-if (!fs.existsSync(DATA_DIR)) {
-  try {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  } catch (err) {
-    // ignore
-  }
-}
 
 export interface State {
   sessions: Session[];
   activeSessionId: string | null;
-  view: 'home' | 'chat';
+  view: 'home' | 'chat' | 'dashboard';
+  isLoaded: boolean;
 }
 
 export type Action =
@@ -30,6 +19,9 @@ export type Action =
   | { type: 'ADD_MESSAGE'; sessionId: string; message: Message }
   | { type: 'UPDATE_ANSWERS'; sessionId: string; answers: Record<string, any> }
   | { type: 'SET_STATUS'; sessionId: string; status: Session['status'] }
+  | { type: 'SET_ACTIVITIES'; sessionId: string; activities: AgentActivity[] }
+  | { type: 'UPDATE_ACTIVITY'; sessionId: string; activity: Partial<AgentActivity> & { agentId: string } }
+  | { type: 'SET_VIEW'; view: State['view'] }
   | { type: 'GO_HOME' }
   | { type: 'DELETE_SESSION'; sessionId: string };
 
@@ -37,21 +29,23 @@ const initialState: State = {
   sessions: [],
   activeSessionId: null,
   view: 'home',
+  isLoaded: false,
 };
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'LOAD_SESSIONS':
-      return { ...state, sessions: action.sessions };
+      return { ...state, sessions: action.sessions, isLoaded: true };
 
     case 'CREATE_SESSION':
       const newSession: Session = {
         id: uuidv4(),
-        name: `${action.agentName} Chat`,
+        name: `${action.agentName} ${new Date().toLocaleDateString()}`,
         agentId: action.agentId,
         messages: [],
         answers: {},
         status: 'idle',
+        activities: [],
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
@@ -64,6 +58,9 @@ function reducer(state: State, action: Action): State {
 
     case 'SELECT_SESSION':
       return { ...state, activeSessionId: action.sessionId, view: 'chat' };
+
+    case 'SET_VIEW':
+      return { ...state, view: action.view };
 
     case 'GO_HOME':
       return { ...state, activeSessionId: null, view: 'home' };
@@ -104,6 +101,30 @@ function reducer(state: State, action: Action): State {
         ),
       };
 
+    case 'SET_ACTIVITIES':
+      return {
+        ...state,
+        sessions: state.sessions.map((s) =>
+          s.id === action.sessionId ? { ...s, activities: action.activities, updatedAt: Date.now() } : s
+        ),
+      };
+
+    case 'UPDATE_ACTIVITY':
+      return {
+        ...state,
+        sessions: state.sessions.map((s) =>
+          s.id === action.sessionId
+            ? {
+                ...s,
+                activities: s.activities.map((a) =>
+                  a.agentId === action.activity.agentId ? { ...a, ...action.activity } : a
+                ),
+                updatedAt: Date.now(),
+              }
+            : s
+        ),
+      };
+
     case 'DELETE_SESSION':
       return {
         ...state,
@@ -128,30 +149,53 @@ export const StoreProvider: React.FC = ({ children }) => {
   // Load sessions on mount
   React.useEffect(() => {
     try {
-      if (fs.existsSync(SESSIONS_FILE)) {
-        const data = fs.readFileSync(SESSIONS_FILE, 'utf-8');
-        const sessions = JSON.parse(data);
-        if (Array.isArray(sessions)) {
-            dispatch({ type: 'LOAD_SESSIONS', sessions });
+      const index = sessionStore.getIndex();
+      const loadedSessions: Session[] = [];
+      
+      // Load full sessions for the most recent ones
+      for (const item of index.slice(0, 20)) {
+        const full = sessionStore.loadSession(item.id);
+        if (full) {
+          loadedSessions.push(full);
         }
       }
+      
+      dispatch({ type: 'LOAD_SESSIONS', sessions: loadedSessions });
     } catch (err) {
-      // ignore
+      console.error('Failed to load sessions', err);
     }
   }, []);
 
   // Save sessions on change
   React.useEffect(() => {
-    try {
-        if (state.sessions.length >= 0) { // Save even if empty to handle deletes
-            fs.writeFileSync(SESSIONS_FILE, JSON.stringify(state.sessions, null, 2));
-        }
-    } catch (err) {
-        // ignore
+    if (!state.isLoaded) return;
+    
+    // Save active session if it changed
+    if (state.activeSessionId) {
+      const active = state.sessions.find(s => s.id === state.activeSessionId);
+      if (active) {
+        sessionStore.saveSession(active);
+      }
     }
-  }, [state.sessions]);
+    
+    // Also handle deletions in index (handled by deleteSession action if we call it)
+  }, [state.sessions, state.activeSessionId, state.isLoaded]);
 
-  return <StoreContext.Provider value={{ state, dispatch }}>{children}</StoreContext.Provider>;
+  // Handle deletion sync
+  const customDispatch = React.useMemo(() => {
+    return (action: Action) => {
+      if (action.type === 'DELETE_SESSION') {
+        sessionStore.deleteSession(action.sessionId);
+      }
+      dispatch(action);
+    };
+  }, [dispatch]);
+
+  return (
+    <StoreContext.Provider value={{ state, dispatch: customDispatch as React.Dispatch<Action> }}>
+      {children}
+    </StoreContext.Provider>
+  );
 };
 
 export const useStore = () => {

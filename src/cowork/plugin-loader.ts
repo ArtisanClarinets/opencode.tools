@@ -10,7 +10,76 @@ import * as path from 'path';
 import { CoworkPlugin, CoworkPluginManifest } from './types';
 import { logger } from '../runtime/logger';
 
-const PLUGINS_DIR = path.join(process.cwd(), 'plugins');
+/**
+ * Get the bundled plugins directory path
+ * 
+ * @returns Path to bundled plugins directory
+ */
+export function getBundledPluginsDir(): string {
+  // Get the project root (parent of dist or src)
+  // When running from dist/src/cowork/, go up to project root
+  const projectRoot = path.resolve(__dirname, '..', '..', '..');
+  return path.join(projectRoot, 'src', 'cowork', 'plugins');
+}
+
+/**
+ * Get the system plugins directory path
+ * 
+ * @returns Path to system plugins directory (~/.config/opencode/cowork/plugins)
+ */
+export function getSystemPluginsDir(): string {
+  return path.join(os.homedir(), '.config', 'opencode', 'cowork', 'plugins');
+}
+
+/**
+ * Load native agents from opencode.json configuration
+ * 
+ * @returns Array of agent definitions from global config
+ */
+export function loadNativeAgents(): AgentDefinition[] {
+  const configDir = path.join(os.homedir(), '.config', 'opencode');
+  const configPath = path.join(configDir, 'opencode.json');
+  
+  const config = readJsonFile<{ agents: Record<string, any> }>(configPath);
+  if (!config || !config.agents) {
+    return [];
+  }
+  
+  const agents: AgentDefinition[] = [];
+  for (const [id, agentConfig] of Object.entries(config.agents)) {
+    // Convert tool map to array
+    const tools: string[] = [];
+    if (agentConfig.tools) {
+      for (const [toolName, enabled] of Object.entries(agentConfig.tools)) {
+        if (enabled === true) tools.push(toolName);
+      }
+    }
+    
+    agents.push({
+      id,
+      name: id.charAt(0).toUpperCase() + id.slice(1).replace(/_/g, ' ') + ' Agent',
+      description: agentConfig.description || '',
+      body: agentConfig.prompt || '',
+      tools,
+      model: agentConfig.model,
+      color: 'blue'
+    });
+  }
+  
+  return agents;
+}
+
+/**
+ * Check if a directory exists
+ */
+function directoryExists(dirPath: string): boolean {
+  try {
+    const stats = fs.statSync(dirPath);
+    return stats.isDirectory();
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Load all available plugins from the plugins directory

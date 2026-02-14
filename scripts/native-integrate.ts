@@ -114,6 +114,7 @@ function integrateWithOpenCode(config: IntegrationConfig): void {
 
   // Add our MCP server configuration
   // OpenCode expects: type: "local" with command array, or type: "remote" with url
+  // The command should be: ["opencode-tools", "mcp"] - CLI command with subcommand
   opencodeConfig.mcp['opencode-tools'] = {
     type: 'local',
     command: ['opencode-tools', 'mcp'],
@@ -158,8 +159,9 @@ function setupGlobalCLI(): void {
       if (fs.existsSync(globalBin)) {
         const symlinkPath = path.join(globalBin, 'opencode-tools');
         if (!fs.existsSync(symlinkPath)) {
-          fs.symlinkSync(cliPath, symlinkPath);
-          logger.success(`Symlink created: ${symlinkPath} -> ${cliPath}`);
+          // If a file already exists at the symlink path, don't try to link it
+          // Let npm handle the global installation via bin field in package.json
+          logger.info('Skipping manual symlink, let npm handle global bin linkage.');
         }
       }
     } catch (error) {
@@ -241,10 +243,17 @@ function main(): void {
 
     // Integrate with OpenCode if available
     const configDir = getOpenCodeDirectory() || getOpenCodeConfigDirectory();
+    
+    // Determine correct CLI path - works both from source (ts-node) and dist
+    const isCompiled = __filename.endsWith('.js');
+    const cliPath = isCompiled
+      ? path.join(__dirname, '..', 'src', 'cli.js')  // From dist/scripts/
+      : path.join(__dirname, '..', 'dist', 'src', 'cli.js');  // From scripts/
+    
     const config: IntegrationConfig = {
       opencodeConfigDir: configDir,
       systemPromptPath: '',
-      cliPath: path.join(__dirname, '..', 'dist', 'src', 'cli.js')
+      cliPath
     };
     integrateWithOpenCode(config);
 
