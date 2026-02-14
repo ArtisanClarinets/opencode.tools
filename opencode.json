@@ -265,76 +265,35 @@
   },
   
   "mcp": {
-    "opencode-tools": {
-      "type": "local",
-      "command": ["node", "{project_root}/dist/tools/mcp-server.js"],
-      "enabled": true,
-      "timeout": 30000
-    },
-    "SequentialThinking": {
+   "SequentialThinking": {
       "type": "local",
       "command": ["npx", "-y", "@modelcontextprotocol/server-sequential-thinking"],
       "enabled": true,
       "timeout": 10000
     },
-    
-    "Desktop-Commander": {
-      "type": "local",
-      "command": ["npx", "-y", "@wonderwhy-er/desktop-commander"],
-      "enabled": true,
-      "timeout": 30000
-    },
-    
     "Memory": {
       "type": "local",
       "command": ["npx", "-y", "@modelcontextprotocol/server-memory@latest"],
       "enabled": true,
       "timeout": 5000
     },
-    
     "critical-thinking": {
       "type": "local",
       "command": ["npx", "-y", "mcp-server-actor-critic-thinking"],
       "enabled": true,
       "timeout": 15000
     },
-    
-    "testsprite": {
-      "type": "local",
-      "command": ["npx", "-y", "@testsprite/testsprite-mcp"],
-      "enabled": true,
-      "environment": {
-        "API_KEY": "{env:TESTSPRITE_API_KEY}"
-      },
-      "timeout": 30000
-    },
-    
-    "next-devtools": {
-      "type": "local",
-      "command": ["npx", "-y", "next-devtools-mcp@latest"],
-      "enabled": true,
-      "timeout": 10000
-    },
-    
     "DeepWiki-SSE": {
       "type": "remote",
       "url": "https://mcp.deepwiki.com/sse",
       "enabled": true,
       "timeout": 15000
     },
-    
     "Serena": {
       "type": "local",
       "command": ["uvx", "--from", "git+https://github.com/oraios/serena", "serena", "start-mcp-server"],
       "enabled": true,
       "timeout": 20000
-    },
-    
-    "discovery.session.export": {
-      "type": "local",
-      "command": ["node", "{project_root}/dist/tools/mcp-server.js"],
-      "enabled": true,
-      "timeout": 15000
     }
   },
   

@@ -2,6 +2,8 @@ import { AgentDefinition } from '../types';
 import { PhdResearchWorkflow } from '../../workflows/phd-research-workflow';
 import { ArchitectureAgent } from '../../../agents/architecture';
 import { CodeGenAgent } from '../../../agents/codegen';
+import { OrchestratorAgent } from '../../agents/orchestrator';
+import { logger } from '../../runtime/logger';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -26,6 +28,69 @@ const saveResearchResults = async (result: any, companyName: string) => {
 };
 
 export const AGENTS: AgentDefinition[] = [
+  {
+    id: 'orchestrator',
+    name: 'Cowork Orchestrator',
+    description: 'Complete Apple-Level Engineering Team',
+    interactive: true,
+    steps: [
+      { key: 'intent', question: 'What do you want to build? (CEO Intent):', type: 'text', required: true }
+    ],
+    execute: async (answers, log) => {
+        log('Initializing Cowork Orchestrator (CTO Mode)...');
+        const agent = new OrchestratorAgent();
+
+        const originalLog = console.log;
+        const originalError = console.error;
+        
+        // Patch global logger to capture agent output
+        const originalLoggerInfo = logger.info;
+        const originalLoggerError = logger.error;
+        const originalLoggerWarn = logger.warn;
+
+        // Create a wrapper that logs to TUI and original logger
+        logger.info = ((message: any, ...meta: any[]) => {
+            log(String(message));
+            return (originalLoggerInfo as Function).apply(logger, [message, ...meta]);
+        }) as any;
+        logger.error = ((message: any, ...meta: any[]) => {
+            log(`ERROR: ${String(message)}`);
+            return (originalLoggerError as Function).apply(logger, [message, ...meta]);
+        }) as any;
+        logger.warn = ((message: any, ...meta: any[]) => {
+            log(`WARN: ${String(message)}`);
+            return (originalLoggerWarn as Function).apply(logger, [message, ...meta]);
+        }) as any;
+
+        try {
+            console.log = (...args) => log(args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '));
+            console.error = (...args) => log(`ERROR: ${args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')}`);
+            
+            log(`CEO Intent Received: ${answers.intent}`);
+            
+            const result = await agent.execute({
+                project: 'Automated Project',
+                intent: answers.intent,
+                mode: 'full'
+            });
+
+            if (result.success) {
+                log('✅ Project lifecycle completed.');
+            } else {
+                log('⚠️ Project lifecycle encountered issues.');
+            }
+            return result;
+        } finally {
+            console.log = originalLog;
+            console.error = originalError;
+            
+            // Restore logger
+            logger.info = originalLoggerInfo;
+            logger.error = originalLoggerError;
+            logger.warn = originalLoggerWarn;
+        }
+    }
+  },
   {
     id: 'research',
     name: 'PhD Research Agent',

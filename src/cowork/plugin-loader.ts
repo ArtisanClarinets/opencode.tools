@@ -36,10 +36,48 @@ export function getBundledPluginsDir(): string {
 /**
  * Get the system plugins directory path
  * 
- * @returns Path to system plugins directory (~/.opencode/cowork/plugins)
+ * @returns Path to system plugins directory (~/.config/opencode/cowork/plugins)
  */
 export function getSystemPluginsDir(): string {
-  return path.join(os.homedir(), '.opencode', 'cowork', 'plugins');
+  return path.join(os.homedir(), '.config', 'opencode', 'cowork', 'plugins');
+}
+
+/**
+ * Load native agents from opencode.json configuration
+ * 
+ * @returns Array of agent definitions from global config
+ */
+export function loadNativeAgents(): AgentDefinition[] {
+  const configDir = path.join(os.homedir(), '.config', 'opencode');
+  const configPath = path.join(configDir, 'opencode.json');
+  
+  const config = readJsonFile<{ agents: Record<string, any> }>(configPath);
+  if (!config || !config.agents) {
+    return [];
+  }
+  
+  const agents: AgentDefinition[] = [];
+  for (const [id, agentConfig] of Object.entries(config.agents)) {
+    // Convert tool map to array
+    const tools: string[] = [];
+    if (agentConfig.tools) {
+      for (const [toolName, enabled] of Object.entries(agentConfig.tools)) {
+        if (enabled === true) tools.push(toolName);
+      }
+    }
+    
+    agents.push({
+      id,
+      name: id.charAt(0).toUpperCase() + id.slice(1).replace(/_/g, ' ') + ' Agent',
+      description: agentConfig.description || '',
+      body: agentConfig.prompt || '',
+      tools,
+      model: agentConfig.model,
+      color: 'blue'
+    });
+  }
+  
+  return agents;
 }
 
 /**

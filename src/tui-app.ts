@@ -9,7 +9,7 @@ import { App } from './tui/App';
  */
 async function main() {
   // Clear the console for a clean TUI start
-  console.clear();
+  process.stdout.write('\x1b[2J\x1b[0f');
 
   // Render the Ink app
   const { waitUntilExit } = render(React.createElement(App));

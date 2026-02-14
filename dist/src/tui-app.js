@@ -43,7 +43,7 @@ const App_1 = require("./tui/App");
  */
 async function main() {
     // Clear the console for a clean TUI start
-    console.clear();
+    process.stdout.write('\x1b[2J\x1b[0f');
     // Render the Ink app
     const { waitUntilExit } = (0, ink_1.render)(React.createElement(App_1.App));
     try {

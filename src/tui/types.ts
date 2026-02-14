@@ -6,12 +6,21 @@ export interface AgentStep {
   required?: boolean;
 }
 
+export interface AgentActivity {
+  agentId: string;
+  agentName: string;
+  status: 'idle' | 'thinking' | 'working' | 'completing' | 'failed' | 'success';
+  lastLog?: string;
+  progress?: number; // 0-100
+}
+
 export interface AgentDefinition {
   id: string;
   name: string;
   description: string;
   steps: AgentStep[];
   execute: (answers: Record<string, any>, log: (msg: string) => void) => Promise<any>;
+  interactive?: boolean; // If true, uses refinement cycle instead of wizard
 }
 
 export interface Message {
@@ -27,7 +36,8 @@ export interface Session {
   agentId: string;
   messages: Message[];
   answers: Record<string, any>;
-  status: 'idle' | 'running' | 'completed' | 'failed';
+  status: 'idle' | 'refining' | 'running' | 'completed' | 'failed';
+  activities: AgentActivity[];
   createdAt: number;
   updatedAt: number;
 }

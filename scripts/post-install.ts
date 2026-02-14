@@ -25,7 +25,8 @@ class PostInstallIntegration {
 
   constructor() {
     this.homeDir = os.homedir();
-    this.opencodeDir = path.join(this.homeDir, '.opencode');
+    // Use XDG-like structure: ~/.config/opencode
+    this.opencodeDir = path.join(this.homeDir, '.config', 'opencode');
     this.currentPackageDir = process.cwd();
   }
 
@@ -58,7 +59,7 @@ class PostInstallIntegration {
     } catch (error) {
       console.error('\n❌ Integration failed:', error);
       console.log('\n🔧 Manual setup instructions:');
-      console.log('   1. Copy opencode.json to ~/.opencode/config.json');
+      console.log('   1. Copy opencode.json to ~/.config/opencode/opencode.json');
       console.log('   2. Restart OpenCode TUI');
       process.exit(1);
     }
@@ -66,16 +67,16 @@ class PostInstallIntegration {
 
   private async ensureOpenCodeDirectory(): Promise<void> {
     if (!fs.existsSync(this.opencodeDir)) {
-      console.log('📁 Creating OpenCode configuration directory...');
+      console.log(`📁 Creating OpenCode configuration directory at ${this.opencodeDir}...`);
       fs.mkdirSync(this.opencodeDir, { recursive: true });
     }
   }
 
   private async backupExistingConfig(): Promise<void> {
-    const globalConfigPath = path.join(this.opencodeDir, 'config.json');
+    const globalConfigPath = path.join(this.opencodeDir, 'opencode.json');
     
     if (fs.existsSync(globalConfigPath)) {
-      const backupPath = path.join(this.opencodeDir, 'config.backup.json');
+      const backupPath = path.join(this.opencodeDir, 'opencode.backup.json');
       console.log('💾 Backing up existing configuration...');
       fs.copyFileSync(globalConfigPath, backupPath);
     }
@@ -83,7 +84,7 @@ class PostInstallIntegration {
 
   private async mergeConfiguration(): Promise<void> {
     const toolsConfigPath = path.join(this.currentPackageDir, 'opencode.json');
-    const globalConfigPath = path.join(this.opencodeDir, 'config.json');
+    const globalConfigPath = path.join(this.opencodeDir, 'opencode.json');
 
     if (!fs.existsSync(toolsConfigPath)) {
       throw new Error('opencode.json not found in package directory');
@@ -93,7 +94,11 @@ class PostInstallIntegration {
     let globalConfig: OpenCodeConfig = { agents: {}, tools: {}, mcp: {} };
 
     if (fs.existsSync(globalConfigPath)) {
-      globalConfig = JSON.parse(fs.readFileSync(globalConfigPath, 'utf-8'));
+      try {
+        globalConfig = JSON.parse(fs.readFileSync(globalConfigPath, 'utf-8'));
+      } catch (e) {
+        console.warn('⚠️ Could not parse existing global config, starting fresh.');
+      }
     }
 
     // Merge configurations, with global taking precedence for conflicts
