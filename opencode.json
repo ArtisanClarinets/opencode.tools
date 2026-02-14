@@ -1,8 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  
   "default_agent": "orchestrator",
-  
   "agent": {
     "orchestrator": {
       "description": "Enterprise Orchestrator Agent - Coordinates all specialized agents with governance oversight",
@@ -33,7 +31,6 @@
       },
       "maxSteps": 1000000
     },
-    
     "architecture": {
       "description": "Architecture Agent - System design with sequential thinking capabilities",
       "mode": "subagent",
@@ -51,7 +48,6 @@
         "DeepWiki-SSE": true
       }
     },
-    
     "codegen": {
       "description": "Codegen Agent - Code generation with memory and critical thinking",
       "mode": "primary",
@@ -89,7 +85,6 @@
         }
       }
     },
-    
     "database": {
       "description": "Database Agent - Prisma ORM and database operations",
       "mode": "subagent",
@@ -110,7 +105,6 @@
         }
       }
     },
-    
     "proposal": {
       "description": "Proposal Agent - Generates client-ready proposals, SOWs, and compliance documentation.",
       "mode": "primary",
@@ -127,7 +121,6 @@
         "critical-thinking": true
       }
     },
-    
     "qa": {
       "description": "QA Agent - Testing with TestSprite integration",
       "mode": "subagent",
@@ -155,7 +148,6 @@
         }
       }
     },
-    
     "delivery": {
       "description": "Delivery Agent - Deployment, runbooks, and client handoff.",
       "mode": "subagent",
@@ -179,7 +171,6 @@
         }
       }
     },
-    
     "research": {
       "description": "Research Agent - DeepWiki and documentation analysis",
       "mode": "subagent",
@@ -202,7 +193,6 @@
         "Memory": true
       }
     },
-    
     "security": {
       "description": "Security Agent - Serena for code analysis and auditing",
       "mode": "subagent",
@@ -217,7 +207,6 @@
       }
     }
   },
-  
   "tools": {
     "SequentialThinking": true,
     "Desktop-Commander": false,
@@ -263,25 +252,79 @@
     "DeepWiki-SSE": true,
     "Serena": false
   },
-  
   "mcp": {
-   "SequentialThinking": {
+   "oct.SequentialThinking": {
+    "opencode-tools": {
       "type": "local",
-      "command": ["npx", "-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "command": [
+        "node",
+        "{project_root}/dist/tools/mcp-server.js"
+      ],
+      "enabled": true,
+      "timeout": 30000
+    },
+    "SequentialThinking": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ],
       "enabled": true,
       "timeout": 10000
     },
+    "Desktop-Commander": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@wonderwhy-er/desktop-commander"
+      ],
+      "enabled": true,
+      "timeout": 30000
+    },
     "Memory": {
       "type": "local",
-      "command": ["npx", "-y", "@modelcontextprotocol/server-memory@latest"],
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-memory@latest"
+      ],
       "enabled": true,
       "timeout": 5000
     },
     "critical-thinking": {
       "type": "local",
-      "command": ["npx", "-y", "mcp-server-actor-critic-thinking"],
+      "command": [
+        "npx",
+        "-y",
+        "mcp-server-actor-critic-thinking"
+      ],
       "enabled": true,
       "timeout": 15000
+    },
+    "testsprite": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@testsprite/testsprite-mcp"
+      ],
+      "enabled": true,
+      "environment": {
+        "API_KEY": "{env:TESTSPRITE_API_KEY}"
+      },
+      "timeout": 30000
+    },
+    "next-devtools": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "next-devtools-mcp@latest"
+      ],
+      "enabled": true,
+      "timeout": 10000
     },
     "DeepWiki-SSE": {
       "type": "remote",
@@ -291,7 +334,13 @@
     },
     "Serena": {
       "type": "local",
-      "command": ["uvx", "--from", "git+https://github.com/oraios/serena", "serena", "start-mcp-server"],
+      "command": [
+        "uvx",
+        "--from",
+        "git+https://github.com/oraios/serena",
+        "serena",
+        "start-mcp-server"
+      ],
       "enabled": true,
       "timeout": 20000
     }
@@ -309,4 +358,30 @@
     },
     "write": "allow"
   }
+}
+    },
+    "discovery.session.export": {
+      "type": "local",
+      "command": [
+        "node",
+        "{project_root}/dist/tools/mcp-server.js"
+      ],
+      "enabled": true,
+      "timeout": 15000
+    },
+
+
+},
+"permission": {
+  "edit": "allow",
+  "bash": {
+    "git status*": "allow",
+    "git log*": "allow",
+    "git diff*": "allow",
+    "ls*": "allow",
+    "pwd": "allow",
+    "echo *": "allow"
+  },
+  "write": "allow"
+}
 }
