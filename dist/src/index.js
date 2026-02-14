@@ -44,6 +44,7 @@ exports.getAvailableTools = getAvailableTools;
 exports.executeTool = executeTool;
 const tui_integration_1 = require("./tui-integration");
 Object.defineProperty(exports, "registerTUITools", { enumerable: true, get: function () { return tui_integration_1.registerTUITools; } });
+const discovery_1 = require("./plugins/discovery");
 const tui_agents_1 = require("./tui-agents");
 Object.defineProperty(exports, "TUIResearchAgent", { enumerable: true, get: function () { return tui_agents_1.TUIResearchAgent; } });
 /**
@@ -53,13 +54,12 @@ function getAvailableTools() {
     // Also include discovered plugin manifests as metadata
     const tools = (0, tui_integration_1.registerTUITools)();
     try {
-        const { discoverBundledPlugins, discoverSystemPlugins } = require('./plugins/discovery');
-        const manifests = discoverBundledPlugins();
+        const manifests = (0, discovery_1.discoverBundledPlugins)();
         for (const m of manifests) {
             tools.push({ id: m.id, name: m.name, description: `Discovered plugin (${m.adapterType})`, category: 'research', handler: async () => ({ manifest: m }) });
         }
         // Also include any plugins already registered in the user's OpenCode home
-        const system = discoverSystemPlugins();
+        const system = (0, discovery_1.discoverSystemPlugins)();
         for (const m of system) {
             tools.push({ id: m.id, name: m.name, description: `System-registered plugin (${m.adapterType})`, category: 'research', handler: async () => ({ manifest: m }) });
         }

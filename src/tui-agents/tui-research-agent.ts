@@ -105,13 +105,13 @@ export class TUIResearchAgent {
    */
   private async tuiPrompt(message: string): Promise<string> {
     // This is a placeholder - in real TUI, this would use the TUI's prompt system
+    const readline = await import('readline');
     return new Promise((resolve) => {
-      const readline = require('readline');
       const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout
       });
-      
+
       rl.question(message + ' ', (answer: string) => {
         rl.close();
         resolve(answer.trim());

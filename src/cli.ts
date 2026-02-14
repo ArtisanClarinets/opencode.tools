@@ -105,9 +105,10 @@ program
 program
   .command('tui')
   .description('Launch interactive TUI')
-  .action(() => {
+  .action(async () => {
     // Import and launch TUI
-    require('./tui-app');
+    // Use dynamic import for ESM compatibility and to allow mocks in tests
+    await import('./tui-app');
   });
 
 program
@@ -133,7 +134,8 @@ program
       `);
       
       // Launch orchestration
-      const { OrchestratorAgent } = require('./agents/orchestrator');
+      // OrchestratorAgent is a TS module in src/agents
+      const { OrchestratorAgent } = await import('./agents/orchestrator');
       const orchestrator = new OrchestratorAgent();
       await orchestrator.execute({
         project: options.project,
@@ -354,16 +356,18 @@ program
       const projectRoot = path.resolve(__dirname, '..', '..');
       
       // Import and run the native integrate script
-      try {
-        const nativeIntegratePath = path.join(projectRoot, 'scripts', 'native-integrate.js');
-        const { integrateWithOpenCode } = require(nativeIntegratePath);
-        integrateWithOpenCode(projectRoot);
-        console.log('[SUCCESS] Integration complete!');
-      } catch (loadErr) {
-        console.log('[INFO] Native integration script not found.');
-        console.log('[INFO] Integration is a placeholder - manual integration required.');
-        console.log('[SUCCESS] Integration complete!');
-      }
+        try {
+          const nativeIntegratePath = path.join(projectRoot, 'scripts', 'native-integrate.js');
+          // Use require here because the script is a JS file intended to run in Node directly
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          const { integrateWithOpenCode } = require(nativeIntegratePath);
+          integrateWithOpenCode(projectRoot);
+          console.log('[SUCCESS] Integration complete!');
+        } catch (loadErr) {
+          console.log('[INFO] Native integration script not found.');
+          console.log('[INFO] Integration is a placeholder - manual integration required.');
+          console.log('[SUCCESS] Integration complete!');
+        }
     } catch (error) {
       logger.error('Integration failed:', error);
       process.exit(1);
