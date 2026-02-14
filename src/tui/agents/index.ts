@@ -264,7 +264,7 @@ export const AGENTS: AgentDefinition[] = [
             console.log = (...args) => log(args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '));
             console.error = (...args) => log(`ERROR: ${args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')}`);
 
-            const result = await agent.prototype({
+            const result = await agent.execute({
                 id: 'TUI-RUN',
                 title: answers.title,
                 description: 'Generated via OpenCode TUI',

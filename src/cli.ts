@@ -126,7 +126,8 @@ program
   .action(async () => {
     // Import and launch TUI
     // Use dynamic import for ESM compatibility and to allow mocks in tests
-    await import('./tui-app');
+    const { startTui } = await import("./tui-app");
+    await startTui();
   });
 
 program

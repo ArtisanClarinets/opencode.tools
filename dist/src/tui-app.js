@@ -33,6 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.startTui = startTui;
 const React = __importStar(require("react"));
 const ink_1 = require("ink");
 const App_1 = require("./tui/App");
@@ -41,7 +42,7 @@ const App_1 = require("./tui/App");
  *
  * Replaces the previous readline-based implementation with a React Ink TUI.
  */
-async function main() {
+async function startTui() {
     // Clear the console for a clean TUI start
     process.stdout.write('\x1b[2J\x1b[0f');
     // Render the Ink app
@@ -54,9 +55,9 @@ async function main() {
         process.exit(1);
     }
 }
-// Start the TUI
+// Start the TUI if run directly
 if (require.main === module) {
-    main().catch(err => {
+    startTui().catch(err => {
         console.error('Fatal error:', err);
         process.exit(1);
     });

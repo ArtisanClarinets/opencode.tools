@@ -7,7 +7,7 @@ import { App } from './tui/App';
  *
  * Replaces the previous readline-based implementation with a React Ink TUI.
  */
-async function main() {
+export async function startTui() {
   // Clear the console for a clean TUI start
   process.stdout.write('\x1b[2J\x1b[0f');
 
@@ -22,9 +22,9 @@ async function main() {
   }
 }
 
-// Start the TUI
+// Start the TUI if run directly
 if (require.main === module) {
-  main().catch(err => {
+  startTui().catch(err => {
     console.error('Fatal error:', err);
     process.exit(1);
   });
