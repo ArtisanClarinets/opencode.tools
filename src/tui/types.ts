@@ -21,6 +21,8 @@ export interface AgentDefinition {
   steps: AgentStep[];
   execute: (answers: Record<string, any>, log: (msg: string) => void) => Promise<any>;
   interactive?: boolean; // If true, uses refinement cycle instead of wizard
+  repl?: boolean; // If true, agent runs in continuous REPL mode
+  onInput?: (input: string, log: (msg: string) => void) => Promise<void>;
 }
 
 export interface Message {

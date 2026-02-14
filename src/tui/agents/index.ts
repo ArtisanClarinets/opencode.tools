@@ -3,6 +3,8 @@ import { PhdResearchWorkflow } from '../../workflows/phd-research-workflow';
 import { ArchitectureAgent } from '../../../agents/architecture';
 import { CodeGenAgent } from '../../../agents/codegen';
 import { OrchestratorAgent } from '../../agents/orchestrator';
+import { CoworkOrchestrator } from '../../cowork/orchestrator/cowork-orchestrator';
+import { CommandRegistry } from '../../cowork/registries/command-registry';
 import { logger } from '../../runtime/logger';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -27,67 +29,110 @@ const saveResearchResults = async (result: any, companyName: string) => {
     return basePath;
 };
 
+// Singleton orchestrator instance for REPL
+let orchestratorInstance: CoworkOrchestrator | null = null;
+
+const getOrchestrator = () => {
+    if (!orchestratorInstance) {
+        orchestratorInstance = new CoworkOrchestrator({
+            projectDir: process.cwd(),
+            maxConcurrent: 5
+        });
+
+        // Register default commands
+        const registry = CommandRegistry.getInstance();
+        if (!registry.has('help')) {
+            registry.register({
+                id: 'help',
+                name: 'help',
+                description: 'Show available commands',
+                body: 'Help command',
+            });
+        }
+        if (!registry.has('status')) {
+             registry.register({
+                id: 'status',
+                name: 'status',
+                description: 'Show orchestrator status',
+                body: 'Status command',
+            });
+        }
+        if (!registry.has('spawn')) {
+             registry.register({
+                id: 'spawn',
+                name: 'spawn',
+                description: 'Spawn an agent: spawn <agentId> <task>',
+                body: 'Spawn command',
+            });
+        }
+    }
+    return orchestratorInstance;
+};
+
 export const AGENTS: AgentDefinition[] = [
   {
     id: 'orchestrator',
     name: 'Cowork Orchestrator',
-    description: 'Complete Apple-Level Engineering Team',
+    description: 'Complete Apple-Level Engineering Team (Interactive)',
     interactive: true,
-    steps: [
-      { key: 'intent', question: 'What do you want to build? (CEO Intent):', type: 'text', required: true }
-    ],
+    repl: true,
+    steps: [],
     execute: async (answers, log) => {
-        log('Initializing Cowork Orchestrator (CTO Mode)...');
-        const agent = new OrchestratorAgent();
+        log('Initializing Cowork Orchestrator REPL...');
+        const orch = getOrchestrator();
+        log('Orchestrator ready. You have complete control.');
+        log('Type "help" for commands or enter natural language intents.');
+        return { success: true };
+    },
+    onInput: async (input, log) => {
+        const orch = getOrchestrator();
+        const cmdParts = input.trim().split(' ');
+        const cmdName = cmdParts[0].toLowerCase();
+        const args = cmdParts.slice(1);
 
-        const originalLog = console.log;
-        const originalError = console.error;
-        
-        // Patch global logger to capture agent output
-        const originalLoggerInfo = logger.info;
-        const originalLoggerError = logger.error;
-        const originalLoggerWarn = logger.warn;
+        log(`> ${input}`);
 
-        // Create a wrapper that logs to TUI and original logger
-        logger.info = ((message: any, ...meta: any[]) => {
-            log(String(message));
-            return (originalLoggerInfo as Function).apply(logger, [message, ...meta]);
-        }) as any;
-        logger.error = ((message: any, ...meta: any[]) => {
-            log(`ERROR: ${String(message)}`);
-            return (originalLoggerError as Function).apply(logger, [message, ...meta]);
-        }) as any;
-        logger.warn = ((message: any, ...meta: any[]) => {
-            log(`WARN: ${String(message)}`);
-            return (originalLoggerWarn as Function).apply(logger, [message, ...meta]);
-        }) as any;
-
-        try {
-            console.log = (...args) => log(args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '));
-            console.error = (...args) => log(`ERROR: ${args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')}`);
-            
-            log(`CEO Intent Received: ${answers.intent}`);
-            
-            const result = await agent.execute({
-                project: 'Automated Project',
-                intent: answers.intent,
-                mode: 'full'
-            });
-
-            if (result.success) {
-                log('✅ Project lifecycle completed.');
-            } else {
-                log('⚠️ Project lifecycle encountered issues.');
+        if (cmdName === 'help') {
+            const registry = CommandRegistry.getInstance();
+            const commands = registry.list();
+            log('Available Commands:');
+            commands.forEach(c => log(` - ${c.name}: ${c.description}`));
+        } else if (cmdName === 'status') {
+            const transcript = orch.getTranscript();
+            const activeCount = transcript.filter(t => t.type === 'spawn').length - transcript.filter(t => t.type === 'complete' || t.type === 'error').length;
+            log(`Status: ${activeCount} agents active.`);
+            log('Recent Activity:');
+            transcript.slice(-5).forEach(t => log(`[${t.timestamp}] ${t.message}`));
+        } else if (cmdName === 'spawn') {
+            if (args.length < 2) {
+                log('Usage: spawn <agentId> <task>');
+                return;
             }
-            return result;
-        } finally {
-            console.log = originalLog;
-            console.error = originalError;
-            
-            // Restore logger
-            logger.info = originalLoggerInfo;
-            logger.error = originalLoggerError;
-            logger.warn = originalLoggerWarn;
+            const agentId = args[0];
+            const task = args.slice(1).join(' ');
+            try {
+                log(`Spawning agent "${agentId}" for task: "${task}"...`);
+                const result = await orch.spawnAgent(agentId, task);
+                if (result.metadata.success) {
+                    log(`✅ Agent "${agentId}" completed: ${JSON.stringify(result.output)}`);
+                } else {
+                    log(`❌ Agent "${agentId}" failed: ${result.metadata.error}`);
+                }
+            } catch (e: any) {
+                log(`Error spawning agent: ${e.message}`);
+            }
+        } else {
+            // Default: treat as natural language intent or unknown command
+            // For now, simple echo or try to execute if it matches a registered command ID
+             const registry = CommandRegistry.getInstance();
+             const command = registry.getByName(cmdName);
+             if (command) {
+                 log(`Executing command "${command.name}"...`);
+                 await orch.execute(command.id, args);
+                 log('Command completed.');
+             } else {
+                 log(`Unknown command: "${cmdName}". Type "help" for options.`);
+             }
         }
     }
   },
@@ -218,11 +263,6 @@ export const AGENTS: AgentDefinition[] = [
         try {
             console.log = (...args) => log(args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '));
             console.error = (...args) => log(`ERROR: ${args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')}`);
-
-            // Fix: prototype method signature requires id, title, description, techStack
-            // Checking agents/codegen/index.ts: public async prototype(backlogItem: BacklogItem): Promise<ProjectScaffoldResult>
-            // BacklogItem has id, title, description, techStack (from ../types)
-            // But we don't have types here.
 
             const result = await agent.prototype({
                 id: 'TUI-RUN',

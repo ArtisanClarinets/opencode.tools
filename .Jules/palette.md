@@ -1,3 +1,3 @@
-## 2026-02-14 - TUI Input Disabled State
-**Learning:** `ink-text-input` lacks a native `disabled` prop, requiring manual conditional rendering of a static `Text` component to prevent user confusion during async operations.
-**Action:** Always implement a `disabled` prop wrapper for `InputArea` components in TUI applications to provide visual feedback (e.g., greyed out text, spinner).
+## 2026-02-14 - Cowork Orchestrator REPL Integration
+**Learning:** To support "continuous control" or REPL-like behavior in the TUI, the standard  promise-based flow is insufficient.
+**Action:** Implemented a `repl: true` flag and `onInput` handler in `AgentDefinition`. `ChatScreen` was updated to allow input during the 'running' state if this flag is present, enabling real-time command dispatch to a persistent orchestrator instance.
