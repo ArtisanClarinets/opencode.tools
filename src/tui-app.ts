@@ -13,7 +13,7 @@ async function main() {
   console.log('\nWelcome! Select a tool to begin:\n');
 
   const tools = registerTUITools();
-  const readline = require('readline');
+  const readline = await import('readline');
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout

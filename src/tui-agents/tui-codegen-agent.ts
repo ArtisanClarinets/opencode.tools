@@ -37,8 +37,8 @@ export class TUICodeGenAgent {
   }
 
   private async tuiPrompt(message: string): Promise<string> {
+    const readline = await import('readline');
     return new Promise((resolve) => {
-      const readline = require('readline');
       const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout

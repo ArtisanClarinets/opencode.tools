@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 
 export interface PluginManifest {
   id: string;
@@ -34,7 +35,7 @@ export function discoverBundledPlugins(packageRoot?: string): PluginManifest[] {
 }
 
 export function discoverSystemPlugins(opencodeDir?: string): PluginManifest[] {
-  const home = opencodeDir || path.join(require('os').homedir(), '.opencode');
+  const home = opencodeDir || path.join(os.homedir(), '.opencode');
   const pluginsDir = path.join(home, 'plugins');
   if (!fs.existsSync(pluginsDir)) return [];
 
