@@ -3371,5 +3371,72 @@
         "relevanceScore": 1
       }
     ]
+  },
+  "undefined": {
+    "topic": "Acme Corp",
+    "status": "in_progress",
+    "startedAt": "2026-02-14T21:34:02.921Z",
+    "findings": [
+      {
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=Acme%20Corp%20company%20overview",
+        "content": "Research: Acme Corp company overview",
+        "timestamp": "2026-02-14T21:34:18.221Z",
+        "relevanceScore": 1
+      },
+      {
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=Acme%20Corp%20about%20us",
+        "content": "Research: Acme Corp about us",
+        "timestamp": "2026-02-14T21:34:18.227Z",
+        "relevanceScore": 1
+      },
+      {
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=Acme%20Corp%20mission%20vision",
+        "content": "Research: Acme Corp mission vision",
+        "timestamp": "2026-02-14T21:34:18.229Z",
+        "relevanceScore": 1
+      },
+      {
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=Acme%20Corp%20company%20overview%20depth%202",
+        "content": "Research: Acme Corp company overview depth 2",
+        "timestamp": "2026-02-14T21:34:33.326Z",
+        "relevanceScore": 1
+      },
+      {
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=Acme%20Corp%20about%20us%20depth%202",
+        "content": "Research: Acme Corp about us depth 2",
+        "timestamp": "2026-02-14T21:34:33.329Z",
+        "relevanceScore": 1
+      },
+      {
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=Acme%20Corp%20mission%20vision%20depth%202",
+        "content": "Research: Acme Corp mission vision depth 2",
+        "timestamp": "2026-02-14T21:34:33.333Z",
+        "relevanceScore": 1
+      },
+      {
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=Acme%20Corp%20company%20overview%20depth%203",
+        "content": "Research: Acme Corp company overview depth 3",
+        "timestamp": "2026-02-14T21:34:48.529Z",
+        "relevanceScore": 1
+      },
+      {
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=Acme%20Corp%20about%20us%20depth%203",
+        "content": "Research: Acme Corp about us depth 3",
+        "timestamp": "2026-02-14T21:34:48.534Z",
+        "relevanceScore": 1
+      },
+      {
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=Acme%20Corp%20mission%20vision%20depth%203",
+        "content": "Research: Acme Corp mission vision depth 3",
+        "timestamp": "2026-02-14T21:34:48.536Z",
+        "relevanceScore": 1
+      },
+      {
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=Construction%20Tech%20industry%20trends%202024",
+        "content": "Research: Construction Tech industry trends 2024",
+        "timestamp": "2026-02-14T21:34:18.230Z",
+        "relevanceScore": 1
+      }
+    ]
   }
 }

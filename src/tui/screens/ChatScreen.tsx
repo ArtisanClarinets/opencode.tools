@@ -82,8 +82,23 @@ export const ChatScreen: React.FC = () => {
   const handleSendMessage = async (content: string) => {
     if (!agent) return;
 
+    let currentStatus = session.status;
+
+    // REPL Mode: Handle idle state - Auto-initialize
+    if (agent.repl && currentStatus === "idle") {
+        dispatch({ type: "SET_STATUS", sessionId: session.id, status: "running" });
+        currentStatus = 'running'; // Update local variable
+
+        // Initialize if execute is provided
+        if (agent.execute) {
+             await agent.execute(session.answers, (log: string) => {
+                 dispatch({ type: "ADD_MESSAGE", sessionId: session.id, message: createLogMessage(log) });
+             });
+        }
+    }
+
     // REPL Mode: Allow input even if running
-    if (session.status === 'running' && !agent.repl) return;
+    if (currentStatus === 'running' && !agent.repl) return;
 
     dispatch({ type: 'ADD_MESSAGE', sessionId: session.id, message: createUserMessage(content) });
 
@@ -93,8 +108,8 @@ export const ChatScreen: React.FC = () => {
     }
 
     // Interactive Refinement Mode (Legacy)
-    if (agent.interactive && !agent.repl && session.status !== 'completed' && session.status !== 'failed') {
-        if (session.status === 'idle') {
+    if (agent.interactive && !agent.repl && currentStatus !== 'completed' && currentStatus !== 'failed') {
+        if (currentStatus === 'idle') {
             const newAnswers = { ...session.answers, intent: content };
             dispatch({ type: 'UPDATE_ANSWERS', sessionId: session.id, answers: newAnswers });
             dispatch({ type: 'SET_STATUS', sessionId: session.id, status: 'refining' });
@@ -116,7 +131,7 @@ export const ChatScreen: React.FC = () => {
                     ]
                 });
             }, 800);
-        } else if (session.status === 'refining') {
+        } else if (currentStatus === 'refining') {
             if (content.toLowerCase().includes('proceed') || content.toLowerCase().includes('yes') || content.toLowerCase().includes('go')) {
                 dispatch({ type: 'SET_STATUS', sessionId: session.id, status: 'running' });
                 dispatch({ type: 'ADD_MESSAGE', sessionId: session.id, message: createAgentMessage("Excellent. Commencing execution. You can monitor the team's progress in the Dashboard (Press 'D').") });
@@ -129,7 +144,7 @@ export const ChatScreen: React.FC = () => {
     }
 
     // REPL Mode Execution
-    if (agent.repl && session.status === 'running' && agent.onInput) {
+    if (agent.repl && currentStatus === 'running' && agent.onInput) {
         await agent.onInput(content, (log: string) => {
              dispatch({ type: 'ADD_MESSAGE', sessionId: session.id, message: createLogMessage(log) });
         });
@@ -157,7 +172,7 @@ export const ChatScreen: React.FC = () => {
         }, 300);
       }
     } else {
-        if (session.status === 'completed' || session.status === 'failed') {
+        if (currentStatus === 'completed' || currentStatus === 'failed') {
              dispatch({ type: 'ADD_MESSAGE', sessionId: session.id, message: createAgentMessage("Session ended. Start a new chat to run again.") });
         }
     }
