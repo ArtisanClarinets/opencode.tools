@@ -66,7 +66,22 @@ export class ToolRouter {
   if (!fullPath.startsWith(BASE_DIR)) {
       throw new Error('Invalid path');
   }
-  return fs.readFileSync(fullPath, 'utf8');
+  const pathModule = require('path');
+  const basePath = '/app/restricted/';
+
+  // ... inside your handler:
+  handler: async ({ path }) => {
+      const fs = require('fs');
+      // Join the user-supplied path with the base directory
+      const joinedPath = pathModule.join(basePath, path);
+      // Normalize to remove any '..' or similar traversal elements
+      const fullPath = pathModule.normalize(joinedPath);
+      // Verify that the resolved path is still within the base directory
+      if (!fullPath.startsWith(basePath)) {
+          throw new Error('Invalid file path');
+      }
+      return fs.readFileSync(fullPath, 'utf8');
+  }
         }
     });
   }
