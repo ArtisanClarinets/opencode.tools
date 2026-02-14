@@ -33,12 +33,13 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-const index_1 = require("./index");
+const React = __importStar(require("react"));
+const ink_1 = require("ink");
+const App_1 = require("./tui/App");
 /**
  * OpenCode TUI Application Entry Point
  *
- * This is the main interface for interacting with OpenCode Tools.
- * All functionality is accessed through this interactive menu.
+ * Replaces the previous readline-based implementation with a React Ink TUI.
  */
 async function main() {
     console.log('\n╔════════════════════════════════════════════╗');
@@ -53,43 +54,11 @@ async function main() {
     });
     const ask = (query) => new Promise(resolve => rl.question(query, resolve));
     try {
-        while (true) {
-            // Display tools menu
-            tools.forEach((tool, index) => {
-                console.log(`${index + 1}. ${tool.name}`);
-                console.log(`   ${tool.description}`);
-            });
-            console.log(`\n${tools.length + 1}. Exit`);
-            const choice = await ask('\nEnter selection: ');
-            const index = parseInt(choice) - 1;
-            if (index >= 0 && index < tools.length) {
-                const tool = tools[index];
-                console.log(`\nLaunching ${tool.name}...\n`);
-                try {
-                    // For Research Agent, we launch the interactive mode by default
-                    if (tool.id === 'research-agent') {
-                        await tool.handler({ mode: 'interactive' });
-                    }
-                    else {
-                        console.log('Tool handler not fully implemented for interactive mode.');
-                    }
-                }
-                catch (error) {
-                    console.error('Error running tool:', error.message);
-                }
-                console.log('\n----------------------------------------\n');
-            }
-            else if (index === tools.length) {
-                console.log('Goodbye!');
-                break;
-            }
-            else {
-                console.log('Invalid selection. Please try again.\n');
-            }
-        }
+        await waitUntilExit();
     }
-    finally {
-        rl.close();
+    catch (error) {
+        console.error('TUI Error:', error);
+        process.exit(1);
     }
 }
 // Start the TUI
