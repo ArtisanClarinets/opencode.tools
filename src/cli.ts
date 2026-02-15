@@ -17,17 +17,35 @@ import { logger } from './runtime/logger';
 import { CoworkOrchestrator } from './cowork/orchestrator/cowork-orchestrator';
 import { CommandRegistry } from './cowork/registries/command-registry';
 import { AgentRegistry } from './cowork/registries/agent-registry';
-import { loadAllPlugins } from './cowork/plugin-loader';
+import { loadAllPlugins, loadNativeAgents } from './cowork/plugin-loader';
 
 const VERSION = '1.0.0';
 
 program
   .name('opencode-tools')
-  .description('OpenCode Tools - Complete Developer Team Automation')
+  .description('OpenCode Tools - Complete Developer Team Automation (Independent TUI & CLI)')
   .version(VERSION);
+
+// Initialize plugin loader and registries
+function initializeCowork(): void {
+  const plugins = loadAllPlugins();
+  const nativeAgents = loadNativeAgents();
+  
+  const commandRegistry = CommandRegistry.getInstance();
+  const agentRegistry = AgentRegistry.getInstance();
+  
+  for (const plugin of plugins) {
+    commandRegistry.registerMany(plugin.commands);
+    agentRegistry.registerMany(plugin.agents);
+  }
+  
+  // Register native agents from ~/.config/opencode/opencode.json
+  agentRegistry.registerMany(nativeAgents);
+}
 
 program
   .command('research')
+
   .description('Execute research agent to gather comprehensive dossier')
   .argument('<company>', 'Company name to research')
   .option('-i, --industry <industry>', 'Industry sector')
@@ -108,7 +126,8 @@ program
   .action(async () => {
     // Import and launch TUI
     // Use dynamic import for ESM compatibility and to allow mocks in tests
-    await import('./tui-app');
+    const { startTui } = await import("./tui-app");
+    await startTui();
   });
 
 program
@@ -180,19 +199,6 @@ program
 // ============================================================
 // Cowork Plugin System Commands
 // ============================================================
-
-// Initialize plugin loader and registries
-function initializeCowork(): void {
-  const plugins = loadAllPlugins();
-  
-  const commandRegistry = CommandRegistry.getInstance();
-  const agentRegistry = AgentRegistry.getInstance();
-  
-  for (const plugin of plugins) {
-    commandRegistry.registerMany(plugin.commands);
-    agentRegistry.registerMany(plugin.agents);
-  }
-}
 
 // cowork list - List commands, agents, and plugins
 const coworkCmd = program
@@ -356,22 +362,29 @@ program
       const projectRoot = path.resolve(__dirname, '..', '..');
       
       // Import and run the native integrate script
-        try {
-          const nativeIntegratePath = path.join(projectRoot, 'scripts', 'native-integrate.js');
-          // Use require here because the script is a JS file intended to run in Node directly
-          // eslint-disable-next-line @typescript-eslint/no-var-requires
-          const { integrateWithOpenCode } = require(nativeIntegratePath);
-          integrateWithOpenCode(projectRoot);
-          console.log('[SUCCESS] Integration complete!');
-        } catch (loadErr) {
-          console.log('[INFO] Native integration script not found.');
-          console.log('[INFO] Integration is a placeholder - manual integration required.');
-          console.log('[SUCCESS] Integration complete!');
-        }
+      const nativeIntegratePath = path.join(projectRoot, 'scripts', 'native-integrate.js');
+      
+      try {
+        // Use require here because the script is a JS file intended to run in Node directly
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const { integrateWithOpenCode } = require(nativeIntegratePath);
+        integrateWithOpenCode(projectRoot);
+        console.log('[SUCCESS] Integration complete!');
+      } catch (loadErr) {
+        console.log('[INFO] Native integration script not found.');
+        console.log('[INFO] Integration is a placeholder - manual integration required.');
+      }
     } catch (error) {
       logger.error('Integration failed:', error);
       process.exit(1);
     }
   });
 
+// Default command - launch TUI if no args provided
+if (process.argv.length === 2) {
+  // Synthesize 'tui' command
+  process.argv.push('tui');
+}
+
 program.parse();
+

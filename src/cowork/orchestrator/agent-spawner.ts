@@ -8,6 +8,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { AgentRegistry } from '../registries/agent-registry';
 import { ToolPermissionGate } from '../permissions/tool-gate';
 import { AgentResult, ResultMerger } from './result-merger';
+import { AgentRunner } from '../runtime/agent-runner';
+import { ToolRouter } from '../runtime/tool-router';
 
 /**
  * Spawn options
@@ -45,6 +47,7 @@ export class AgentSpawner {
   private permissionGate: ToolPermissionGate;
   private resultMerger: ResultMerger;
   private customHandlers: Map<string, AgentHandler>;
+  private agentRunner: AgentRunner;
 
   /**
    * Create agent spawner
@@ -54,6 +57,10 @@ export class AgentSpawner {
     this.permissionGate = new ToolPermissionGate();
     this.resultMerger = new ResultMerger();
     this.customHandlers = new Map<string, AgentHandler>();
+
+    // Initialize Runtime
+    const toolRouter = new ToolRouter();
+    this.agentRunner = new AgentRunner(toolRouter);
   }
 
   /**
@@ -164,7 +171,7 @@ export class AgentSpawner {
    * Execute agent with timeout
    */
   private async executeWithTimeout(
-    agent: { id: string; name: string; body: string },
+    agent: { id: string; name: string; body?: string },
     context: TaskContext,
     timeout: number
   ): Promise<AgentResult> {
@@ -190,17 +197,21 @@ export class AgentSpawner {
           return;
         }
 
-        // For now, we'll just simulate agent execution
-        // In a real implementation, this would call the actual agent
-        const output = {
-          agentId: agent.id,
-          agentName: agent.name,
-          task: context.task,
-          result: `Executed agent: ${agent.name}`
-        };
+        // Use the AgentRunner to execute the agent using LLM loop
+        this.agentRunner.run(agent.id, context.task, context)
+            .then(result => {
+                clearTimeout(timeoutId);
+                if (result.success) {
+                    resolve(this.createSuccessResult(agent.id, agent.name, result));
+                } else {
+                    resolve(this.createErrorResult(agent.id, result.output));
+                }
+            })
+            .catch(error => {
+                clearTimeout(timeoutId);
+                resolve(this.createErrorResult(agent.id, error instanceof Error ? error.message : String(error)));
+            });
 
-        clearTimeout(timeoutId);
-        resolve(this.createSuccessResult(agent.id, agent.name, output));
       } catch (error) {
         clearTimeout(timeoutId);
         resolve(this.createErrorResult(agent.id, error instanceof Error ? error.message : String(error)));
