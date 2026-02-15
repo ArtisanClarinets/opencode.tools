@@ -2,6 +2,14 @@ import { ResearchDossier } from '../research/types';
 export interface Documents {
     prd: string;
     sow: string;
+    metadata?: {
+        runId: string;
+        generatedAt: string;
+        provenance: {
+            briefHash: string;
+            dossierHash: string;
+        };
+    };
 }
 export declare class DocumentationAgent {
     private readonly agentName;

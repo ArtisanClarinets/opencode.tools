@@ -12,6 +12,8 @@ import { HookManager } from '../hooks/hook-manager';
 import { ToolPermissionGate } from '../permissions/tool-gate';
 import { AgentSpawner, SpawnOptions, TaskContext } from './agent-spawner';
 import { ResultMerger, AgentResult, MergedResult } from './result-merger';
+import { EventBus } from './event-bus';
+import { Blackboard } from './blackboard';
 
 /**
  * Orchestrator options
@@ -70,6 +72,8 @@ export class CoworkOrchestrator {
   private permissionGate: ToolPermissionGate;
   private agentSpawner: AgentSpawner;
   private resultMerger: ResultMerger;
+  private eventBus: EventBus;
+  private blackboard: Blackboard;
   private transcript: TranscriptEntry[];
   private options: OrchestratorOptions;
 
@@ -85,6 +89,8 @@ export class CoworkOrchestrator {
     this.permissionGate = new ToolPermissionGate();
     this.agentSpawner = new AgentSpawner();
     this.resultMerger = new ResultMerger();
+    this.eventBus = EventBus.getInstance();
+    this.blackboard = Blackboard.getInstance();
     this.transcript = [];
     this.options = {
       projectDir: options?.projectDir || process.cwd(),
@@ -203,15 +209,27 @@ export class CoworkOrchestrator {
     task: string,
     context?: Record<string, unknown>
   ): Promise<AgentResult> {
+    const sharedArtifacts = this.blackboard.getAllArtifacts();
+
     this.addTranscriptEntry({
       type: 'spawn',
       agentId,
       message: `Spawning agent "${agentId}"`
     });
 
+    this.eventBus.publish('agent:start', {
+      agentId,
+      task,
+      context,
+      sharedArtifacts,
+    });
+
     const taskContext: TaskContext = {
       task,
-      context
+      context: {
+        ...context,
+        sharedArtifacts,
+      },
     };
 
     const result = await this.agentSpawner.spawn(agentId, taskContext, {
@@ -219,12 +237,31 @@ export class CoworkOrchestrator {
     });
 
     if (result.metadata.success) {
+      this.blackboard.updateArtifact(
+        `agent_output:${agentId}`,
+        result.output,
+        agentId,
+        'agent_output'
+      );
+
+      this.eventBus.publish('agent:complete', {
+        agentId,
+        task,
+        output: result.output,
+      });
+
       this.addTranscriptEntry({
         type: 'complete',
         agentId,
         message: `Agent "${agentId}" completed successfully`
       });
     } else {
+      this.eventBus.publish('agent:error', {
+        agentId,
+        task,
+        error: result.metadata.error,
+      });
+
       this.addTranscriptEntry({
         type: 'error',
         agentId,

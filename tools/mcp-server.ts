@@ -9,6 +9,7 @@ import { search } from "./search.js";
 import { enforceRateLimit } from "./rate-limit.js";
 import { normalizeSource } from "./source-normalize.js";
 import { logToolCall, replayRun, checkReproducibility } from "./audit.js";
+import { createToolResponseEnvelope, normalizeToolResponseEnvelope } from "../src/runtime/tool-response";
 
 const server = new Server(
   {
@@ -341,20 +342,33 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         throw new Error(`Tool not found: ${name}`);
     }
 
+    const envelope = normalizeToolResponseEnvelope(name, result, args?.runId as string | undefined);
+
     return {
       content: [
         {
           type: "text",
-          text: JSON.stringify(result, null, 2),
+          text: JSON.stringify(envelope, null, 2),
         },
       ],
     };
   } catch (error: any) {
+    const envelope = createToolResponseEnvelope({
+      toolName: name,
+      runId: args?.runId as string | undefined,
+      success: false,
+      data: null,
+      error: {
+        message: error.message,
+        details: { name: error.name }
+      }
+    });
+
     return {
       content: [
         {
           type: "text",
-          text: `Error: ${error.message}`,
+          text: JSON.stringify(envelope, null, 2),
         },
       ],
       isError: true,

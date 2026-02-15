@@ -1,7 +1,36 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "default_agent": "orchestrator",
+  "default_agent": "foundry",
   "agent": {
+    "foundry": {
+      "description": "Foundry Orchestrator Agent - Runs enterprise iterative workflow with quality gates and peer review",
+      "mode": "primary",
+      "prompt": "You are Foundry Orchestrator Agent. Execute the enterprise state-machine workflow end-to-end: decompose intent, coordinate specialized agents, enforce security and compliance, require peer review from another agent, run quality gates, and iterate until release readiness.",
+      "tools": {
+        "read": true,
+        "write": true,
+        "edit": true,
+        "bash": true,
+        "task": true,
+        "SequentialThinking": true,
+        "Memory": true,
+        "critical-thinking": true,
+        "audit.logToolCall": true,
+        "audit.replayRun": true,
+        "audit.checkReproducibility": true
+      },
+      "permission": {
+        "edit": "ask",
+        "bash": {
+          "git status*": "allow",
+          "git log*": "allow",
+          "git diff*": "allow",
+          "ls*": "allow",
+          "pwd": "allow"
+        }
+      },
+      "maxSteps": 1000000
+    },
     "orchestrator": {
       "description": "Enterprise Orchestrator Agent - Coordinates all specialized agents with governance oversight",
       "mode": "primary",

@@ -7,19 +7,47 @@
  * Provides access to all agents and capabilities
  */
 
-import { program } from 'commander';
+import { Command } from 'commander';
 import * as path from 'path';
+import * as fs from 'fs';
 import { ResearchAgent } from '../agents/research/research-agent';
 import { DocumentationAgent } from '../agents/docs';
 import { ArchitectureAgent } from '../agents/architecture';
 import { PDFGeneratorAgent } from '../agents/pdf/pdf-agent';
+import type { PDFInput } from '../agents/pdf/types';
+import type { ResearchDossier } from '../agents/research/types';
 import { logger } from './runtime/logger';
 import { CoworkOrchestrator } from './cowork/orchestrator/cowork-orchestrator';
 import { CommandRegistry } from './cowork/registries/command-registry';
 import { AgentRegistry } from './cowork/registries/agent-registry';
 import { loadAllPlugins, loadNativeAgents } from './cowork/plugin-loader';
+import { FoundryOrchestrator, createFoundryExecutionRequest } from './foundry/orchestrator';
+import type { FoundryExecutionRequest } from './foundry/contracts';
 
 const VERSION = '1.0.0';
+
+interface CliDependencies {
+  createDocumentationAgent: () => DocumentationAgent;
+  createArchitectureAgent: () => ArchitectureAgent;
+  createPdfAgent: () => PDFGeneratorAgent;
+}
+
+const defaultDependencies: CliDependencies = {
+  createDocumentationAgent: () => new DocumentationAgent(),
+  createArchitectureAgent: () => new ArchitectureAgent(),
+  createPdfAgent: () => new PDFGeneratorAgent(),
+};
+
+interface DocsCommandInput {
+  dossier?: unknown;
+  brief?: unknown;
+  clientBrief?: unknown;
+}
+
+type OrchestrationMode = 'research' | 'docs' | 'architect' | 'code' | 'full';
+
+export function createCliProgram(dependencies: CliDependencies = defaultDependencies): Command {
+const program = new Command();
 
 program
   .name('opencode-tools')
@@ -77,9 +105,26 @@ program
   .action(async (input, options) => {
     try {
       logger.info('Generating documentation');
-      const agent = new DocumentationAgent();
-      // Implementation details...
-      console.log('Documentation generated');
+      const inputPath = resolveReadableFile(input);
+      const outputDir = resolveOutputDirectory(options.output);
+      const payload = parseJsonFile<DocsCommandInput>(inputPath);
+      const dossier = extractDossier(payload);
+      const brief = extractBrief(payload);
+
+      const agent = dependencies.createDocumentationAgent();
+      const documents = await agent.generateDocuments(dossier, brief);
+
+      ensureDirectory(outputDir);
+      const prdPath = path.join(outputDir, 'PRD.md');
+      const sowPath = path.join(outputDir, 'SOW.md');
+      const metadataPath = path.join(outputDir, 'docs.metadata.json');
+      fs.writeFileSync(prdPath, documents.prd, 'utf-8');
+      fs.writeFileSync(sowPath, documents.sow, 'utf-8');
+      if (documents.metadata) {
+        fs.writeFileSync(metadataPath, JSON.stringify(documents.metadata, null, 2), 'utf-8');
+      }
+
+      console.log(`Documentation generated: PRD=${prdPath} SOW=${sowPath}`);
     } catch (error) {
       logger.error('Documentation generation failed:', error);
       process.exit(1);
@@ -94,9 +139,24 @@ program
   .action(async (prd, options) => {
     try {
       logger.info('Generating architecture');
-      const agent = new ArchitectureAgent();
-      // Implementation details...
-      console.log('Architecture generated');
+      const prdPath = resolveReadableFile(prd);
+      const outputDir = resolveOutputDirectory(options.output);
+      const prdContent = fs.readFileSync(prdPath, 'utf-8');
+
+      const agent = dependencies.createArchitectureAgent();
+      const architecture = await agent.execute({ prd_content: prdContent });
+
+      ensureDirectory(outputDir);
+      const diagramPath = path.join(outputDir, 'architecture.mmd');
+      const backlogPath = path.join(outputDir, 'backlog.json');
+      const metadataPath = path.join(outputDir, 'architecture.metadata.json');
+      fs.writeFileSync(diagramPath, architecture.architectureDiagram, 'utf-8');
+      fs.writeFileSync(backlogPath, JSON.stringify(architecture.backlog, null, 2), 'utf-8');
+      if (architecture.metadata) {
+        fs.writeFileSync(metadataPath, JSON.stringify(architecture.metadata, null, 2), 'utf-8');
+      }
+
+      console.log(`Architecture generated: diagram=${diagramPath} backlog=${backlogPath}`);
     } catch (error) {
       logger.error('Architecture generation failed:', error);
       process.exit(1);
@@ -111,9 +171,25 @@ program
   .action(async (config, options) => {
     try {
       logger.info('Generating PDF');
-      const agent = new PDFGeneratorAgent();
-      // Implementation details...
-      console.log('PDF generated');
+      const configPath = resolveReadableFile(config);
+      const input = parseJsonFile<PDFInput>(configPath);
+      const agent = dependencies.createPdfAgent();
+      const result = await agent.execute(input);
+
+      const buffer = assertPdfBuffer(result.documentBuffer);
+
+      const outputPath = resolvePdfOutputPath(options.output, result.documentPath);
+      ensureDirectory(path.dirname(outputPath));
+      fs.writeFileSync(outputPath, buffer);
+
+      const metadataPath = outputPath.replace(/\.pdf$/i, '.metadata.json');
+      fs.writeFileSync(
+        metadataPath,
+        JSON.stringify({ metadata: result.metadata, warnings: result.warnings, meta: result.meta }, null, 2),
+        'utf-8',
+      );
+
+      console.log(`PDF generated: file=${outputPath} pages=${result.metadata.pageCount}`);
     } catch (error) {
       logger.error('PDF generation failed:', error);
       process.exit(1);
@@ -152,24 +228,25 @@ program
 ╚══════════════════════════════════════════════════════════════╝
       `);
       
-      // Launch orchestration
-      // OrchestratorAgent is a TS module in src/agents
-      const { OrchestratorAgent } = await import('./agents/orchestrator');
-      const orchestrator = new OrchestratorAgent();
-      await orchestrator.execute({
-        project: options.project,
-        mode: options.mode
-      });
+      const intent = options.project || 'Enterprise implementation workflow';
+      const mode = normalizeOrchestrationMode(options.mode);
+      const foundry = new FoundryOrchestrator();
+      const baseRequest = createFoundryExecutionRequest(intent, process.cwd(), true);
+      const request = applyOrchestrationMode(baseRequest, mode);
+      const report = await foundry.execute(request);
+
+      console.log('\n🧭 Foundry Report:');
+      console.log(`  Status: ${report.status}`);
+      console.log(`  Final phase: ${report.phase}`);
+      console.log(`  Mode: ${mode}`);
+      console.log(`  Tasks: ${report.tasks.filter(t => t.status === 'completed').length}/${report.tasks.length} completed`);
+      console.log(`  Quality gates: ${report.gateResults.filter(g => g.passed).length}/${report.gateResults.length} passed`);
+      console.log(`  Review: ${report.review.passed ? 'approved' : 'changes requested'} by ${report.review.reviewer}`);
     } catch (error) {
       logger.error('Orchestration failed:', error);
       process.exit(1);
     }
   });
-
-// Default command - show help
-if (process.argv.length === 2) {
-  program.help();
-}
 
 // ============================================================
 // MCP Server Command
@@ -380,11 +457,135 @@ program
     }
   });
 
-// Default command - launch TUI if no args provided
-if (process.argv.length === 2) {
-  // Synthesize 'tui' command
-  process.argv.push('tui');
+return program;
 }
 
-program.parse();
+function ensureDirectory(dirPath: string): void {
+  fs.mkdirSync(dirPath, { recursive: true });
+}
 
+function resolveReadableFile(filePath: string): string {
+  const resolved = path.resolve(filePath);
+  const stat = fs.statSync(resolved, { throwIfNoEntry: false });
+  if (!stat || !stat.isFile()) {
+    throw new Error(`Input file does not exist or is not a file: ${resolved}`);
+  }
+
+  return resolved;
+}
+
+function resolveOutputDirectory(outputPath: string): string {
+  return path.resolve(outputPath);
+}
+
+function resolvePdfOutputPath(requestedOutput: string, fallbackOutput: string): string {
+  const requested = path.resolve(requestedOutput);
+  if (requested.toLowerCase().endsWith('.pdf')) {
+    return requested;
+  }
+
+  const fallbackName = path.basename(fallbackOutput) || 'document.pdf';
+  return path.join(requested, fallbackName);
+}
+
+function assertPdfBuffer(buffer: Buffer): Buffer {
+  if (!Buffer.isBuffer(buffer) || buffer.length === 0) {
+    throw new Error('PDF generation returned an empty document buffer.');
+  }
+
+  const header = buffer.subarray(0, 5).toString('utf-8');
+  if (header !== '%PDF-') {
+    throw new Error('Generated document is not a valid PDF payload.');
+  }
+
+  return buffer;
+}
+
+function normalizeOrchestrationMode(mode: string): OrchestrationMode {
+  const normalized = mode.trim().toLowerCase();
+  if (
+    normalized === 'research' ||
+    normalized === 'docs' ||
+    normalized === 'architect' ||
+    normalized === 'code' ||
+    normalized === 'full'
+  ) {
+    return normalized;
+  }
+
+  throw new Error(`Unsupported mode: ${mode}`);
+}
+
+export function applyOrchestrationMode(
+  request: FoundryExecutionRequest,
+  mode: OrchestrationMode,
+): FoundryExecutionRequest {
+  const next: FoundryExecutionRequest = { ...request };
+
+  switch (mode) {
+    case 'research':
+      next.maxIterations = 1;
+      next.runQualityGates = false;
+      break;
+    case 'docs':
+      next.maxIterations = 1;
+      next.runQualityGates = false;
+      break;
+    case 'architect':
+      next.maxIterations = 1;
+      next.runQualityGates = true;
+      break;
+    case 'code':
+      next.maxIterations = 2;
+      next.runQualityGates = true;
+      break;
+    case 'full':
+      next.maxIterations = 3;
+      next.runQualityGates = true;
+      break;
+    default:
+      throw new Error(`Unsupported mode: ${mode}`);
+  }
+
+  const baseDescription = request.description?.trim() || request.projectName;
+  next.description = `[mode:${mode}] ${baseDescription}`;
+
+  return next;
+}
+
+function parseJsonFile<T>(filePath: string): T {
+  const content = fs.readFileSync(filePath, 'utf-8');
+  return JSON.parse(content) as T;
+}
+
+function extractDossier(payload: DocsCommandInput): ResearchDossier {
+  const maybeDossier = (payload && typeof payload === 'object' && 'dossier' in payload)
+    ? payload.dossier
+    : payload;
+
+  if (!maybeDossier || typeof maybeDossier !== 'object') {
+    throw new Error('Documentation input must include a dossier object.');
+  }
+
+  return maybeDossier as ResearchDossier;
+}
+
+function extractBrief(payload: DocsCommandInput): string {
+  if (typeof payload?.brief === 'string' && payload.brief.trim().length > 0) {
+    return payload.brief;
+  }
+
+  if (payload?.clientBrief) {
+    return JSON.stringify(payload.clientBrief, null, 2);
+  }
+
+  return 'Client brief not supplied in input payload.';
+}
+
+if (require.main === module) {
+  const cli = createCliProgram();
+  const argv = process.argv.length === 2
+    ? [...process.argv, 'tui']
+    : process.argv;
+  cli.parse(argv);
+}
