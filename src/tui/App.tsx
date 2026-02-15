@@ -1,17 +1,25 @@
 import * as React from 'react';
-import { Box } from 'ink';
+import { Box, useInput } from 'ink';
 import { StoreProvider, useStore } from './store/store';
 import { HomeScreen } from './screens/HomeScreen';
 import { ChatScreen } from './screens/ChatScreen';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { Header } from './components/Header';
-import { useInput } from 'ink';
+import { COLORS } from './theme';
 
 const Main: React.FC = () => {
   const { state, dispatch } = useStore();
 
   useInput((input, key) => {
-    if (key.escape || input === 'h') {
+    if (key.escape) {
+      if (state.view === 'home') {
+          // Allow exit from home
+          // process.exit(0); // Optional
+      } else {
+          dispatch({ type: 'SET_VIEW', view: 'home' });
+      }
+    }
+    if (input === 'h' && state.view !== 'home') {
       dispatch({ type: 'SET_VIEW', view: 'home' });
     }
     if (input === 'd' && state.activeSessionId) {
@@ -43,9 +51,11 @@ const Main: React.FC = () => {
   };
 
   return (
-    <Box flexDirection="column" minHeight={20}>
+    <Box flexDirection="column" minHeight={30} padding={1} borderStyle="double" borderColor={COLORS.border}>
       <Header />
-      {renderScreen()}
+      <Box flexGrow={1} flexDirection="column">
+        {renderScreen()}
+      </Box>
     </Box>
   );
 };
