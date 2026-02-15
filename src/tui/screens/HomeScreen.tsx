@@ -3,7 +3,8 @@ import { Box, Text } from 'ink';
 import SelectInput from 'ink-select-input';
 import { useStore } from '../store/store';
 import { AGENTS } from '../agents';
-import { COLORS } from '../styles';
+import { COLORS } from '../theme';
+import { Panel } from '../components/Panel';
 
 export const HomeScreen: React.FC = () => {
   const { state, dispatch } = useStore();
@@ -12,24 +13,23 @@ export const HomeScreen: React.FC = () => {
   if (showAgentList) {
     const items = [
         ...AGENTS.map(a => ({ label: `🚀 ${a.name} - ${a.description}`, value: a.id })),
-        { label: '⬅️  Go Back', value: 'back' }
+        { label: '⬅️  Back to Main Menu', value: 'back' }
     ];
 
     return (
       <Box flexDirection="column" paddingX={2} paddingY={1}>
-        <Box marginBottom={1}>
-          <Text bold color={COLORS.secondary} underline>START A NEW VENTURE</Text>
-        </Box>
-        <SelectInput
-          items={items}
-          onSelect={(item: any) => {
-            if (item.value === 'back') {
-                setShowAgentList(false);
-            } else {
-                dispatch({ type: 'CREATE_SESSION', agentId: item.value, agentName: (item.label.split('-')[0] || item.label).trim().replace('🚀 ', '') });
-            }
-          }}
-        />
+        <Panel title=" SELECT AN AGENT " borderColor={COLORS.secondary}>
+            <SelectInput
+            items={items}
+            onSelect={(item: any) => {
+                if (item.value === 'back') {
+                    setShowAgentList(false);
+                } else {
+                    dispatch({ type: 'CREATE_SESSION', agentId: item.value, agentName: (item.label.split('-')[0] || item.label).trim().replace('🚀 ', '') });
+                }
+            }}
+            />
+        </Panel>
       </Box>
     );
   }
@@ -37,41 +37,39 @@ export const HomeScreen: React.FC = () => {
   const sessionItems = state.sessions.map(s => {
       const statusIcon = s.status === 'completed' ? '✅' : s.status === 'running' ? '⏳' : '💬';
       return {
-          label: `${statusIcon} ${s.name} (${new Date(s.updatedAt).toLocaleTimeString()})`,
+          label: `${statusIcon}  ${s.name} (${new Date(s.updatedAt).toLocaleTimeString()})`,
           value: s.id,
       };
   });
 
   const items = [
-    { label: '✨ New Interactive Chat', value: 'new_chat' },
+    { label: '✨  New Interactive Session', value: 'new_chat' },
     ...sessionItems,
+    { label: '📊  System Dashboard', value: 'dashboard' },
+    { label: '❌  Exit', value: 'exit' }
   ];
 
   return (
     <Box flexDirection="column" paddingX={2} paddingY={1}>
-      <Box marginBottom={1} flexDirection="row" justifyContent="space-between">
-        <Text bold color={COLORS.primary}>OPENCODE OS v1.0</Text>
-        <Text color="gray">System: Online | CEO: Connected</Text>
-      </Box>
-      
-      <Box borderStyle="single" borderColor={COLORS.border} paddingX={1} flexDirection="column">
-        <Box marginBottom={1}>
-          <Text bold color={COLORS.highlight}>RESUME SESSION</Text>
-        </Box>
+      <Panel title=" MAIN MENU " borderColor={COLORS.primary}>
         <SelectInput
             items={items}
             onSelect={(item: any) => {
                 if (item.value === 'new_chat') {
                     setShowAgentList(true);
+                } else if (item.value === 'dashboard') {
+                    dispatch({ type: 'SET_VIEW', view: 'dashboard' });
+                } else if (item.value === 'exit') {
+                    process.exit(0);
                 } else {
                     dispatch({ type: 'SELECT_SESSION', sessionId: item.value });
                 }
             }}
         />
-      </Box>
+      </Panel>
 
-      <Box marginTop={1}>
-          <Text color="gray">Active sessions: {state.sessions.length} | Commands: [D] Dashboard [H] Home [Esc] Back</Text>
+      <Box marginTop={1} justifyContent="center">
+          <Text color={COLORS.muted}>Controls: [Arrow Keys] Navigate | [Enter] Select | [Esc] Back</Text>
       </Box>
     </Box>
   );
