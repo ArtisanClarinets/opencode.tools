@@ -253,7 +253,6 @@
     "Serena": false
   },
   "mcp": {
-   "oct.SequentialThinking": {
     "opencode-tools": {
       "type": "local",
       "command": [
@@ -345,7 +344,6 @@
       "timeout": 20000
     }
   },
-  
   "permission": {
     "edit": "allow",
     "bash": {
@@ -358,30 +356,4 @@
     },
     "write": "allow"
   }
-}
-    },
-    "discovery.session.export": {
-      "type": "local",
-      "command": [
-        "node",
-        "{project_root}/dist/tools/mcp-server.js"
-      ],
-      "enabled": true,
-      "timeout": 15000
-    },
-
-
-},
-"permission": {
-  "edit": "allow",
-  "bash": {
-    "git status*": "allow",
-    "git log*": "allow",
-    "git diff*": "allow",
-    "ls*": "allow",
-    "pwd": "allow",
-    "echo *": "allow"
-  },
-  "write": "allow"
-}
 }
