@@ -49,9 +49,15 @@ export function getSystemPluginsDir(): string {
  */
 export function loadNativeAgents(): AgentDefinition[] {
   const configDir = path.join(os.homedir(), '.config', 'opencode');
-  const configPath = path.join(configDir, 'opencode.json');
+  const toolsConfigPath = path.join(configDir, 'opencode-tools.json');
+  const legacyConfigPath = path.join(configDir, 'opencode.json');
   
-  const config = readJsonFile<{ agents: Record<string, any> }>(configPath);
+  // Try opencode-tools.json first, fall back to opencode.json
+  let config = readJsonFile<{ agents: Record<string, any> }>(toolsConfigPath);
+  if (!config || !config.agents) {
+    config = readJsonFile<{ agents: Record<string, any> }>(legacyConfigPath);
+  }
+
   if (!config || !config.agents) {
     return [];
   }
