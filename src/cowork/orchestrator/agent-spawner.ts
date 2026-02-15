@@ -171,7 +171,7 @@ export class AgentSpawner {
    * Execute agent with timeout
    */
   private async executeWithTimeout(
-    agent: { id: string; name: string; body: string },
+    agent: { id: string; name: string; body?: string },
     context: TaskContext,
     timeout: number
   ): Promise<AgentResult> {

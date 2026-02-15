@@ -71,6 +71,18 @@ export class CommandRegistry {
     const entry = this.commands.get(commandId);
     return entry?.item;
   }
+
+  /**
+   * Get a command by name (or ID)
+   */
+  public getByName(name: string): CoworkCommand | undefined {
+    // Try getting by ID first
+    const byId = this.get(name);
+    if (byId) return byId;
+
+    // Search by name property
+    return Array.from(this.commands.values()).find(entry => entry.item.name === name)?.item;
+  }
   
   /**
    * Check if a command exists

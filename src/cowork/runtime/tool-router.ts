@@ -1,6 +1,9 @@
 import { ToolPermissionGate } from '../permissions/tool-gate';
 import { logger } from '../../runtime/logger';
 import * as path from 'path';
+import * as fs from 'fs';
+
+const BASE_DIR = '/app/restricted/';
 
 /**
  * Tool Definition
@@ -30,38 +33,12 @@ export class ToolRouter {
         description: 'List files in a directory',
         parameters: { type: 'object', properties: { path: { type: 'string' } } },
         handler: async ({ path: inputPath }) => {
-            const fs = require('fs');
-  // Securely resolve and validate the supplied path to prevent directory traversal
-  const pathModule = require('path');
-  const basePath = '/app/restricted/'; // Set your intended base directory
-  const target = pathModule.normalize(pathModule.join(basePath, path || ''));
-  if (!target.startsWith(basePath)) {
-      throw new Error("Invalid path specified!");
-  }
-  // Securely resolve and validate the supplied path to prevent directory traversal
-  const pathModule = require('path');
-  const basePath = '/app/restricted/'; // Set your intended base directory
-  const target = pathModule.normalize(pathModule.join(basePath, path || ''));
-  if (!target.startsWith(basePath)) {
-      throw new Error("Invalid path specified!");
-  }
-  // Securely list files in a directory, restricting to a base directory to prevent path traversal attacks
-  const pathModule = require('path');
-  const basePath = '/app/restricted/'; // Define a restricted base directory
-
-  handler: async ({ path }) => {
-      const fs = require('fs');
-      // Join the user-supplied path (if any) to the base directory
-      const dirPath = path ? pathModule.join(basePath, path) : basePath;
-      // Normalize the resulting path
-      const normPath = pathModule.normalize(dirPath);
-      // Ensure the normalized path is still within the base directory
-      if (!normPath.startsWith(basePath)) {
-          throw new Error('Invalid path');
-      }
-      // Safely list files in the directory
-      return fs.readdirSync(normPath);
-  }
+            const dirPath = inputPath ? path.join(BASE_DIR, inputPath) : BASE_DIR;
+            const normPath = path.normalize(dirPath);
+            if (!normPath.startsWith(BASE_DIR)) {
+                throw new Error("Invalid path specified!");
+            }
+            return fs.readdirSync(normPath);
         }
     });
 
@@ -70,35 +47,11 @@ export class ToolRouter {
         description: 'Read a file',
         parameters: { type: 'object', properties: { path: { type: 'string' } } },
         handler: async ({ path: inputPath }) => {
-            const fs = require('fs');
-  const pathModule = require('path'); // Ensure path is required at the top of the handler
-  const BASE_DIR = '/app/restricted/'; // Restrict file reads to a safe directory
-  const fullPath = pathModule.normalize(pathModule.join(BASE_DIR, path));
-  if (!fullPath.startsWith(BASE_DIR)) {
-      throw new Error('Invalid path');
-  }
-  const pathModule = require('path'); // Ensure path is required at the top of the handler
-  const BASE_DIR = '/app/restricted/'; // Restrict file reads to a safe directory
-  const fullPath = pathModule.normalize(pathModule.join(BASE_DIR, path));
-  if (!fullPath.startsWith(BASE_DIR)) {
-      throw new Error('Invalid path');
-  }
-  const pathModule = require('path');
-  const basePath = '/app/restricted/';
-
-  // ... inside your handler:
-  handler: async ({ path }) => {
-      const fs = require('fs');
-      // Join the user-supplied path with the base directory
-      const joinedPath = pathModule.join(basePath, path);
-      // Normalize to remove any '..' or similar traversal elements
-      const fullPath = pathModule.normalize(joinedPath);
-      // Verify that the resolved path is still within the base directory
-      if (!fullPath.startsWith(basePath)) {
-          throw new Error('Invalid file path');
-      }
-      return fs.readFileSync(fullPath, 'utf8');
-  }
+            const fullPath = path.normalize(path.join(BASE_DIR, inputPath));
+            if (!fullPath.startsWith(BASE_DIR)) {
+                throw new Error('Invalid path');
+            }
+            return fs.readFileSync(fullPath, 'utf8');
         }
     });
   }
