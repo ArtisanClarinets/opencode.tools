@@ -11,7 +11,9 @@ const saveResearchResults = async (result: any, companyName: string) => {
     if (!fs.existsSync(artifactsDir)) {
       try {
         fs.mkdirSync(artifactsDir, { recursive: true });
-      } catch (e) {}
+      } catch (e) {
+        // Directory may already exist or permission denied, continue anyway
+      }
     }
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const safeCompanyName = companyName.replace(/[^a-zA-Z0-9]/g, '_');
@@ -119,7 +121,11 @@ export const AGENTS: AgentDefinition[] = [
 
             const artifactsDir = 'artifacts/architecture';
             if (!fs.existsSync(artifactsDir)) {
-                try { fs.mkdirSync(artifactsDir, { recursive: true }); } catch (e) {}
+                try {
+                    fs.mkdirSync(artifactsDir, { recursive: true });
+                } catch (e) {
+                    // Directory may already exist or permission denied, continue anyway
+                }
             }
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
             const baseName = path.basename(answers.prdPath, '.md');

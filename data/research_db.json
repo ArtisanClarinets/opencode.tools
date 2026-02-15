@@ -3371,5 +3371,83 @@
         "relevanceScore": 1
       }
     ]
+  },
+  "302adffb-c184-4531-a131-bf4a62ca7d30": {
+    "id": "302adffb-c184-4531-a131-bf4a62ca7d30",
+    "topic": "unnamed-project",
+    "status": "in_progress",
+    "startedAt": "2026-02-14T10:17:29.014Z",
+    "findings": [
+      {
+        "id": "cbc027e1-fd2f-48b9-b50b-5d7338ff3dc1",
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=unnamed-project%20company%20overview",
+        "content": "Research: unnamed-project company overview",
+        "timestamp": "2026-02-14T10:17:29.383Z",
+        "relevanceScore": 1
+      },
+      {
+        "id": "fd1c54e0-c400-476a-8147-63bcc5e596a4",
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=unnamed-project%20about%20us",
+        "content": "Research: unnamed-project about us",
+        "timestamp": "2026-02-14T10:17:29.375Z",
+        "relevanceScore": 1
+      },
+      {
+        "id": "24bc6d2e-5d53-4fe7-b403-16d0f355effd",
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=unnamed-project%20mission%20vision",
+        "content": "Research: unnamed-project mission vision",
+        "timestamp": "2026-02-14T10:17:29.389Z",
+        "relevanceScore": 1
+      },
+      {
+        "id": "60ba2c64-ab8c-4d5b-8d7d-9d13616cc2d8",
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=unnamed-project%20company%20overview%20depth%202",
+        "content": "Research: unnamed-project company overview depth 2",
+        "timestamp": "2026-02-14T10:17:29.471Z",
+        "relevanceScore": 1
+      },
+      {
+        "id": "a889eb94-06ef-4810-a96d-045543a81b2a",
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=unnamed-project%20about%20us%20depth%202",
+        "content": "Research: unnamed-project about us depth 2",
+        "timestamp": "2026-02-14T10:17:29.489Z",
+        "relevanceScore": 1
+      },
+      {
+        "id": "565a45fa-0cce-4742-917e-de948d81feb4",
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=unnamed-project%20mission%20vision%20depth%202",
+        "content": "Research: unnamed-project mission vision depth 2",
+        "timestamp": "2026-02-14T10:17:29.488Z",
+        "relevanceScore": 1
+      },
+      {
+        "id": "bc973028-0dc7-4470-9aa7-60ee32607c22",
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=unnamed-project%20company%20overview%20depth%203",
+        "content": "Research: unnamed-project company overview depth 3",
+        "timestamp": "2026-02-14T10:17:29.566Z",
+        "relevanceScore": 1
+      },
+      {
+        "id": "b61c984a-660b-4401-9737-2931001c8874",
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=unnamed-project%20about%20us%20depth%203",
+        "content": "Research: unnamed-project about us depth 3",
+        "timestamp": "2026-02-14T10:17:29.574Z",
+        "relevanceScore": 1
+      },
+      {
+        "id": "c8679c23-85ff-4be3-a9a3-2bcdaf397b47",
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=unnamed-project%20mission%20vision%20depth%203",
+        "content": "Research: unnamed-project mission vision depth 3",
+        "timestamp": "2026-02-14T10:17:29.568Z",
+        "relevanceScore": 1
+      },
+      {
+        "id": "effb62fd-b32c-4ab8-81d0-c6fa274e792e",
+        "sourceUrl": "https://html.duckduckgo.com/html/?q=Technology%20industry%20trends%202024",
+        "content": "Research: Technology industry trends 2024",
+        "timestamp": "2026-02-14T10:17:29.400Z",
+        "relevanceScore": 1
+      }
+    ]
   }
 }
