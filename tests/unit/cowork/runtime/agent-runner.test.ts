@@ -1,5 +1,6 @@
 import { AgentRunner } from '../../../../src/cowork/runtime/agent-runner';
 import { LLMMessage, LLMProvider, LLMResponse } from '../../../../src/cowork/runtime/llm-provider';
+import { AgentStreamEvent } from '../../../../src/cowork/runtime/stream-events';
 
 class StubToolRouter {
   private readonly definitions: Array<{ name: string; description: string; parameters: unknown }>;
@@ -111,5 +112,80 @@ describe('cowork/runtime/agent-runner', () => {
         expect.objectContaining({ type: 'run_exit', reason: 'cancelled' })
       ])
     );
+  });
+
+  it('emits ordered stream events with expected content', async () => {
+    const llm = new SequenceLLMProvider([
+      { content: null, function_call: { name: 'fs.list', arguments: '{"path":"."}' } },
+      { content: 'done' }
+    ]);
+    const runner = new AgentRunner(new StubToolRouter() as any, llm);
+    const streamEvents: AgentStreamEvent[] = [];
+
+    const result = await runner.run('agent-stream', 'list and finish', undefined, {
+      onStream: (event) => {
+        streamEvents.push(event);
+      }
+    });
+
+    expect(result.success).toBe(true);
+    expect(streamEvents.map((event) => event.type)).toEqual([
+      'step',
+      'step',
+      'tool',
+      'tool',
+      'step',
+      'step',
+      'thought',
+      'result'
+    ]);
+    expect(streamEvents[0]).toMatchObject({
+      type: 'step',
+      agentId: 'agent-stream',
+      step: 1,
+      payload: { phase: 'start', maxSteps: 10 }
+    });
+    expect(streamEvents[2]).toMatchObject({
+      type: 'tool',
+      agentId: 'agent-stream',
+      step: 1,
+      payload: { status: 'call', name: 'fs.list' }
+    });
+    expect(streamEvents[3]).toMatchObject({
+      type: 'tool',
+      agentId: 'agent-stream',
+      step: 1,
+      payload: { status: 'result', name: 'fs.list', result: { ok: true } }
+    });
+    expect(streamEvents[7]).toMatchObject({
+      type: 'result',
+      agentId: 'agent-stream',
+      step: 2,
+      payload: { success: true, output: 'done' }
+    });
+
+    for (const event of streamEvents) {
+      expect(typeof event.timestamp).toBe('string');
+      expect(Number.isNaN(Date.parse(event.timestamp))).toBe(false);
+    }
+  });
+
+  it('collects runtime metrics without breaking existing run behavior', async () => {
+    const llm = new SequenceLLMProvider([{ content: 'final answer' }]);
+    const runner = new AgentRunner(new StubToolRouter() as any, llm);
+
+    const result = await runner.run('agent-metrics', 'do work');
+
+    expect(result.success).toBe(true);
+    const metrics = runner.getMetricsSnapshot();
+    expect(metrics.totalRuns).toBe(1);
+    expect(metrics.successRate).toBe(1);
+    expect(metrics.perAgent['agent-metrics']).toMatchObject({
+      runs: 1,
+      successes: 1,
+      failures: 0,
+      toolCalls: 0,
+      errors: 0
+    });
   });
 });

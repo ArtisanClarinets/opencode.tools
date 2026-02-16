@@ -1,11 +1,17 @@
 import { v4 as uuidv4 } from 'uuid';
+import * as os from 'os';
+import * as path from 'path';
 import { EnterpriseStateMachine } from '@foundry/core/state-machine';
 import type { StateContext, StateEvent, StatePhase } from '@foundry/types';
 import { Database } from '@/storage/db';
 import { FoundryCollaborationHub } from './collaboration-hub';
-import { FoundryCoworkBridge } from './cowork-bridge';
+import { createWarmedUpBridge } from './cowork-bridge';
 import { QualityGateRunner } from './quality-gates';
 import { createFoundryStateMachineDefinition } from './state-definition';
+import { UnifiedStateStore } from '../integration/unified-state-store';
+import { SessionPersistenceAdapter } from '../integration/session-persistence-adapter';
+import { UnifiedEvidenceStore, type JsonValue } from '../integration/unified-evidence-store';
+import type { StateTransitionMetadata, UnifiedStateAction } from '../integration/types';
 import type {
   FoundryExecutionReport,
   FoundryExecutionRequest,
@@ -33,21 +39,52 @@ interface ExecutionCheckpoint {
 
 export class FoundryOrchestrator {
   private readonly collaborationHub = new FoundryCollaborationHub();
-  private readonly coworkBridge = new FoundryCoworkBridge();
+  private readonly coworkBridge = createWarmedUpBridge();
   private readonly gateRunner = new QualityGateRunner();
+  private readonly snapshotAdapter = new SessionPersistenceAdapter();
+  private readonly evidenceStore = new UnifiedEvidenceStore({
+    persistenceFilePath: path.join(os.tmpdir(), 'opencode-tools', 'foundry-evidence-store.json'),
+  });
   private readonly db = Database.Client();
   private tasks: FoundryTask[] = [];
   private messages: FoundryMessage[] = [];
+  private stateStore: UnifiedStateStore | null = null;
+  private stateContext: { projectId: string; runId: string; sessionId: string } | null = null;
 
   public async execute(request: FoundryExecutionRequest): Promise<FoundryExecutionReport> {
     const startedAt = new Date().toISOString();
     const resumeKey = request.resumeKey?.trim() || request.projectId;
     const checkpoint = await this.loadCheckpoint(request.projectId, resumeKey);
 
+    await this.initializeStateStore(request.projectId, resumeKey, resumeKey);
+
     this.tasks = [...checkpoint.tasks];
     this.messages = [...checkpoint.messages];
     this.collaborationHub.clear();
-    this.coworkBridge.initialize();
+
+    this.coworkBridge.getEventBus().publish('workflow:start', {
+      projectId: request.projectId,
+      projectName: request.projectName,
+      sessionId: resumeKey,
+      startedAt,
+    });
+    this.dispatchState(
+      { type: 'WORKFLOW_PATCH', patch: { status: 'running', phase: 'idle' } },
+      'foundry.execute',
+      'workflow_start'
+    );
+    this.appendEvidence('workflow_start', 'foundry', {
+      projectId: request.projectId,
+      projectName: request.projectName,
+      resumeKey,
+      startedAt,
+    });
+
+    // Validate bridge health before execution
+    const healthCheck = this.coworkBridge.healthCheck();
+    if (!healthCheck.healthy) {
+      console.warn('FoundryCoworkBridge health check warnings:', healthCheck.errors);
+    }
 
     const stateMachine = new EnterpriseStateMachine({
       definition: createFoundryStateMachineDefinition(),
@@ -319,6 +356,36 @@ export class FoundryOrchestrator {
     const finalPhase = stateMachine.getCurrentPhase();
     const status = finalPhase === 'released' ? 'completed' : 'failed';
 
+    this.dispatchState(
+      {
+        type: 'WORKFLOW_PATCH',
+        patch: {
+          phase: finalPhase,
+          status: status === 'completed' ? 'completed' : 'failed',
+          lastTransitionAt: Date.now(),
+        },
+      },
+      'foundry.execute',
+      'workflow_complete'
+    );
+    this.appendEvidence('workflow_complete', 'foundry', {
+      projectId: request.projectId,
+      status,
+      phase: finalPhase,
+      startedAt,
+      finishedAt,
+    });
+
+    const runtimeMetrics = this.coworkBridge.getRuntimeMetrics();
+    this.coworkBridge.getEventBus().publish('workflow:metrics', {
+      projectId: request.projectId,
+      sessionId: this.stateContext?.sessionId,
+      runtimeMetrics,
+      finishedAt,
+    });
+
+    await this.persistStateSnapshot(`workflow:${status}`);
+
     return {
       projectId: request.projectId,
       status,
@@ -408,6 +475,15 @@ export class FoundryOrchestrator {
 
     const results = await this.gateRunner.runAll(repoRoot);
     gateResults.push(...results);
+    for (const gate of results) {
+      this.appendEvidence('quality_gate', 'foundry', {
+        signature,
+        gate: gate.name,
+        command: gate.command,
+        passed: gate.passed,
+        exitCode: gate.exitCode,
+      });
+    }
     checkpoint.gateResults = [...gateResults];
     checkpoint.stepOutcomes[signature] = results;
     checkpoint.completedStepSignatures.push(signature);
@@ -427,7 +503,36 @@ export class FoundryOrchestrator {
       return;
     }
 
+    const fromPhase = machine.getCurrentPhase();
+
     await machine.dispatch(event);
+    const toPhase = machine.getCurrentPhase();
+
+    this.dispatchState(
+      {
+        type: 'WORKFLOW_PATCH',
+        patch: {
+          phase: toPhase,
+          status: toPhase === 'aborted' ? 'failed' : 'running',
+          lastTransitionAt: Date.now(),
+        },
+      },
+      'foundry.transition',
+      signature,
+    );
+    this.appendEvidence('state_transition', 'foundry', {
+      signature,
+      event,
+      fromPhase,
+      toPhase,
+    });
+
+    this.coworkBridge.getEventBus().publish('workflow:phase_changed', {
+      from: fromPhase,
+      to: toPhase,
+      signature,
+      sessionId: this.stateContext?.sessionId,
+    });
 
     if (!alreadyCompleted) {
       checkpoint.completedStepSignatures.push(signature);
@@ -455,6 +560,30 @@ export class FoundryOrchestrator {
     };
     this.tasks.push(task);
 
+    this.dispatchState(
+      {
+        type: 'RUNTIME_PATCH',
+        patch: {
+          status: 'running',
+          activeAgentIds: [roleId],
+          lastHeartbeatAt: Date.now(),
+          data: {
+            currentTaskId: task.id,
+            currentRoleId: roleId,
+            currentTitle: title,
+          },
+        },
+      },
+      'foundry.task',
+      `start:${task.id}`,
+    );
+    this.appendEvidence('task_assigned', 'foundry', {
+      taskId: task.id,
+      roleId,
+      title,
+      phase,
+    });
+
     this.recordBroadcast('CTO_ORCHESTRATOR', `phase:${phase}`, `Assigned to ${roleId}: ${title}`, {
       taskId: task.id,
     });
@@ -463,18 +592,64 @@ export class FoundryOrchestrator {
       phase,
       title,
       taskId: task.id,
+      sessionId: this.stateContext?.sessionId,
     });
 
     if (!result || !result.metadata.success) {
       task.status = 'failed';
       task.summary = result?.metadata.error || 'Agent unavailable or task failed';
       this.recordBroadcast(roleId, `phase:${phase}`, `Task failed: ${task.summary}`, { taskId: task.id });
+      this.dispatchState(
+        {
+          type: 'RUNTIME_PATCH',
+          patch: {
+            status: 'failed',
+            activeAgentIds: [],
+            lastHeartbeatAt: Date.now(),
+            data: {
+              lastTaskId: task.id,
+              lastTaskStatus: 'failed',
+              error: task.summary,
+            },
+          },
+        },
+        'foundry.task',
+        `failed:${task.id}`,
+      );
+      this.appendEvidence('task_failed', roleId, {
+        taskId: task.id,
+        phase,
+        error: task.summary,
+      });
       return false;
     }
 
     task.status = 'completed';
     task.summary = this.summarizeResult(result.output);
     this.recordBroadcast(roleId, `phase:${phase}`, `Task completed: ${task.summary}`, { taskId: task.id });
+    this.dispatchState(
+      {
+        type: 'RUNTIME_PATCH',
+        patch: {
+          status: 'waiting',
+          activeAgentIds: [],
+          lastHeartbeatAt: Date.now(),
+          data: {
+            lastTaskId: task.id,
+            lastTaskStatus: 'completed',
+            summary: task.summary,
+          },
+        },
+      },
+      'foundry.task',
+      `completed:${task.id}`,
+    );
+    this.appendEvidence('task_completed', roleId, {
+      taskId: task.id,
+      phase,
+      summary: task.summary,
+      output: this.serializeForEvidence(result.output),
+    });
     return true;
   }
 
@@ -486,6 +661,13 @@ export class FoundryOrchestrator {
   ): void {
     const message = this.collaborationHub.broadcast(from, topic, content, metadata);
     this.messages.push(message);
+    this.appendEvidence('collaboration_message', from, {
+      topic,
+      content,
+      metadata: this.serializeForEvidence(metadata),
+      messageId: message.id,
+      timestamp: message.timestamp,
+    });
   }
 
   private summarizeResult(output: unknown): string {
@@ -605,6 +787,8 @@ export class FoundryOrchestrator {
         checkpoint.updatedAt,
       ],
     });
+
+    await this.persistStateSnapshot(`checkpoint:${checkpoint.phaseIndex}`);
   }
 
   private parseStringArray(value: unknown): string[] {
@@ -666,6 +850,118 @@ export class FoundryOrchestrator {
     }
 
     return 'not_started';
+  }
+
+  private async initializeStateStore(projectId: string, runId: string, sessionId: string): Promise<void> {
+    this.stateContext = { projectId, runId, sessionId };
+    const latestSnapshot = await this.snapshotAdapter.loadLatestSnapshot(projectId);
+
+    this.stateStore = new UnifiedStateStore({
+      context: this.stateContext,
+      initialState: latestSnapshot?.state,
+      eventPublisher: this.coworkBridge.getEventBus(),
+    });
+
+    if (latestSnapshot) {
+      this.coworkBridge.getEventBus().publish('snapshot:restored', {
+        projectId,
+        runId,
+        sessionId,
+        snapshotId: latestSnapshot.snapshotId,
+        savedAt: latestSnapshot.metadata.savedAt,
+      });
+    }
+  }
+
+  private dispatchState(action: UnifiedStateAction, source: string, reason: string): void {
+    if (!this.stateStore || !this.stateContext) {
+      return;
+    }
+
+    const metadata: StateTransitionMetadata = {
+      ...this.stateContext,
+      source,
+      reason,
+      timestamp: Date.now(),
+    };
+
+    try {
+      this.stateStore.dispatch(action, metadata);
+    } catch {
+      // Do not fail primary workflow on state projection errors.
+    }
+  }
+
+  private async persistStateSnapshot(label: string): Promise<void> {
+    if (!this.stateStore || !this.stateContext) {
+      return;
+    }
+
+    const savedAt = Date.now();
+    const snapshot = await this.snapshotAdapter.saveSnapshot(this.stateStore.getSnapshot(), {
+      ...this.stateContext,
+      savedAt,
+      source: 'foundry.orchestrator',
+      label,
+    });
+
+    this.coworkBridge.getEventBus().publish('snapshot:created', {
+      projectId: this.stateContext.projectId,
+      runId: this.stateContext.runId,
+      sessionId: this.stateContext.sessionId,
+      snapshotId: snapshot.snapshotId,
+      label,
+      savedAt,
+    });
+  }
+
+  private appendEvidence(type: string, source: string, data: unknown): void {
+    if (!this.stateContext) {
+      return;
+    }
+
+    const serialized = this.serializeForEvidence(data);
+    const serializedRecord = this.toEvidenceRecord(serialized);
+    const record = this.evidenceStore.append({
+      projectId: this.stateContext.projectId,
+      runId: this.stateContext.runId,
+      source,
+      type,
+      data: serialized,
+      timestamp: new Date().toISOString(),
+    });
+
+    this.dispatchState(
+      {
+        type: 'EVIDENCE_UPSERT',
+        item: {
+          id: record.id,
+          type,
+          summary: `${source}:${type}`,
+          createdAt: Date.now(),
+          source,
+          data: serializedRecord,
+        },
+      },
+      'foundry.evidence',
+      type,
+    );
+  }
+
+  private serializeForEvidence(value: unknown): JsonValue {
+    try {
+      return JSON.parse(JSON.stringify(value ?? null)) as JsonValue;
+    } catch {
+      return String(value);
+    }
+  }
+
+  private toEvidenceRecord(value: JsonValue): Record<string, unknown> {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      return value as Record<string, unknown>;
+    }
+
+    return { value };
   }
 
   private buildDiscoveryTask(request: FoundryExecutionRequest): string {

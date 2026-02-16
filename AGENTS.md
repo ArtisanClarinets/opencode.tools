@@ -12,6 +12,7 @@ This guide defines practical standards for contributors and coding agents workin
 ## 2) Runtime Topology
 
 - CLI entry: `src/cli.ts`
+- Runtime alias bootstrap: `src/runtime/register-path-aliases.ts` (loaded first by CLI)
 - TUI entry: `src/tui-app.ts`
 - Foundry orchestration: `src/foundry/*`
 - Cowork runtime and plugin system: `src/cowork/*`
@@ -50,6 +51,7 @@ npm run validate
 
 ```bash
 npm run tui
+opencode-tools verify
 ```
 
 ## 4) Coding Standards
@@ -126,3 +128,230 @@ A change is done when:
 2. Tests and validation commands pass for impacted areas.
 3. Security/governance implications are addressed.
 4. Documentation reflects the new behavior.
+
+---
+
+## 10) Foundry-Cowork-Agents-TUI Integration Architecture
+
+### Overview
+
+The system follows an **event-driven architecture** with EventBus as the central nervous system:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     TUI (React Ink)                              │
+│                   Subscribes to EventBus                         │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │ EventBus
+┌──────────────────────────▼──────────────────────────────────────┐
+│                     FoundryOrchestrator                          │
+│              Uses warmed-up FoundryCoworkBridge                  │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │ spawnAgent()
+┌──────────────────────────▼──────────────────────────────────────┐
+│                     CoworkOrchestrator                           │
+│              Injects EventBus into AgentSpawner                  │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │ run()
+┌──────────────────────────▼──────────────────────────────────────┐
+│                     AgentRunner                                  │
+│              Reports progress via callbacks                      │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Key Components
+
+1. **EventBusBridge** (`src/cowork/orchestrator/event-bus-bridge.ts`)
+   - Connects FoundryCollaborationHub with EventBus
+   - Enables bidirectional message flow
+   - Automatic event capture and forwarding
+
+2. **AgentSpawner** (`src/cowork/orchestrator/agent-spawner.ts`)
+   - Injects EventBus into agent context
+   - Provides `AgentEventSystem` interface to agents
+   - Supports progress callbacks
+
+3. **TUI Store** (`src/tui/store/store.tsx`)
+   - Subscribes to EventBus events
+   - Dispatches actions for agent lifecycle
+   - Shows real-time progress updates
+
+4. **FoundryCoworkBridge** (`src/foundry/cowork-bridge.ts`)
+   - Eager initialization via `warmup()`
+   - Health checks with `healthCheck()`
+   - EventBus integration for all operations
+
+### Event Flow
+
+```
+Agent Execution:
+1. AgentSpawner.spawn() publishes 'agent:start'
+2. AgentRunner.run() calls onProgress(percent, message)
+3. Progress callback publishes 'agent:progress'
+4. TUI Store receives event → dispatches AGENT_PROGRESS
+5. UI re-renders with updated progress
+
+6. Agent completes → AgentRunner returns
+7. AgentSpawner publishes 'agent:complete'
+8. TUI Store receives event → dispatches AGENT_COMPLETE
+9. Blackboard.updateArtifact() publishes 'artifact:any:updated'
+10. TUI shows artifact update notification
+```
+
+### Using the Integration
+
+**In Agents:**
+```typescript
+// Agent receives EventBus access via context
+async function agentHandler(context: TaskContext) {
+  // Publish custom events
+  context.events?.publish('my_agent:event', { data: 'value' });
+  
+  // Subscribe to other agents
+  const unsubscribe = context.events?.subscribe('other_agent:event', callback);
+  
+  // Report progress
+  context.onProgress?.(50, 'Halfway done');
+  
+  // Cleanup
+  unsubscribe?.();
+}
+```
+
+**In TUI:**
+```typescript
+// TUI automatically receives updates via StoreProvider
+function MyComponent() {
+  const { state } = useStore();
+  const activities = state.sessions.find(s => s.id === state.activeSessionId)?.activities;
+  
+  // activities contains real-time agent progress
+}
+```
+
+**Health Checking:**
+```typescript
+import { createWarmedUpBridge } from './foundry/cowork-bridge';
+
+const bridge = createWarmedUpBridge();
+const health = bridge.healthCheck();
+console.log(`Healthy: ${health.healthy}, Agents: ${health.agentCount}`);
+```
+
+### Testing Integration
+
+When modifying integration code:
+
+1. Run all validation commands:
+   ```bash
+   npm run build
+   npm run lint
+   npx tsc --noEmit
+   npm run test:unit
+   ```
+
+2. Test event flow:
+   - Verify `agent:start` event fires when spawning
+   - Verify `agent:progress` updates during execution
+   - Verify `agent:complete` fires on success
+   - Verify TUI receives all events
+
+3. Test health checks:
+   - Verify bridge reports healthy status
+   - Verify missing agents are detected
+   - Verify EventBus connectivity
+
+### Documentation
+
+- Architecture Review: `docs/ARCHITECTURE_REVIEW_FOUNDRY_COWORK_TUI.md`
+- Implementation Summary: `docs/INTEGRATION_IMPLEMENTATION_SUMMARY.md`
+
+---
+
+## 11) Collaborative Workspace System (Phase 1)
+
+### Overview
+
+Phase 1 of the Foundry-Cowork Integration introduces a comprehensive **Collaborative Workspace System** that enables parallel, event-driven agent collaboration. This system provides project-scoped workspaces, artifact versioning, feedback threads, and compliance package generation.
+
+### Components
+
+Located in `src/cowork/collaboration/`:
+
+1. **ArtifactVersioning** (`artifact-versioning.ts`)
+   - Version history and lineage tracking
+   - Diff capabilities between versions
+   - Rollback support with audit trail
+   - Immutable version storage
+
+2. **FeedbackThreads** (`feedback-threads.ts`)
+   - Threaded conversations on artifacts
+   - Severity levels: nit, blocking, critical
+   - Status tracking: pending, addressed, wontfix, in_progress
+   - Location-aware feedback with file/line/column
+   - Tag-based categorization
+
+3. **CollaborativeWorkspace** (`collaborative-workspace.ts`)
+   - Project-scoped workspace management
+   - Member management and role tracking
+   - Conflict detection for concurrent edits
+   - Compliance package generation
+   - Workspace metrics and reporting
+
+### Usage
+
+```typescript
+import { CollaborativeWorkspace } from './src/cowork/collaboration';
+
+const workspace = CollaborativeWorkspace.getInstance();
+
+// Create project workspace
+const ws = workspace.createWorkspace('project-1', 'Feature Dev', 'cto');
+
+// Add artifacts with versioning
+workspace.updateArtifact(
+  ws.id,
+  'architecture.md',
+  { content: '## Design' },
+  'design-tool',
+  'architect'
+);
+
+// Add feedback
+workspace.addFeedback(
+  ws.id,
+  'architecture.md',
+  'security-lead',
+  'Missing auth',
+  'Add authentication requirements',
+  'blocking'
+);
+
+// Generate compliance package
+const pkg = workspace.generateCompliancePackage(ws.id, 'compliance-officer');
+```
+
+### Events
+
+The collaboration system publishes events to EventBus:
+- `artifact:version:created/updated/rollback`
+- `feedback:thread:created/resolved/escalated`
+- `workspace:created/status:changed`
+- `workspace:conflict:detected/resolved`
+- `workspace:compliance:package_generated`
+
+### Tests
+
+All collaboration components have comprehensive test coverage:
+- `tests/unit/cowork/collaboration/artifact-versioning.test.ts`
+- `tests/unit/cowork/collaboration/feedback-threads.test.ts`
+- `tests/unit/cowork/collaboration/collaborative-workspace.test.ts`
+
+Run tests with:
+```bash
+npm run test:unit -- --testPathPattern=collaboration
+```
+
+### Documentation
+
+- Phase 1 Summary: `docs/PHASE1_IMPLEMENTATION_SUMMARY.md`

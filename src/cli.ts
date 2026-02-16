@@ -7,6 +7,8 @@
  * Provides access to all agents and capabilities
  */
 
+import './runtime/register-path-aliases';
+
 import { Command } from 'commander';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -22,6 +24,7 @@ import { CommandRegistry } from './cowork/registries/command-registry';
 import { AgentRegistry } from './cowork/registries/agent-registry';
 import { loadAllPlugins, loadNativeAgents } from './cowork/plugin-loader';
 import { FoundryOrchestrator, createFoundryExecutionRequest } from './foundry/orchestrator';
+import { createWarmedUpBridge } from './foundry/cowork-bridge';
 import type { FoundryExecutionRequest } from './foundry/contracts';
 
 const VERSION = '1.0.0';
@@ -46,6 +49,23 @@ interface DocsCommandInput {
 
 type OrchestrationMode = 'research' | 'docs' | 'architect' | 'code' | 'full';
 
+// Initialize plugin loader and registries
+function initializeCowork(): void {
+  const plugins = loadAllPlugins();
+  const nativeAgents = loadNativeAgents();
+
+  const commandRegistry = CommandRegistry.getInstance();
+  const agentRegistry = AgentRegistry.getInstance();
+
+  for (const plugin of plugins) {
+    commandRegistry.registerMany(plugin.commands);
+    agentRegistry.registerMany(plugin.agents);
+  }
+
+  // Register native agents from ~/.config/opencode/opencode.json
+  agentRegistry.registerMany(nativeAgents);
+}
+
 export function createCliProgram(dependencies: CliDependencies = defaultDependencies): Command {
 const program = new Command();
 
@@ -53,23 +73,6 @@ program
   .name('opencode-tools')
   .description('OpenCode Tools - Complete Developer Team Automation (Independent TUI & CLI)')
   .version(VERSION);
-
-// Initialize plugin loader and registries
-function initializeCowork(): void {
-  const plugins = loadAllPlugins();
-  const nativeAgents = loadNativeAgents();
-  
-  const commandRegistry = CommandRegistry.getInstance();
-  const agentRegistry = AgentRegistry.getInstance();
-  
-  for (const plugin of plugins) {
-    commandRegistry.registerMany(plugin.commands);
-    agentRegistry.registerMany(plugin.agents);
-  }
-  
-  // Register native agents from ~/.config/opencode/opencode.json
-  agentRegistry.registerMany(nativeAgents);
-}
 
 program
   .command('research')
@@ -269,6 +272,18 @@ program
       await main();
     } catch (error) {
       logger.error('MCP server failed to start:', error);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('verify')
+  .description('Verify Foundry/Cowork runtime wiring and health')
+  .action(async () => {
+    try {
+      await runRuntimeVerification();
+    } catch (error) {
+      logger.error('Verification failed:', error);
       process.exit(1);
     }
   });
@@ -582,10 +597,131 @@ function extractBrief(payload: DocsCommandInput): string {
   return 'Client brief not supplied in input payload.';
 }
 
+interface VerificationCheck {
+  name: string;
+  passed: boolean;
+  detail: string;
+}
+
+async function runRuntimeVerification(): Promise<void> {
+  const checks: VerificationCheck[] = [];
+
+  const foundryAliasPath = resolveModulePath('@foundry/core/state-machine');
+  const srcFoundryAliasPath = resolveModulePath('@src/foundry/orchestrator');
+  const srcCoworkAliasPath = resolveModulePath('@src/cowork/orchestrator/cowork-orchestrator');
+  const srcAliasPath = resolveModulePath('@/cowork/orchestrator/cowork-orchestrator');
+  const srcPrefixAliasPath = resolveModulePath('src/runtime/logger');
+  const runtimeAliasesHealthy = Boolean(
+    foundryAliasPath
+    && srcFoundryAliasPath
+    && srcCoworkAliasPath
+    && srcAliasPath
+    && srcPrefixAliasPath
+  );
+
+  checks.push({
+    name: 'Runtime alias bootstrap',
+    passed: runtimeAliasesHealthy,
+    detail: runtimeAliasesHealthy
+      ? 'resolved @foundry/, @src/, @/, and src/ imports'
+      : 'failed to resolve one or more configured aliases',
+  });
+
+  const originalProvider = process.env.COWORK_LLM_PROVIDER;
+  const originalAllowMock = process.env.COWORK_ALLOW_MOCK_LLM;
+  const shouldUseMockForVerification = !originalProvider && !process.env.OPENAI_API_KEY;
+  let bridgeErrors: string[] = [];
+
+  if (shouldUseMockForVerification) {
+    process.env.COWORK_LLM_PROVIDER = 'mock';
+    process.env.COWORK_ALLOW_MOCK_LLM = 'true';
+  }
+
+  try {
+    const bridge = createWarmedUpBridge();
+    const bridgeHealth = bridge.healthCheck();
+    bridgeErrors = [...bridgeHealth.errors];
+    checks.push({
+      name: 'FoundryCoworkBridge health',
+      passed: bridgeHealth.healthy,
+      detail: `agents=${bridgeHealth.agentCount}, commands=${bridgeHealth.commandCount}, missingRoles=${bridgeHealth.missingRoles.length}`,
+    });
+
+    const collaboration = await import('./foundry/integration/collaboration-bridge');
+    const collaborationBridgeExported = typeof collaboration.FoundryCollaborationBridge === 'function';
+    checks.push({
+      name: 'FoundryCollaborationBridge wiring',
+      passed: collaborationBridgeExported,
+      detail: collaborationBridgeExported ? 'module loaded' : 'module export missing',
+    });
+
+    const foundryModule = await import('./foundry/orchestrator');
+    checks.push({
+      name: 'FoundryOrchestrator wiring',
+      passed: typeof foundryModule.FoundryOrchestrator === 'function',
+      detail: 'module loaded',
+    });
+
+    if (shouldUseMockForVerification) {
+      checks.push({
+        name: 'LLM provider mode',
+        passed: true,
+        detail: 'used temporary mock provider for verification',
+      });
+    }
+  } finally {
+    if (originalProvider === undefined) {
+      delete process.env.COWORK_LLM_PROVIDER;
+    } else {
+      process.env.COWORK_LLM_PROVIDER = originalProvider;
+    }
+
+    if (originalAllowMock === undefined) {
+      delete process.env.COWORK_ALLOW_MOCK_LLM;
+    } else {
+      process.env.COWORK_ALLOW_MOCK_LLM = originalAllowMock;
+    }
+  }
+
+  const failedChecks = checks.filter((check) => !check.passed);
+
+  console.log('\n🔍 OpenCode Runtime Verification');
+  console.log('================================');
+  for (const check of checks) {
+    console.log(`  ${check.passed ? '✅' : '❌'} ${check.name}: ${check.detail}`);
+  }
+
+  if (bridgeErrors.length > 0) {
+    console.log('\n⚠️ Bridge diagnostics:');
+    for (const error of bridgeErrors) {
+      console.log(`  - ${error}`);
+    }
+  }
+
+  if (failedChecks.length > 0) {
+    throw new Error(`Verification failed (${failedChecks.length} check(s) did not pass).`);
+  }
+
+  console.log('\n✅ Verification completed successfully.');
+}
+
+function resolveModulePath(specifier: string): string | null {
+  try {
+    return require.resolve(specifier);
+  } catch {
+    return null;
+  }
+}
+
 if (require.main === module) {
   const cli = createCliProgram();
   const argv = process.argv.length === 2
     ? [...process.argv, 'tui']
-    : process.argv;
+    : [...process.argv];
+
+  if (argv.length === 3 && argv[2] === '--verify') {
+    argv[2] = 'verify';
+  }
+
   cli.parse(argv);
 }

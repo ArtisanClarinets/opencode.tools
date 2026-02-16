@@ -5,15 +5,18 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import { CommandDefinition, AgentDefinition } from '../types';
+import { CommandDefinition } from '../types';
 import { CommandRegistry } from '../registries/command-registry';
 import { AgentRegistry } from '../registries/agent-registry';
 import { HookManager } from '../hooks/hook-manager';
 import { ToolPermissionGate } from '../permissions/tool-gate';
-import { AgentSpawner, SpawnOptions, TaskContext } from './agent-spawner';
+import { AgentSpawner, TaskContext } from './agent-spawner';
+import { AgentCoordinator, type DirectMessageEnvelope } from './agent-coordinator';
 import { ResultMerger, AgentResult, MergedResult } from './result-merger';
 import { EventBus } from './event-bus';
 import { Blackboard } from './blackboard';
+import type { RuntimeMetricsSnapshot } from '../runtime/metrics-collector';
+import type { DirectMessagePolicy } from '../../security/event-guardrails';
 
 /**
  * Orchestrator options
@@ -27,6 +30,8 @@ export interface OrchestratorOptions {
   maxConcurrent?: number;
   /** Default timeout for agent execution */
   defaultTimeout?: number;
+  /** Direct agent messaging policy */
+  directMessagePolicy?: DirectMessagePolicy;
 }
 
 /**
@@ -71,6 +76,7 @@ export class CoworkOrchestrator {
   private hookManager: HookManager;
   private permissionGate: ToolPermissionGate;
   private agentSpawner: AgentSpawner;
+  private coordinator: AgentCoordinator;
   private resultMerger: ResultMerger;
   private eventBus: EventBus;
   private blackboard: Blackboard;
@@ -87,9 +93,16 @@ export class CoworkOrchestrator {
     this.agentRegistry = AgentRegistry.getInstance();
     this.hookManager = new HookManager();
     this.permissionGate = new ToolPermissionGate();
-    this.agentSpawner = new AgentSpawner();
-    this.resultMerger = new ResultMerger();
     this.eventBus = EventBus.getInstance();
+    this.agentSpawner = new AgentSpawner(this.eventBus);
+    const directMessagePolicy = options?.directMessagePolicy ?? {
+      defaultAllow: false,
+      allowedRoutes: [{ from: '*', to: '*' }],
+    };
+    this.coordinator = new AgentCoordinator(this.eventBus, Blackboard.getInstance(), {
+      directMessagePolicy,
+    });
+    this.resultMerger = new ResultMerger();
     this.blackboard = Blackboard.getInstance();
     this.transcript = [];
     this.options = {
@@ -202,14 +215,17 @@ export class CoworkOrchestrator {
    * @param agentId - Agent ID
    * @param task - Task prompt
    * @param context - Additional context
+   * @param sessionId - Optional session ID for tracking
    * @returns Agent result
    */
   public async spawnAgent(
     agentId: string,
     task: string,
-    context?: Record<string, unknown>
+    context?: Record<string, unknown>,
+    sessionId?: string
   ): Promise<AgentResult> {
     const sharedArtifacts = this.blackboard.getAllArtifacts();
+    const derivedSessionId = sessionId || (typeof context?.sessionId === 'string' ? context.sessionId : undefined);
 
     this.addTranscriptEntry({
       type: 'spawn',
@@ -217,12 +233,26 @@ export class CoworkOrchestrator {
       message: `Spawning agent "${agentId}"`
     });
 
-    this.eventBus.publish('agent:start', {
+    this.eventBus.publish('agent:queued', {
       agentId,
       task,
       context,
       sharedArtifacts,
+      sessionId: derivedSessionId,
     });
+
+    this.coordinator.registerAgent(agentId);
+
+    const messaging: TaskContext['messaging'] = {
+      send: async (toAgentId: string, messageType: string, payload: unknown) => {
+        return this.coordinator.sendDirectMessage(agentId, toAgentId, messageType, payload);
+      },
+      onMessage: (callback: (fromAgentId: string, messageType: string, payload: unknown) => void) => {
+        return this.coordinator.subscribeInbox(agentId, (envelope) => {
+          callback(envelope.from, envelope.messageType, envelope.payload);
+        });
+      },
+    };
 
     const taskContext: TaskContext = {
       task,
@@ -230,47 +260,41 @@ export class CoworkOrchestrator {
         ...context,
         sharedArtifacts,
       },
+      messaging,
+      sessionId: derivedSessionId,
     };
 
-    const result = await this.agentSpawner.spawn(agentId, taskContext, {
-      timeout: this.options.defaultTimeout
-    });
-
-    if (result.metadata.success) {
-      this.blackboard.updateArtifact(
-        `agent_output:${agentId}`,
-        result.output,
-        agentId,
-        'agent_output'
-      );
-
-      this.eventBus.publish('agent:complete', {
-        agentId,
-        task,
-        output: result.output,
+    try {
+      const result = await this.agentSpawner.spawn(agentId, taskContext, {
+        timeout: this.options.defaultTimeout
       });
 
-      this.addTranscriptEntry({
-        type: 'complete',
-        agentId,
-        message: `Agent "${agentId}" completed successfully`
-      });
-    } else {
-      this.eventBus.publish('agent:error', {
-        agentId,
-        task,
-        error: result.metadata.error,
-      });
+      if (result.metadata.success) {
+        this.blackboard.updateArtifact(
+          `agent_output:${agentId}`,
+          result.output,
+          agentId,
+          'agent_output'
+        );
 
-      this.addTranscriptEntry({
-        type: 'error',
-        agentId,
-        message: `Agent "${agentId}" failed: ${result.metadata.error}`,
-        data: { error: result.metadata.error }
-      });
+        this.addTranscriptEntry({
+          type: 'complete',
+          agentId,
+          message: `Agent "${agentId}" completed successfully`
+        });
+      } else {
+        this.addTranscriptEntry({
+          type: 'error',
+          agentId,
+          message: `Agent "${agentId}" failed: ${result.metadata.error}`,
+          data: { error: result.metadata.error }
+        });
+      }
+
+      return result;
+    } finally {
+      this.coordinator.unregisterAgent(agentId);
     }
-
-    return result;
   }
 
   /**
@@ -291,18 +315,34 @@ export class CoworkOrchestrator {
       message: `Spawning ${tasks.length} agents concurrently`
     });
 
-    const taskContexts = tasks.map(t => ({
-      agentId: t.agentId,
-      context: {
-        task: t.task,
-        context: t.context
+    const coordinated = await this.coordinator.coordinateParallel(
+      tasks.map((task, index) => ({
+        taskId: `${task.agentId}:${index}`,
+        agentId: task.agentId,
+        execute: () => this.spawnAgent(task.agentId, task.task, task.context),
+      })),
+      {
+        concurrency: this.options.maxConcurrent,
       }
-    }));
-
-    const results = await this.agentSpawner.spawnMany(
-      taskContexts,
-      { timeout: this.options.defaultTimeout }
     );
+
+    const results: AgentResult[] = coordinated.map((entry) => {
+      if (entry.status === 'fulfilled' && entry.value) {
+        return entry.value as AgentResult;
+      }
+
+      return {
+        agentId: entry.agentId,
+        agentName: entry.agentId,
+        output: null,
+        metadata: {
+          runId: uuidv4(),
+          timestamp: new Date().toISOString(),
+          success: false,
+          error: entry.error instanceof Error ? entry.error.message : String(entry.error || 'Unknown error'),
+        },
+      };
+    });
 
     const mergedResult = this.resultMerger.merge(results);
 
@@ -313,6 +353,67 @@ export class CoworkOrchestrator {
     });
 
     return mergedResult;
+  }
+
+  public async sendAgentMessage(
+    fromAgentId: string,
+    toAgentId: string,
+    messageType: string,
+    payload: unknown,
+  ): Promise<DirectMessageEnvelope> {
+    return this.withTemporaryAgentRegistrations([fromAgentId, toAgentId], async () => {
+      return this.coordinator.sendDirectMessage(fromAgentId, toAgentId, messageType, payload);
+    });
+  }
+
+  public subscribeAgentInbox(
+    agentId: string,
+    callback: (fromAgentId: string, messageType: string, payload: unknown) => void,
+  ): () => void {
+    const wasRegistered = this.coordinator.isAgentRegistered(agentId);
+    if (!wasRegistered) {
+      this.coordinator.registerAgent(agentId);
+    }
+
+    const unsubscribeInbox = this.coordinator.subscribeInbox(agentId, (envelope) => {
+      callback(envelope.from, envelope.messageType, envelope.payload);
+    });
+
+    return () => {
+      unsubscribeInbox();
+      if (!wasRegistered) {
+        this.coordinator.unregisterAgent(agentId);
+      }
+    };
+  }
+
+  private async withTemporaryAgentRegistrations<T>(agentIds: string[], action: () => Promise<T>): Promise<T> {
+    const newlyRegistered: string[] = [];
+
+    for (const agentId of agentIds) {
+      if (this.coordinator.isAgentRegistered(agentId)) {
+        continue;
+      }
+
+      if (!this.agentRegistry.has(agentId)) {
+        throw new Error(`Agent "${agentId}" is not registered in the agent registry`);
+      }
+
+      this.coordinator.registerAgent(agentId);
+      newlyRegistered.push(agentId);
+    }
+
+    try {
+      return await action();
+    } finally {
+      for (const agentId of newlyRegistered) {
+        this.coordinator.unregisterAgent(agentId);
+      }
+    }
+  }
+
+  public getMetricsSnapshot(): RuntimeMetricsSnapshot {
+    return this.agentSpawner.getMetricsSnapshot();
   }
 
   /**

@@ -1,11 +1,17 @@
 import { LLMProvider, getLLMProvider, LLMMessage, LLMResponse } from './llm-provider';
 import { ToolRouter } from './tool-router';
 import { logger } from '../../runtime/logger';
+import { MetricsCollector, RuntimeMetricsSnapshot } from './metrics-collector';
+import { AgentStreamCallback, AgentStreamEventType } from './stream-events';
 
 export interface AgentRunOptions {
   maxSteps?: number;
   timeoutMs?: number;
   signal?: AbortSignal;
+  /** Progress callback for streaming updates */
+  onProgress?: (percent: number, message: string) => void;
+  /** Structured stream callback for runtime events */
+  onStream?: AgentStreamCallback;
 }
 
 /**
@@ -28,11 +34,17 @@ export interface AgentExecutionResult {
 export class AgentRunner {
   private llm: LLMProvider;
   private tools: ToolRouter;
+  private metrics: MetricsCollector;
   private maxSteps: number = 10;
 
-  constructor(tools: ToolRouter, llm?: LLMProvider) {
+  constructor(tools: ToolRouter, llm?: LLMProvider, metrics?: MetricsCollector) {
     this.llm = llm ?? getLLMProvider();
     this.tools = tools;
+    this.metrics = metrics ?? new MetricsCollector();
+  }
+
+  public getMetricsSnapshot(): RuntimeMetricsSnapshot {
+    return this.metrics.snapshot();
   }
 
   /**
@@ -51,8 +63,35 @@ export class AgentRunner {
     const timeoutMs = options?.timeoutMs ?? context?.timeoutMs ?? context?.timeBudgetMs;
     const deadline = timeoutMs !== undefined ? startedAt + timeoutMs : undefined;
     const signal = options?.signal ?? context?.signal;
+    let toolCalls = 0;
+    let errorCount = 0;
 
     logger.info(`Starting agent run for ${agentId}`, { task });
+
+    // Progress callback
+    const onProgress = options?.onProgress || context?.onProgress;
+    const onStream: AgentStreamCallback | undefined = options?.onStream || context?.onStream;
+    const reportProgress = (percent: number, message: string) => {
+      if (onProgress) {
+        onProgress(percent, message);
+      }
+    };
+    const reportStream = (type: AgentStreamEventType, step: number, payload: unknown): void => {
+      if (!onStream) {
+        return;
+      }
+
+      onStream({
+        type,
+        agentId,
+        step,
+        timestamp: new Date().toISOString(),
+        payload
+      });
+    };
+
+    // Report initial progress
+    reportProgress(0, 'Starting agent execution');
 
     // Ensure tools are available for this run
     if (context?.tools) {
@@ -64,6 +103,12 @@ export class AgentRunner {
 
       try {
         this.throwIfCancelledOrOutOfBudget(steps, signal, deadline);
+        reportStream('step', steps, { phase: 'start', maxSteps });
+
+        // Report progress before LLM call
+        const progressPercent = Math.round((steps / maxSteps) * 50); // First 50% for reasoning
+        reportProgress(progressPercent, `Step ${steps}/${maxSteps}: Thinking...`);
+        reportStream('step', steps, { phase: 'thinking', message: `Step ${steps}/${maxSteps}: Thinking...` });
 
         // 1. Get model response
         // Note: toolDefinitions might need to be passed in specific format depending on provider
@@ -83,8 +128,14 @@ export class AgentRunner {
         if (response.function_call) {
             assistantMsg.function_call = response.function_call;
             transcript.push({ type: 'tool_call', name: response.function_call.name, args: response.function_call.arguments });
+            reportStream('tool', steps, {
+              status: 'call',
+              name: response.function_call.name,
+              args: response.function_call.arguments
+            });
         } else if (response.content) {
             transcript.push({ type: 'thought', content: response.content });
+            reportStream('thought', steps, { content: response.content });
         }
 
         messages.push(assistantMsg);
@@ -92,6 +143,7 @@ export class AgentRunner {
         // 2. Check for tool call
         if (response.function_call) {
           const toolName = response.function_call.name;
+          toolCalls += 1;
           let toolArgs = {};
           try {
               toolArgs = JSON.parse(response.function_call.arguments);
@@ -101,15 +153,23 @@ export class AgentRunner {
 
           logger.info(`Agent ${agentId} calling tool ${toolName}`, toolArgs);
 
+          // Report progress for tool execution
+          reportProgress(50 + Math.round((steps / maxSteps) * 40), `Step ${steps}/${maxSteps}: Executing ${toolName}...`);
+
           // 3. Execute tool
           let toolResult;
           try {
              toolResult = await this.awaitWithRunControls(
-               () => this.tools.execute(agentId, toolName, toolArgs),
-               signal,
-               deadline
-             );
-             transcript.push({ type: 'tool_result', name: toolName, result: toolResult });
+                () => this.tools.execute(agentId, toolName, toolArgs),
+                signal,
+                deadline
+              );
+              transcript.push({ type: 'tool_result', name: toolName, result: toolResult });
+              reportStream('tool', steps, {
+                status: 'result',
+                name: toolName,
+                result: toolResult
+              });
 
              messages.push({
                  role: 'function',
@@ -117,12 +177,18 @@ export class AgentRunner {
                  content: JSON.stringify(toolResult)
              });
            } catch (err: any) {
-             if (err instanceof AgentRunExitError) {
-               throw err;
-             }
+              if (err instanceof AgentRunExitError) {
+                throw err;
+              }
 
-              toolResult = `Error: ${err.message}`;
-              transcript.push({ type: 'tool_error', name: toolName, error: err.message });
+              errorCount += 1;
+               toolResult = `Error: ${err.message}`;
+               transcript.push({ type: 'tool_error', name: toolName, error: err.message });
+              reportStream('tool', steps, {
+                status: 'error',
+                name: toolName,
+                error: err.message
+              });
 
              messages.push({
                  role: 'function',
@@ -133,11 +199,17 @@ export class AgentRunner {
         } else {
           // If no tool call, this is the final answer
           logger.info(`Agent ${agentId} finished run`);
-          return {
-            success: true,
-            output: response.content || 'No content',
-            transcript
-          };
+          reportProgress(100, 'Completed successfully');
+          reportStream('result', steps, { success: true, output: response.content || 'No content' });
+          return this.finalizeRun(
+            agentId,
+            true,
+            response.content || 'No content',
+            transcript,
+            startedAt,
+            toolCalls,
+            errorCount
+          );
         }
 
       } catch (error: any) {
@@ -145,28 +217,44 @@ export class AgentRunner {
           const exitEntry = this.createRunExitEntry(error.reason, steps, maxSteps, startedAt, timeoutMs);
           transcript.push(exitEntry);
           logger.warn(`Agent ${agentId} exited due to ${error.reason}`, exitEntry);
-          return {
-            success: false,
-            output: error.message,
-            transcript
-          };
+          errorCount += 1;
+          reportStream('result', steps, { success: false, output: error.message, reason: error.reason });
+          return this.finalizeRun(agentId, false, error.message, transcript, startedAt, toolCalls, errorCount);
         }
 
         logger.error(`Agent loop error: ${error.message}`);
-        return {
-          success: false,
-          output: error.message,
-          transcript
-        };
+        errorCount += 1;
+        reportStream('result', steps, { success: false, output: error.message, reason: 'error' });
+        return this.finalizeRun(agentId, false, error.message, transcript, startedAt, toolCalls, errorCount);
       }
     }
 
     const maxStepsExit = this.createRunExitEntry('max_steps', steps, maxSteps, startedAt, timeoutMs);
     transcript.push(maxStepsExit);
+    reportStream('result', steps, { success: false, output: 'Max steps reached', reason: 'max_steps' });
+
+    return this.finalizeRun(agentId, false, 'Max steps reached', transcript, startedAt, toolCalls, errorCount);
+  }
+
+  private finalizeRun(
+    agentId: string,
+    success: boolean,
+    output: string,
+    transcript: any[],
+    startedAt: number,
+    toolCalls: number,
+    errorCount: number
+  ): AgentExecutionResult {
+    this.metrics.recordRun(agentId, {
+      success,
+      durationMs: Date.now() - startedAt,
+      toolCalls,
+      errorCount
+    });
 
     return {
-      success: false,
-      output: 'Max steps reached',
+      success,
+      output,
       transcript
     };
   }

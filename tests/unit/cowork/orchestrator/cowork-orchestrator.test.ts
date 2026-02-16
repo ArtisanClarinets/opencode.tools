@@ -120,6 +120,44 @@ describe('CoworkOrchestrator', () => {
     });
   });
 
+  describe('direct messaging', () => {
+    it('delivers messages even when agents are not currently active', async () => {
+      agentRegistry.register({
+        id: 'pm',
+        name: 'Project Manager',
+        description: 'PM agent',
+        body: 'You are a project manager.',
+      });
+      agentRegistry.register({
+        id: 'architect',
+        name: 'Architect',
+        description: 'Architect agent',
+        body: 'You are an architect.',
+      });
+
+      const inbox: Array<{ from: string; type: string; payload: unknown }> = [];
+      const unsubscribe = orchestrator.subscribeAgentInbox('architect', (from, type, payload) => {
+        inbox.push({ from, type, payload });
+      });
+
+      const envelope = await orchestrator.sendAgentMessage('pm', 'architect', 'handoff', { done: true });
+
+      expect(envelope.from).toBe('pm');
+      expect(envelope.to).toBe('architect');
+      expect(inbox).toHaveLength(1);
+      expect(inbox[0].from).toBe('pm');
+      expect(inbox[0].type).toBe('handoff');
+
+      unsubscribe();
+    });
+
+    it('rejects direct messages for agents missing from the registry', async () => {
+      await expect(
+        orchestrator.sendAgentMessage('unknown-a', 'unknown-b', 'handoff', { done: true }),
+      ).rejects.toThrow('not registered in the agent registry');
+    });
+  });
+
   describe('transcript', () => {
     it('should record transcript entries', async () => {
       const command: CommandDefinition = {

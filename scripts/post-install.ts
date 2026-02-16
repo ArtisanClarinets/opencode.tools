@@ -54,7 +54,7 @@ class PostInstallIntegration {
       console.log('\n📝 Next steps:');
       console.log('   1. Restart your OpenCode TUI');
       console.log('   2. All tools should be available automatically');
-      console.log('   3. If tools fail to start, run: opencode-tools --verify');
+      console.log('   3. If tools fail to start, run: opencode-tools verify (or --verify)');
 
     } catch (error) {
       console.error('\n❌ Integration failed:', error);
