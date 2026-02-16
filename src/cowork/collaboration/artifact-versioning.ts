@@ -318,6 +318,19 @@ export class ArtifactVersioning {
   }
 
   /**
+   * Restore persisted artifact versions without emitting events.
+   */
+  public restoreArtifactVersions<T>(artifactId: string, versions: ArtifactVersion<T>[]): void {
+    if (versions.length === 0) {
+      return;
+    }
+
+    const sorted = [...versions].sort((left, right) => left.version - right.version);
+    this.versions.set(artifactId, sorted as ArtifactVersion[]);
+    this.currentVersion.set(artifactId, sorted[sorted.length - 1].version);
+  }
+
+  /**
    * Clear all versions (use with caution - mainly for testing)
    */
   public clear(): void {

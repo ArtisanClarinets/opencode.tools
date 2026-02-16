@@ -1,6 +1,6 @@
 # Enterprise Gap Backlog
 
-Last updated: 2026-02-15
+Last updated: 2026-02-16
 
 This backlog tracks what remains to make OpenCode Tools a complete, corporate-level autonomous delivery team that consistently produces production-ready outputs.
 
@@ -14,6 +14,7 @@ This backlog tracks what remains to make OpenCode Tools a complete, corporate-le
 
 - Foundry orchestration flow and contracts in `src/foundry/*`.
 - Cowork plugin/runtime architecture in `src/cowork/*`.
+- Cowork Phase 0 foundation modules for persistence contracts, PostgreSQL manager/migrations, and validated config loading in `src/cowork/persistence/*` and `src/cowork/config/*`.
 - Quality gate runner in `src/foundry/quality-gates.ts`.
 - Governance/security primitives in `src/governance/*` and `src/security/*`.
 - Broad test suites across unit/integration/e2e.

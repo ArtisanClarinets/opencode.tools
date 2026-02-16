@@ -7,6 +7,7 @@
 
 import { logger } from '../../runtime/logger';
 import { EventBus } from '../orchestrator/event-bus';
+import { randomUUID } from 'crypto';
 
 export type FeedbackSeverity = 'nit' | 'blocking' | 'critical';
 export type FeedbackStatus = 'pending' | 'addressed' | 'wontfix' | 'in_progress';
@@ -82,11 +83,11 @@ export class FeedbackThreads {
       metadata?: Record<string, unknown>;
     }
   ): FeedbackThread {
-    const threadId = `thread-${artifactId}-${Date.now()}`;
+    const threadId = `thread-${artifactId}-${randomUUID()}`;
     const now = new Date().toISOString();
 
     const comment: FeedbackComment = {
-      id: `comment-${Date.now()}`,
+      id: `comment-${randomUUID()}`,
       threadId,
       author,
       content: initialComment,
@@ -146,7 +147,7 @@ export class FeedbackThreads {
     }
 
     const comment: FeedbackComment = {
-      id: `comment-${Date.now()}`,
+      id: `comment-${randomUUID()}`,
       threadId,
       author,
       content,
@@ -403,6 +404,18 @@ export class FeedbackThreads {
    */
   public getThreadsByTag(tag: string): FeedbackThread[] {
     return this.getAllThreads().filter(t => t.tags?.includes(tag));
+  }
+
+  /**
+   * Restore persisted thread state without emitting events.
+   */
+  public restoreThread(thread: FeedbackThread): void {
+    this.threads.set(thread.id, thread);
+
+    if (!this.artifactThreads.has(thread.artifactId)) {
+      this.artifactThreads.set(thread.artifactId, new Set());
+    }
+    this.artifactThreads.get(thread.artifactId)?.add(thread.id);
   }
 
   /**

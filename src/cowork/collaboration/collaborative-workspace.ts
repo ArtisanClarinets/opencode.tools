@@ -6,10 +6,17 @@
  */
 
 import { logger } from '../../runtime/logger';
+import { randomUUID } from 'crypto';
 import { EventBus } from '../orchestrator/event-bus';
-import { Blackboard, Artifact, FeedbackEntry } from '../orchestrator/blackboard';
 import { ArtifactVersioning, ArtifactVersion } from './artifact-versioning';
 import { FeedbackThreads, FeedbackThread } from './feedback-threads';
+import {
+  CoworkDomainStore,
+  CoworkPersistenceRuntime,
+  WorkspaceSnapshotRecord,
+  initializeCoworkPersistence,
+} from '../persistence';
+import { WorkflowEngine, registerPhaseOneWorkflows } from '../workflow';
 
 export type WorkspaceStatus = 'active' | 'archived' | 'frozen' | 'merging';
 export type ConflictResolutionStrategy = 'last-write-wins' | 'merge' | 'reject' | 'manual';
@@ -83,7 +90,7 @@ export interface WorkspaceMetrics {
 }
 
 export class CollaborativeWorkspace {
-  private static instance: CollaborativeWorkspace;
+  private static instance: CollaborativeWorkspace | null = null;
   private workspaces: Map<string, ProjectWorkspace> = new Map();
   private projectWorkspaces: Map<string, Set<string>> = new Map(); // projectId -> workspaceIds
   private conflicts: Map<string, Conflict> = new Map();
@@ -91,12 +98,23 @@ export class CollaborativeWorkspace {
   private versioning: ArtifactVersioning;
   private feedback: FeedbackThreads;
   private eventBus: EventBus;
+  private workflowEngine: WorkflowEngine;
+  private persistenceStore: CoworkDomainStore | null = null;
+  private pendingPersistenceWrites: Set<Promise<void>> = new Set();
+  private monotonicTimestampMs = 0;
 
   private constructor() {
     this.versioning = ArtifactVersioning.getInstance();
     this.feedback = FeedbackThreads.getInstance();
     this.eventBus = EventBus.getInstance();
+    this.workflowEngine = WorkflowEngine.getInstance();
     this.setupEventListeners();
+
+    const runtimeStore = CoworkPersistenceRuntime.getInstance().getStore();
+    if (runtimeStore) {
+      this.persistenceStore = runtimeStore;
+      this.eventBus.configurePersistence(runtimeStore);
+    }
   }
 
   public static getInstance(): CollaborativeWorkspace {
@@ -104,6 +122,64 @@ export class CollaborativeWorkspace {
       CollaborativeWorkspace.instance = new CollaborativeWorkspace();
     }
     return CollaborativeWorkspace.instance;
+  }
+
+  public static resetForTests(): void {
+    if (!CollaborativeWorkspace.instance) {
+      return;
+    }
+
+    CollaborativeWorkspace.instance.versioning.clear();
+    CollaborativeWorkspace.instance.feedback.clear();
+    CollaborativeWorkspace.instance.workspaces.clear();
+    CollaborativeWorkspace.instance.projectWorkspaces.clear();
+    CollaborativeWorkspace.instance.conflicts.clear();
+    CollaborativeWorkspace.instance.workspaceConflicts.clear();
+    CollaborativeWorkspace.instance.pendingPersistenceWrites.clear();
+    CollaborativeWorkspace.instance.workflowEngine.clearForTests();
+    CollaborativeWorkspace.instance.eventBus.resetForTests();
+    CollaborativeWorkspace.instance.persistenceStore = null;
+    CollaborativeWorkspace.instance = null;
+  }
+
+  public async configurePersistence(
+    store?: CoworkDomainStore,
+    options: {
+      hydrateFromStore?: boolean;
+      initializeRuntime?: boolean;
+      startDispatcher?: boolean;
+    } = {},
+  ): Promise<void> {
+    if (store) {
+      this.persistenceStore = store;
+    } else if (options.initializeRuntime !== false) {
+      this.persistenceStore = await initializeCoworkPersistence();
+    }
+
+    if (!this.persistenceStore) {
+      return;
+    }
+
+    this.eventBus.configurePersistence(this.persistenceStore);
+    if (options.startDispatcher !== false) {
+      this.eventBus.startDispatcher();
+    }
+
+    await this.workflowEngine.configurePersistence(this.persistenceStore);
+    await registerPhaseOneWorkflows(this.workflowEngine);
+    this.workflowEngine.start();
+
+    if (options.hydrateFromStore !== false) {
+      await this.hydrateFromPersistence();
+    }
+  }
+
+  public async flushPersistence(): Promise<void> {
+    if (this.pendingPersistenceWrites.size === 0) {
+      return;
+    }
+
+    await Promise.all([...this.pendingPersistenceWrites]);
   }
 
   private setupEventListeners(): void {
@@ -136,8 +212,8 @@ export class CollaborativeWorkspace {
       initialMembers?: string[];
     }
   ): ProjectWorkspace {
-    const workspaceId = `workspace-${projectId}-${Date.now()}`;
-    const now = new Date().toISOString();
+    const workspaceId = `workspace-${projectId}-${randomUUID()}`;
+    const now = this.nextTimestamp();
 
     const workspace: ProjectWorkspace = {
       id: workspaceId,
@@ -160,7 +236,11 @@ export class CollaborativeWorkspace {
     }
     this.projectWorkspaces.get(projectId)!.add(workspaceId);
 
-    this.eventBus.publish('workspace:created', workspace);
+    this.eventBus.publish('workspace:created', workspace, {
+      aggregateType: 'workspace',
+      aggregateId: workspaceId,
+    });
+    this.persistWorkspaceState(workspace);
     logger.info(`[CollaborativeWorkspace] Created workspace ${workspaceId} for project ${projectId}`);
 
     return workspace;
@@ -213,16 +293,74 @@ export class CollaborativeWorkspace {
 
     const oldStatus = workspace.status;
     workspace.status = newStatus;
-    workspace.updatedAt = new Date().toISOString();
+    workspace.updatedAt = this.nextTimestamp();
 
     this.eventBus.publish('workspace:status:changed', {
       workspaceId,
       oldStatus,
       newStatus,
       updatedBy
+    }, {
+      aggregateType: 'workspace',
+      aggregateId: workspaceId,
     });
 
+    this.persistWorkspaceState(workspace);
+
     logger.info(`[CollaborativeWorkspace] Workspace ${workspaceId} status changed from ${oldStatus} to ${newStatus}`);
+
+    return workspace;
+  }
+
+  public openWorkspace(workspaceId: string, openedBy: string): ProjectWorkspace | null {
+    const workspace = this.updateWorkspaceStatus(workspaceId, 'active', openedBy);
+    if (!workspace) {
+      return null;
+    }
+
+    this.eventBus.publish(
+      'workspace:opened',
+      {
+        workspaceId,
+        openedBy,
+        timestamp: workspace.updatedAt,
+      },
+      {
+        aggregateType: 'workspace',
+        aggregateId: workspaceId,
+      },
+    );
+
+    return workspace;
+  }
+
+  public closeWorkspace(workspaceId: string, closedBy: string, reason?: string): ProjectWorkspace | null {
+    const workspace = this.updateWorkspaceStatus(workspaceId, 'frozen', closedBy);
+    if (!workspace) {
+      return null;
+    }
+
+    workspace.metadata = {
+      ...(workspace.metadata ?? {}),
+      closedAt: workspace.updatedAt,
+      closedBy,
+      closeReason: reason,
+    };
+
+    this.persistWorkspaceState(workspace, workspace.updatedAt);
+    this.eventBus.publish(
+      'workspace:closed',
+      {
+        workspaceId,
+        closedBy,
+        reason,
+        timestamp: workspace.updatedAt,
+      },
+      {
+        aggregateType: 'workspace',
+        aggregateId: workspaceId,
+      },
+    );
 
     return workspace;
   }
@@ -236,14 +374,19 @@ export class CollaborativeWorkspace {
 
     if (!workspace.members.includes(member)) {
       workspace.members.push(member);
-      workspace.updatedAt = new Date().toISOString();
+      workspace.updatedAt = this.nextTimestamp();
 
       this.eventBus.publish('workspace:member:added', {
         workspaceId,
         member,
         addedBy,
         timestamp: workspace.updatedAt
+      }, {
+        aggregateType: 'workspace',
+        aggregateId: workspaceId,
       });
+
+      this.persistWorkspaceState(workspace);
 
       logger.debug(`[CollaborativeWorkspace] Added member ${member} to workspace ${workspaceId}`);
     }
@@ -261,14 +404,19 @@ export class CollaborativeWorkspace {
     const index = workspace.members.indexOf(member);
     if (index > -1) {
       workspace.members.splice(index, 1);
-      workspace.updatedAt = new Date().toISOString();
+      workspace.updatedAt = this.nextTimestamp();
 
       this.eventBus.publish('workspace:member:removed', {
         workspaceId,
         member,
         removedBy,
         timestamp: workspace.updatedAt
+      }, {
+        aggregateType: 'workspace',
+        aggregateId: workspaceId,
       });
+
+      this.persistWorkspaceState(workspace);
 
       logger.debug(`[CollaborativeWorkspace] Removed member ${member} from workspace ${workspaceId}`);
     }
@@ -330,14 +478,20 @@ export class CollaborativeWorkspace {
       workspace.artifacts.set(artifactKey, newArtifactId);
     }
 
-    workspace.updatedAt = new Date().toISOString();
+    workspace.updatedAt = this.nextTimestamp();
 
     this.eventBus.publish('workspace:artifact:updated', {
       workspaceId,
       artifactKey,
       version: version.version,
       author
+    }, {
+      aggregateType: 'workspace',
+      aggregateId: workspaceId,
     });
+
+    this.persistWorkspaceState(workspace);
+    this.persistWorkspaceArtifact(workspace, artifactKey, version, source);
 
     return version;
   }
@@ -387,14 +541,20 @@ export class CollaborativeWorkspace {
 
     const result = this.versioning.rollbackToVersion<T>(artifactId, targetVersion, author, reason);
     if (result) {
-      workspace.updatedAt = new Date().toISOString();
+      workspace.updatedAt = this.nextTimestamp();
       this.eventBus.publish('workspace:artifact:rollback', {
         workspaceId,
         artifactKey,
         targetVersion,
         author,
         reason
+      }, {
+        aggregateType: 'workspace',
+        aggregateId: workspaceId,
       });
+
+      this.persistWorkspaceState(workspace);
+      this.persistWorkspaceArtifact(workspace, artifactKey, result, result.source);
     }
 
     return result;
@@ -434,14 +594,35 @@ export class CollaborativeWorkspace {
       options
     );
 
-    workspace.updatedAt = new Date().toISOString();
+    workspace.updatedAt = this.nextTimestamp();
 
     this.eventBus.publish('workspace:feedback:added', {
       workspaceId,
       artifactKey,
       threadId: thread.id,
       severity
+    }, {
+      aggregateType: 'workspace',
+      aggregateId: workspaceId,
     });
+
+    this.persistWorkspaceState(workspace);
+    this.persistFeedbackThread(workspaceId, thread);
+    this.eventBus.publish(
+      'feedback:added',
+      {
+        id: thread.id,
+        workspaceId,
+        artifactId,
+        severity: thread.severity,
+        status: thread.status,
+        createdAt: thread.createdAt,
+      },
+      {
+        aggregateType: 'workspace',
+        aggregateId: workspaceId,
+      },
+    );
 
     return thread;
   }
@@ -494,14 +675,14 @@ export class CollaborativeWorkspace {
       if (!workspace) return;
 
       const conflict: Conflict = {
-        id: `conflict-${Date.now()}`,
+        id: `conflict-${randomUUID()}`,
         workspaceId: workspace.id,
         artifactKey: this.getArtifactKeyById(workspace, artifactId),
         agent1: conflictingVersion.author,
         agent2: version.author,
         version1: conflictingVersion,
         version2: version,
-        detectedAt: new Date().toISOString(),
+        detectedAt: this.nextTimestamp(),
         status: 'detected'
       };
 
@@ -512,7 +693,10 @@ export class CollaborativeWorkspace {
       }
       this.workspaceConflicts.get(workspace.id)!.add(conflict.id);
 
-      this.eventBus.publish('workspace:conflict:detected', conflict);
+      this.eventBus.publish('workspace:conflict:detected', conflict, {
+        aggregateType: 'workspace',
+        aggregateId: workspace.id,
+      });
       logger.warn(`[CollaborativeWorkspace] Conflict detected on artifact ${artifactId} between ${conflictingVersion.author} and ${version.author}`);
     }
   }
@@ -537,13 +721,16 @@ export class CollaborativeWorkspace {
     conflict.resolution = {
       strategy,
       resolvedBy,
-      resolvedAt: new Date().toISOString(),
+      resolvedAt: this.nextTimestamp(),
       winningVersion: options?.winningVersion,
       mergedData: options?.mergedData,
       reason: options?.reason
     };
 
-    this.eventBus.publish('workspace:conflict:resolved', conflict);
+    this.eventBus.publish('workspace:conflict:resolved', conflict, {
+      aggregateType: 'workspace',
+      aggregateId: conflict.workspaceId,
+    });
     logger.info(`[CollaborativeWorkspace] Conflict ${conflictId} resolved with strategy: ${strategy}`);
 
     return conflict;
@@ -610,7 +797,7 @@ export class CollaborativeWorkspace {
       packageId,
       projectId: workspace.projectId,
       workspaceId,
-      generatedAt: new Date().toISOString(),
+      generatedAt: this.nextTimestamp(),
       generatedBy,
       artifacts,
       summary: {
@@ -623,7 +810,10 @@ export class CollaborativeWorkspace {
       signatures: []
     };
 
-    this.eventBus.publish('workspace:compliance:package_generated', pkg);
+    this.eventBus.publish('workspace:compliance:package_generated', pkg, {
+      aggregateType: 'workspace',
+      aggregateId: workspaceId,
+    });
     logger.info(`[CollaborativeWorkspace] Generated compliance package ${packageId} with ${artifacts.length} artifacts`);
 
     return pkg;
@@ -638,7 +828,7 @@ export class CollaborativeWorkspace {
       packageId,
       signer,
       signature,
-      timestamp: new Date().toISOString()
+      timestamp: this.nextTimestamp()
     });
 
     logger.info(`[CollaborativeWorkspace] Compliance package ${packageId} signed by ${signer}`);
@@ -694,7 +884,7 @@ export class CollaborativeWorkspace {
       feedback: {} as Record<string, FeedbackThread[]>,
       conflicts: this.getConflictsForWorkspace(workspaceId),
       metrics: this.getMetrics(workspaceId),
-      exportedAt: new Date().toISOString()
+      exportedAt: this.nextTimestamp()
     };
 
     for (const [key, artifactId] of workspace.artifacts) {
@@ -715,7 +905,10 @@ export class CollaborativeWorkspace {
         workspaceId,
         archivedBy,
         reason,
-        timestamp: new Date().toISOString()
+        timestamp: this.nextTimestamp()
+      }, {
+        aggregateType: 'workspace',
+        aggregateId: workspaceId,
       });
       logger.info(`[CollaborativeWorkspace] Workspace ${workspaceId} archived by ${archivedBy}`);
     }
@@ -746,12 +939,17 @@ export class CollaborativeWorkspace {
 
     this.workspaces.delete(workspaceId);
 
+    this.persistWorkspaceDeletion(workspace);
+
     this.eventBus.publish('workspace:deleted', {
       workspaceId,
       projectId: workspace.projectId,
       deletedBy,
       reason,
-      timestamp: new Date().toISOString()
+      timestamp: this.nextTimestamp()
+    }, {
+      aggregateType: 'workspace',
+      aggregateId: workspaceId,
     });
 
     logger.info(`[CollaborativeWorkspace] Workspace ${workspaceId} deleted by ${deletedBy}`);
@@ -763,6 +961,304 @@ export class CollaborativeWorkspace {
    */
   public getAllWorkspaces(): ProjectWorkspace[] {
     return Array.from(this.workspaces.values());
+  }
+
+  public async createCheckpoint(
+    workspaceId: string,
+    createdBy: string,
+    snapshotType = 'checkpoint',
+    metadata: Record<string, unknown> = {},
+  ): Promise<WorkspaceSnapshotRecord | null> {
+    const workspace = this.workspaces.get(workspaceId);
+    if (!workspace || !this.persistenceStore) {
+      return null;
+    }
+
+    const payload: Record<string, unknown> = {
+      workspace: this.serializeWorkspace(workspace),
+      artifacts: Object.fromEntries(
+        [...workspace.artifacts.entries()].map(([key, artifactId]) => {
+          const currentVersion = this.versioning.getCurrentVersion(artifactId);
+          return [key, currentVersion ?? null];
+        }),
+      ),
+      feedback: Object.fromEntries(
+        [...workspace.artifacts.entries()].map(([key, artifactId]) => {
+          return [key, this.feedback.getThreadsForArtifact(artifactId)];
+        }),
+      ),
+    };
+
+    return this.persistenceStore.saveWorkspaceSnapshot({
+      workspaceId,
+      snapshotType,
+      payload,
+      metadata,
+      createdBy,
+    });
+  }
+
+  public async listCheckpoints(workspaceId: string, limit = 25): Promise<WorkspaceSnapshotRecord[]> {
+    if (!this.persistenceStore) {
+      return [];
+    }
+
+    return this.persistenceStore.listWorkspaceSnapshots(workspaceId, limit);
+  }
+
+  private nextTimestamp(): string {
+    const now = Date.now();
+    this.monotonicTimestampMs = now > this.monotonicTimestampMs ? now : this.monotonicTimestampMs + 1;
+    return new Date(this.monotonicTimestampMs).toISOString();
+  }
+
+  private serializeWorkspace(workspace: ProjectWorkspace): Record<string, unknown> {
+    return {
+      id: workspace.id,
+      projectId: workspace.projectId,
+      name: workspace.name,
+      description: workspace.description,
+      status: workspace.status,
+      createdAt: workspace.createdAt,
+      updatedAt: workspace.updatedAt,
+      createdBy: workspace.createdBy,
+      members: workspace.members,
+      artifacts: Object.fromEntries(workspace.artifacts.entries()),
+      metadata: workspace.metadata ?? {},
+    };
+  }
+
+  private persistWorkspaceState(workspace: ProjectWorkspace, closedAt?: string): void {
+    if (!this.persistenceStore) {
+      return;
+    }
+
+    this.schedulePersistence('workspace:upsert', async () => {
+      await this.persistenceStore?.upsertWorkspace({
+        workspaceId: workspace.id,
+        projectId: workspace.projectId,
+        name: workspace.name,
+        description: workspace.description,
+        status: workspace.status,
+        createdBy: workspace.createdBy,
+        members: [...workspace.members],
+        artifactMap: Object.fromEntries(workspace.artifacts.entries()),
+        metadata: workspace.metadata ?? {},
+        createdAt: workspace.createdAt,
+        updatedAt: workspace.updatedAt,
+        closedAt,
+      });
+    });
+  }
+
+  private persistWorkspaceArtifact(
+    workspace: ProjectWorkspace,
+    artifactKey: string,
+    version: ArtifactVersion,
+    source: string,
+  ): void {
+    if (!this.persistenceStore) {
+      return;
+    }
+
+    const artifactId = workspace.artifacts.get(artifactKey);
+    if (!artifactId) {
+      return;
+    }
+
+    const expectedVersion = Math.max(0, version.version - 1);
+
+    this.schedulePersistence('workspace:artifact:upsert', async () => {
+      const persistedEntry = await this.persistenceStore?.upsertBlackboardEntry({
+        workspaceId: workspace.id,
+        artifactKey,
+        artifactId,
+        artifactType: 'workspace_artifact',
+        source,
+        payload: {
+          workspaceId: workspace.id,
+          artifactKey,
+          data: version.data as unknown,
+          version: version.version,
+          author: version.author,
+          timestamp: version.timestamp,
+          changeType: version.changeType,
+          metadata: version.metadata ?? {},
+        },
+        expectedVersion,
+        timestamp: version.timestamp,
+      });
+
+      if (!persistedEntry) {
+        return;
+      }
+
+      this.eventBus.publish(
+        expectedVersion === 0 ? 'blackboard:entry:created' : 'blackboard:entry:updated',
+        {
+          workspaceId: workspace.id,
+          artifactKey,
+          artifactId,
+          source,
+          version: persistedEntry.version,
+          updatedAt: persistedEntry.updatedAt,
+        },
+        {
+          aggregateType: 'blackboard',
+          aggregateId: artifactId,
+        },
+      );
+    });
+  }
+
+  private persistFeedbackThread(workspaceId: string, thread: FeedbackThread): void {
+    if (!this.persistenceStore) {
+      return;
+    }
+
+    this.schedulePersistence('workspace:feedback:upsert', async () => {
+      await this.persistenceStore?.saveBlackboardFeedback({
+        workspaceId,
+        feedbackId: thread.id,
+        targetId: thread.artifactId,
+        sourceActor: thread.author,
+        content: thread.initialComment,
+        severity: thread.severity,
+        status: thread.status,
+        metadata: {
+          comments: thread.comments,
+          tags: thread.tags ?? [],
+          location: thread.location,
+          metadata: thread.metadata ?? {},
+        },
+        createdAt: thread.createdAt,
+        updatedAt: thread.updatedAt,
+      });
+    });
+  }
+
+  private persistWorkspaceDeletion(workspace: ProjectWorkspace): void {
+    if (!this.persistenceStore) {
+      return;
+    }
+
+    const deletedAt = this.nextTimestamp();
+    this.schedulePersistence('workspace:delete', async () => {
+      await this.persistenceStore?.upsertWorkspace({
+        workspaceId: workspace.id,
+        projectId: workspace.projectId,
+        name: workspace.name,
+        description: workspace.description,
+        status: workspace.status,
+        createdBy: workspace.createdBy,
+        members: [...workspace.members],
+        artifactMap: Object.fromEntries(workspace.artifacts.entries()),
+        metadata: workspace.metadata ?? {},
+        createdAt: workspace.createdAt,
+        updatedAt: deletedAt,
+        deletedAt,
+      });
+    });
+  }
+
+  private schedulePersistence(operation: string, task: () => Promise<void>): void {
+    const promise = task()
+      .catch((error) => {
+        logger.error('[CollaborativeWorkspace] Persistence operation failed', {
+          operation,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      })
+      .finally(() => {
+        this.pendingPersistenceWrites.delete(promise);
+      });
+
+    this.pendingPersistenceWrites.add(promise);
+  }
+
+  private async hydrateFromPersistence(): Promise<void> {
+    if (!this.persistenceStore) {
+      return;
+    }
+
+    const persistedWorkspaces = await this.persistenceStore.listWorkspaces(undefined, false);
+
+    this.workspaces.clear();
+    this.projectWorkspaces.clear();
+
+    for (const record of persistedWorkspaces) {
+      const workspace: ProjectWorkspace = {
+        id: record.workspaceId,
+        projectId: record.projectId,
+        name: record.name,
+        description: record.description,
+        status: record.status as WorkspaceStatus,
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt,
+        createdBy: record.createdBy,
+        members: record.members,
+        artifacts: new Map(Object.entries(record.artifactMap)),
+        metadata: record.metadata,
+      };
+
+      this.workspaces.set(workspace.id, workspace);
+      if (!this.projectWorkspaces.has(workspace.projectId)) {
+        this.projectWorkspaces.set(workspace.projectId, new Set());
+      }
+      this.projectWorkspaces.get(workspace.projectId)?.add(workspace.id);
+
+      const persistedEntries = await this.persistenceStore.listBlackboardEntries(workspace.id);
+      for (const entry of persistedEntries) {
+        workspace.artifacts.set(entry.artifactKey, entry.artifactId);
+
+        const payloadRecord = entry.payload;
+        const lineage = Array.from({ length: Math.max(entry.version, 1) }, (_, index) => `${entry.artifactId}-v${index + 1}`);
+        this.versioning.restoreArtifactVersions(entry.artifactId, [
+          {
+            id: `${entry.artifactId}-v${entry.version}`,
+            artifactId: entry.artifactId,
+            version: entry.version,
+            data: payloadRecord.data,
+            source: entry.source,
+            author: typeof payloadRecord.author === 'string' ? payloadRecord.author : 'system',
+            timestamp: typeof payloadRecord.timestamp === 'string' ? payloadRecord.timestamp : entry.updatedAt,
+            changeType: entry.version <= 1 ? 'create' : 'update',
+            changeDescription: 'Hydrated from persistent blackboard state',
+            lineage,
+            metadata: {
+              ...(isRecord(payloadRecord.metadata) ? payloadRecord.metadata : {}),
+              restoredFromPersistence: true,
+            },
+          },
+        ]);
+      }
+
+      const persistedFeedback = await this.persistenceStore.listBlackboardFeedback(workspace.id);
+      for (const feedbackRecord of persistedFeedback) {
+        this.feedback.restoreThread({
+          id: feedbackRecord.feedbackId,
+          artifactId: feedbackRecord.targetId,
+          author: feedbackRecord.sourceActor,
+          title: `Recovered feedback ${feedbackRecord.feedbackId}`,
+          initialComment: feedbackRecord.content,
+          severity: feedbackRecord.severity as 'nit' | 'blocking' | 'critical',
+          status: feedbackRecord.status as 'pending' | 'addressed' | 'wontfix' | 'in_progress',
+          comments: [
+            {
+              id: `${feedbackRecord.feedbackId}-comment-1`,
+              threadId: feedbackRecord.feedbackId,
+              author: feedbackRecord.sourceActor,
+              content: feedbackRecord.content,
+              timestamp: feedbackRecord.createdAt,
+            },
+          ],
+          createdAt: feedbackRecord.createdAt,
+          updatedAt: feedbackRecord.updatedAt,
+          tags: [],
+          metadata: feedbackRecord.metadata,
+        });
+      }
+    }
   }
 
   /**
@@ -796,6 +1292,10 @@ export class CollaborativeWorkspace {
     }
     return artifactId;
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
 export default CollaborativeWorkspace;

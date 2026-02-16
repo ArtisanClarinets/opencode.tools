@@ -15,8 +15,12 @@ import { AgentCoordinator, type DirectMessageEnvelope } from './agent-coordinato
 import { ResultMerger, AgentResult, MergedResult } from './result-merger';
 import { EventBus } from './event-bus';
 import { Blackboard } from './blackboard';
+import { CollaborativeWorkspace } from '../collaboration/collaborative-workspace';
+import { initializeCoworkPersistence } from '../persistence';
+import { CoworkConfigManager } from '../config';
 import type { RuntimeMetricsSnapshot } from '../runtime/metrics-collector';
 import type { DirectMessagePolicy } from '../../security/event-guardrails';
+import { logger } from '../../runtime/logger';
 
 /**
  * Orchestrator options
@@ -82,6 +86,7 @@ export class CoworkOrchestrator {
   private blackboard: Blackboard;
   private transcript: TranscriptEntry[];
   private options: OrchestratorOptions;
+  private persistenceBootstrapPromise: Promise<void> | null = null;
 
   /**
    * Create orchestrator
@@ -111,6 +116,22 @@ export class CoworkOrchestrator {
       maxConcurrent: options?.maxConcurrent || 5,
       defaultTimeout: options?.defaultTimeout || 60000
     };
+
+    if (this.shouldBootstrapPersistence()) {
+      this.persistenceBootstrapPromise = this.bootstrapCoworkPersistence();
+    }
+  }
+
+  public async awaitPersistenceBootstrap(): Promise<void> {
+    if (!this.persistenceBootstrapPromise && this.shouldBootstrapPersistence()) {
+      this.persistenceBootstrapPromise = this.bootstrapCoworkPersistence();
+    }
+
+    if (!this.persistenceBootstrapPromise) {
+      return;
+    }
+
+    await this.persistenceBootstrapPromise;
   }
 
   /**
@@ -507,5 +528,35 @@ export class CoworkOrchestrator {
         allSucceeded: false
       }
     };
+  }
+
+  private async bootstrapCoworkPersistence(): Promise<void> {
+    try {
+      const store = await initializeCoworkPersistence();
+      this.eventBus.configurePersistence(store);
+      this.eventBus.startDispatcher();
+      await this.blackboard.configurePersistence(store, {
+        hydrateFromStore: true,
+        initializeRuntime: false,
+        startDispatcher: false,
+      });
+      await CollaborativeWorkspace.getInstance().configurePersistence(store, {
+        hydrateFromStore: true,
+        initializeRuntime: false,
+        startDispatcher: false,
+      });
+    } catch (error) {
+      logger.warn('[CoworkOrchestrator] Running without persistent Cowork storage', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  private shouldBootstrapPersistence(): boolean {
+    const hasLoadedConfig = Boolean(CoworkConfigManager.getInstance().getCurrentConfig());
+    const hasPersistenceConnection = typeof process.env.COWORK_PERSISTENCE_CONNECTION_STRING === 'string'
+      && process.env.COWORK_PERSISTENCE_CONNECTION_STRING.length > 0;
+
+    return hasLoadedConfig || hasPersistenceConnection;
   }
 }

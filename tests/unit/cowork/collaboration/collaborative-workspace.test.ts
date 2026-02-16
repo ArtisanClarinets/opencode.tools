@@ -14,6 +14,7 @@ describe('CollaborativeWorkspace', () => {
   let eventBus: EventBus;
 
   beforeEach(() => {
+    CollaborativeWorkspace.resetForTests();
     workspace = CollaborativeWorkspace.getInstance();
     versioning = ArtifactVersioning.getInstance();
     feedback = FeedbackThreads.getInstance();
@@ -22,8 +23,12 @@ describe('CollaborativeWorkspace', () => {
     // Clear all state
     versioning.clear();
     feedback.clear();
-    // Note: CollaborativeWorkspace doesn't have a clear method, so we create fresh instances
+    eventBus.resetForTests();
     jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    CollaborativeWorkspace.resetForTests();
   });
 
   describe('createWorkspace', () => {
@@ -57,7 +62,8 @@ describe('CollaborativeWorkspace', () => {
 
       expect(publishSpy).toHaveBeenCalledWith(
         'workspace:created',
-        expect.objectContaining({ projectId: 'project-1', name: 'Main' })
+        expect.objectContaining({ projectId: 'project-1', name: 'Main' }),
+        expect.objectContaining({ aggregateType: 'workspace' })
       );
     });
   });
@@ -114,7 +120,8 @@ describe('CollaborativeWorkspace', () => {
           workspaceId: ws.id,
           oldStatus: 'active',
           newStatus: 'archived'
-        })
+        }),
+        expect.objectContaining({ aggregateType: 'workspace' })
       );
     });
 
@@ -202,7 +209,8 @@ describe('CollaborativeWorkspace', () => {
         expect.objectContaining({
           workspaceId: ws.id,
           artifactKey: 'doc.md'
-        })
+        }),
+        expect.objectContaining({ aggregateType: 'workspace' })
       );
     });
   });
