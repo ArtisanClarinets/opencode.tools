@@ -74,6 +74,20 @@ export class TaskRouter {
     return TaskRouter.instance;
   }
 
+  public static resetForTests(): void {
+    if (!TaskRouter.instance) {
+      return;
+    }
+
+    for (const timer of TaskRouter.instance.retryTimers.values()) {
+      clearTimeout(timer);
+    }
+    TaskRouter.instance.retryTimers.clear();
+    TaskRouter.instance.taskQueue.clear();
+    TaskRouter.instance.agentTasks.clear();
+    TaskRouter.instance = undefined as unknown as TaskRouter;
+  }
+
   /**
    * Submit a new task to the queue
    */
@@ -492,15 +506,7 @@ export class TaskRouter {
    * Clear all tasks (for testing)
    */
   public clear(): void {
-    // Clear all retry timers
-    for (const timer of this.retryTimers.values()) {
-      clearTimeout(timer);
-    }
-    this.retryTimers.clear();
-
-    this.taskQueue.clear();
-    this.agentTasks.clear();
-    TaskRouter.instance = undefined as unknown as TaskRouter;
+    TaskRouter.resetForTests();
     logger.warn('[TaskRouter] All tasks cleared');
   }
 

@@ -69,6 +69,22 @@ export class ParallelStateMonitor {
     this.setupEventListeners();
   }
 
+  private getWorkspace(): CollaborativeWorkspace | null {
+    if (this.workspace) {
+      return this.workspace;
+    }
+
+    try {
+      this.workspace = CollaborativeWorkspace.getInstance();
+      return this.workspace;
+    } catch (error) {
+      logger.warn('[ParallelStateMonitor] Workspace unavailable, skipping artifact persistence', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return null;
+    }
+  }
+
   public static getInstance(): ParallelStateMonitor {
     if (!ParallelStateMonitor.instance) {
       ParallelStateMonitor.instance = new ParallelStateMonitor();
@@ -383,10 +399,11 @@ export class ParallelStateMonitor {
 
     // Store finding as artifact in workspace
     if (finding.projectId) {
-      const workspaces = this.workspace.getWorkspacesForProject(finding.projectId);
+      const workspace = this.getWorkspace();
+      const workspaces = workspace?.getWorkspacesForProject(finding.projectId) ?? [];
       if (workspaces.length > 0) {
         const activeWorkspace = workspaces.find(w => w.status === 'active') || workspaces[0];
-        this.workspace.updateArtifact(
+        workspace?.updateArtifact(
           activeWorkspace.id,
           `findings/${finding.type}/${finding.id}`,
           finding,

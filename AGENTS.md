@@ -8,6 +8,8 @@ This guide defines practical standards for contributors and coding agents workin
 - Prefer real integrations over placeholders.
 - Keep security and governance controls explicit and testable.
 - Treat docs as operational contracts: update docs with behavior changes.
+- Enforce production-deliverable scope: final artifacts must be code/docs/tests only.
+- Prefer bespoke, project-specific output over generic boilerplate deliverables.
 
 ## 2) Runtime Topology
 
@@ -31,6 +33,7 @@ When changing orchestration behavior, validate the full flow from entrypoint to 
 npm run build
 npm run lint
 npx tsc --noEmit
+npm run validate:deliverable-scope
 ```
 
 ## Testing
@@ -53,6 +56,7 @@ npm run validate
 
 ```bash
 npm run tui
+npm run foundry:tui
 opencode-tools verify
 ```
 
@@ -105,6 +109,7 @@ opencode-tools verify
 - **CLI/TUI behavior changes**: validate command path and visible operator output.
 
 At minimum, run `npm run lint`, `npm run build`, `npx tsc --noEmit`, and relevant test suites before finalizing.
+For release-facing work, also run `npm run validate:deliverable-scope`.
 
 ## 7) Security and Governance Requirements
 
@@ -112,6 +117,7 @@ At minimum, run `npm run lint`, `npm run build`, `npx tsc --noEmit`, and relevan
 - Preserve redaction controls in `src/security/*`.
 - Keep policy and review checks wired in `src/governance/*` and `src/review/*`.
 - Avoid introducing hardcoded secrets, paths, or mock IDs into production code paths.
+- Preserve strict deliverable-scope enforcement in `src/foundry/deliverable-scope.ts` and `scripts/validate-deliverable-scope.js`.
 
 ## 8) Documentation Maintenance
 
@@ -120,6 +126,7 @@ If behavior changes, update at least:
 - `README.md` (operator-facing behavior)
 - `AGENTS.md` (developer process/standards)
 - Any impacted architecture/integration docs (`INTEGRATION_GUIDE.md`, `TUI_INTEGRATION.md`, Foundry docs)
+- `docs/PRODUCTION_DELIVERABLE_POLICY.md` when delivery scope or release guardrails change
 
 For strategic remediation planning, keep `docs/ENTERPRISE_GAP_BACKLOG.md` current.
 
@@ -131,6 +138,7 @@ A change is done when:
 2. Tests and validation commands pass for impacted areas.
 3. Security/governance implications are addressed.
 4. Documentation reflects the new behavior.
+5. Deliverable-scope policy is satisfied (or explicit allow-list exceptions are documented).
 
 ---
 
@@ -188,17 +196,12 @@ The system follows an **event-driven architecture** with EventBus as the central
 
 ```
 Agent Execution:
-1. AgentSpawner.spawn() publishes 'agent:start'
-2. AgentRunner.run() calls onProgress(percent, message)
-3. Progress callback publishes 'agent:progress'
-4. TUI Store receives event → dispatches AGENT_PROGRESS
-5. UI re-renders with updated progress
-
-6. Agent completes → AgentRunner returns
-7. AgentSpawner publishes 'agent:complete'
-8. TUI Store receives event → dispatches AGENT_COMPLETE
-9. Blackboard.updateArtifact() publishes 'artifact:any:updated'
-10. TUI shows artifact update notification
+1. FoundryCollaborationBridge.initialize() publishes 'foundry:collaboration_bridge:initialized'
+2. startProject() publishes 'foundry:project:started'
+3. runPhaseWithCollaboration() publishes 'foundry:phase:complete'
+4. Team updates publish 'team:activity' and 'team:activity:update'
+5. ParallelStateMonitor publishes monitoring lifecycle events (for example 'monitoring:started', 'monitoring:state:updated')
+6. EvidenceCollector publishes 'evidence:collected' and 'evidence:package_exported'
 ```
 
 ### Using the Integration
@@ -254,10 +257,10 @@ When modifying integration code:
    ```
 
 2. Test event flow:
-   - Verify `agent:start` event fires when spawning
-   - Verify `agent:progress` updates during execution
-   - Verify `agent:complete` fires on success
-   - Verify TUI receives all events
+   - Verify `foundry:project:started` when collaboration execution begins
+   - Verify `foundry:phase:complete` for each collaboration phase
+   - Verify `team:activity:update` events are emitted for visibility
+   - Verify monitoring/evidence events (`monitoring:*`, `evidence:*`) flow to subscribers
 
 3. Test health checks:
    - Verify bridge reports healthy status
@@ -334,14 +337,20 @@ workspace.addFeedback(
 const pkg = workspace.generateCompliancePackage(ws.id, 'compliance-officer');
 ```
 
+Current integration API references:
+- `FoundryCollaborationBridge.executeWithTeam(request)` in `src/foundry/integration/collaboration-bridge.ts`
+- `ParallelStateMonitor.getMonitoringReport(projectId)` in `src/cowork/monitoring/parallel-state-monitor.ts`
+- `CollaborationProtocol.requestHelp(fromAgentId, toAgentId, task, context?, priority?, timeout?)` in `src/cowork/team/collaboration-protocol.ts`
+- `EvidenceCollector.exportEvidencePackage(filter)` in `src/cowork/evidence/collector.ts`
+
 ### Events
 
 The collaboration system publishes events to EventBus:
-- `artifact:version:created/updated/rollback`
-- `feedback:thread:created/resolved/escalated`
-- `workspace:created/status:changed`
-- `workspace:conflict:detected/resolved`
-- `workspace:compliance:package_generated`
+- `artifact:version:created`, `artifact:version:updated`, `artifact:version:rollback`
+- `feedback:thread:created`, `feedback:thread:resolved`, `feedback:escalated`
+- `workspace:created`, `workspace:status:changed`, `workspace:artifact:updated`
+- `workspace:conflict:detected`, `workspace:conflict:resolved`
+- `workspace:compliance:package_generated`, `workspace:compliance:package_signed`
 
 ### Tests
 
@@ -354,6 +363,20 @@ Run tests with:
 ```bash
 npm run test:unit -- --testPathPattern=collaboration
 ```
+
+### Task 0 Test Hardening and Singleton Reset Helpers
+
+Task 0 test hardening standardized singleton cleanup to remove cross-test state leakage in Cowork/Foundry integration tests.
+
+- Primary helper: `tests/unit/cowork/test-helpers.ts` (`resetCoworkSingletonsForTests`)
+- Core reset APIs:
+  - `CollaborativeWorkspace.resetForTests()` in `src/cowork/collaboration/collaborative-workspace.ts`
+  - `EvidenceCollector.resetForTests()` in `src/cowork/evidence/collector.ts`
+  - `CollaborationProtocol.resetForTests()` in `src/cowork/team/collaboration-protocol.ts`
+  - `TaskRouter.resetForTests()` in `src/cowork/routing/task-router.ts`
+  - `CoworkPersistenceRuntime.resetForTests()` in `src/cowork/persistence/runtime.ts`
+  - `CoworkConfigManager.resetForTests()` in `src/cowork/config/loader.ts`
+- Use these in `beforeEach`/`afterEach` for any suite touching EventBus, workspace persistence, monitoring, collaboration protocol, or evidence collection.
 
 ### Documentation
 

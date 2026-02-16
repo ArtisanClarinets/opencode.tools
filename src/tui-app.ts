@@ -1,3 +1,4 @@
+import './runtime/register-path-aliases';
 import * as React from 'react';
 import { render } from 'ink';
 import { App } from './tui/App';
@@ -7,7 +8,7 @@ import { App } from './tui/App';
  *
  * Replaces the previous readline-based implementation with a React Ink TUI.
  */
-export async function startTui() {
+export async function startTui(): Promise<void> {
   // Clear the console for a clean TUI start
   process.stdout.write('\x1b[2J\x1b[0f');
 

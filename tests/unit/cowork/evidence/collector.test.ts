@@ -6,26 +6,7 @@ import { EvidenceCollector, EvidenceFilter, IntegrityReport } from '../../../../
 import { EvidenceSigner, SignedEvidence } from '../../../../src/cowork/evidence/signer';
 import { EventBus } from '../../../../src/cowork/orchestrator/event-bus';
 import { CollaborativeWorkspace } from '../../../../src/cowork/collaboration/collaborative-workspace';
-
-// Mock the EventBus
-jest.mock('../../../../src/cowork/orchestrator/event-bus', () => ({
-  EventBus: {
-    getInstance: jest.fn(() => ({
-      subscribe: jest.fn(() => jest.fn()),
-      publish: jest.fn()
-    }))
-  }
-}));
-
-// Mock the CollaborativeWorkspace
-jest.mock('../../../../src/cowork/collaboration/collaborative-workspace', () => ({
-  CollaborativeWorkspace: {
-    getInstance: jest.fn(() => ({
-      getWorkspacesForProject: jest.fn(() => []),
-      updateArtifact: jest.fn()
-    }))
-  }
-}));
+import { resetCoworkSingletonsForTests } from '../test-helpers';
 
 describe('EvidenceCollector', () => {
   let collector: EvidenceCollector;
@@ -33,9 +14,7 @@ describe('EvidenceCollector', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
-    EvidenceSigner['instance'] = undefined as unknown as EvidenceSigner;
-    EvidenceCollector['instance'] = undefined as unknown as EvidenceCollector;
+    resetCoworkSingletonsForTests();
     
     signer = EvidenceSigner.getInstance();
     signer.generateKeyPair();
@@ -43,9 +22,7 @@ describe('EvidenceCollector', () => {
   });
 
   afterEach(() => {
-    collector.stopCollecting();
-    EvidenceCollector['instance'] = undefined as unknown as EvidenceCollector;
-    EvidenceSigner['instance'] = undefined as unknown as EvidenceSigner;
+    resetCoworkSingletonsForTests();
   });
 
   describe('getInstance', () => {
@@ -76,23 +53,15 @@ describe('EvidenceCollector', () => {
     });
 
     it('should subscribe to relevant events when starting', () => {
-      const mockSubscribe = jest.fn(() => jest.fn());
-      const mockEventBus = {
-        subscribe: mockSubscribe,
-        publish: jest.fn()
-      };
-      
-      (EventBus.getInstance as jest.Mock).mockReturnValue(mockEventBus);
-      
-      EvidenceCollector['instance'] = undefined as unknown as EvidenceCollector;
-      const newCollector = EvidenceCollector.getInstance();
-      
-      newCollector.startCollecting();
-      
-      expect(mockSubscribe).toHaveBeenCalledWith('agent:complete', expect.any(Function));
-      expect(mockSubscribe).toHaveBeenCalledWith('task:completed', expect.any(Function));
-      expect(mockSubscribe).toHaveBeenCalledWith('monitoring:finding', expect.any(Function));
-      expect(mockSubscribe).toHaveBeenCalledWith('state:transition', expect.any(Function));
+      const eventBus = EventBus.getInstance();
+      const subscribeSpy = jest.spyOn(eventBus, 'subscribe');
+
+      collector.startCollecting();
+
+      expect(subscribeSpy).toHaveBeenCalledWith('agent:complete', expect.any(Function));
+      expect(subscribeSpy).toHaveBeenCalledWith('task:completed', expect.any(Function));
+      expect(subscribeSpy).toHaveBeenCalledWith('monitoring:finding', expect.any(Function));
+      expect(subscribeSpy).toHaveBeenCalledWith('state:transition', expect.any(Function));
     });
   });
 
@@ -193,11 +162,11 @@ describe('EvidenceCollector', () => {
       
       // Small delay
       const now = Date.now();
-      jest.spyOn(Date, 'now').mockReturnValue(now + 1000);
+      const nowSpy = jest.spyOn(Date, 'now').mockReturnValue(now + 1000);
       
       const e2 = collector.collectFromAgentOutput('agent-1', { data: 'b' }, { projectId: 'project-1' });
       
-      (Date.now as jest.Mock).mockRestore();
+      nowSpy.mockRestore();
       
       const evidence = collector.getEvidenceForProject('project-1');
       

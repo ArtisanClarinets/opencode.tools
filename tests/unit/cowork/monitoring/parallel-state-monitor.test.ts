@@ -51,6 +51,7 @@ describe('ParallelStateMonitor', () => {
   let mockEventBus: { subscribe: jest.Mock; publish: jest.Mock };
   let mockTeamManager: { getTeamForProject: jest.Mock; getTeamLead: jest.Mock };
   let mockCollaboration: { escalate: jest.Mock };
+  let mockWorkspace: { getWorkspacesForProject: jest.Mock; updateArtifact: jest.Mock };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -69,9 +70,15 @@ describe('ParallelStateMonitor', () => {
       escalate: jest.fn()
     };
 
+    mockWorkspace = {
+      getWorkspacesForProject: jest.fn(() => []),
+      updateArtifact: jest.fn()
+    };
+
     (EventBus.getInstance as jest.Mock).mockReturnValue(mockEventBus);
     (TeamManager.getInstance as jest.Mock).mockReturnValue(mockTeamManager);
     (CollaborationProtocol.getInstance as jest.Mock).mockReturnValue(mockCollaboration);
+    (CollaborativeWorkspace.getInstance as jest.Mock).mockReturnValue(mockWorkspace);
 
     ParallelStateMonitor['instance'] = undefined as unknown as ParallelStateMonitor;
     monitor = ParallelStateMonitor.getInstance();
@@ -306,14 +313,12 @@ describe('ParallelStateMonitor', () => {
     });
 
     it('should store finding as workspace artifact', () => {
-      const mockWorkspace = {
-        getWorkspacesForProject: jest.fn(() => [{
+      mockWorkspace.getWorkspacesForProject.mockReturnValue([
+        {
           id: 'ws-1',
           status: 'active'
-        }]),
-        updateArtifact: jest.fn()
-      };
-      (CollaborativeWorkspace.getInstance as jest.Mock).mockReturnValue(mockWorkspace);
+        }
+      ]);
       
       monitor.startMonitoring('project-1');
       

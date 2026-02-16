@@ -99,6 +99,18 @@ export class CollaborationProtocol {
     return CollaborationProtocol.instance;
   }
 
+  public static resetForTests(): void {
+    if (!CollaborationProtocol.instance) {
+      return;
+    }
+
+    CollaborationProtocol.instance.stopCleanupInterval();
+    CollaborationProtocol.instance.requests.clear();
+    CollaborationProtocol.instance.pendingRequests.clear();
+    CollaborationProtocol.instance.subscribers.clear();
+    CollaborationProtocol.instance = undefined as unknown as CollaborationProtocol;
+  }
+
   /**
    * Start cleanup interval for expired requests
    */
@@ -715,6 +727,10 @@ export class CollaborationProtocol {
     }
   }
 
+  public triggerCleanupForTests(): void {
+    this.cleanupExpiredRequests();
+  }
+
   /**
    * Get all active requests
    */
@@ -733,11 +749,7 @@ export class CollaborationProtocol {
    * Clear all requests (for testing)
    */
   public clear(): void {
-    this.stopCleanupInterval();
-    this.requests.clear();
-    this.pendingRequests.clear();
-    this.subscribers.clear();
-    CollaborationProtocol.instance = undefined as unknown as CollaborationProtocol;
+    CollaborationProtocol.resetForTests();
     logger.warn('[CollaborationProtocol] All requests cleared');
   }
 }

@@ -244,6 +244,11 @@ program
       console.log(`  Mode: ${mode}`);
       console.log(`  Tasks: ${report.tasks.filter(t => t.status === 'completed').length}/${report.tasks.length} completed`);
       console.log(`  Quality gates: ${report.gateResults.filter(g => g.passed).length}/${report.gateResults.length} passed`);
+      if (report.deliverableScopeReport) {
+        console.log(
+          `  Deliverable scope: ${report.deliverableScopeReport.passed ? 'pass' : 'fail'} (${report.deliverableScopeReport.included.length} included, ${report.deliverableScopeReport.excluded.length} excluded)`,
+        );
+      }
       console.log(`  Review: ${report.review.passed ? 'approved' : 'changes requested'} by ${report.review.reviewer}`);
     } catch (error) {
       logger.error('Orchestration failed:', error);
@@ -535,7 +540,10 @@ export function applyOrchestrationMode(
   request: FoundryExecutionRequest,
   mode: OrchestrationMode,
 ): FoundryExecutionRequest {
-  const next: FoundryExecutionRequest = { ...request };
+  const next: FoundryExecutionRequest = {
+    ...request,
+    enforceDeliverableScope: request.enforceDeliverableScope !== false,
+  };
 
   switch (mode) {
     case 'research':

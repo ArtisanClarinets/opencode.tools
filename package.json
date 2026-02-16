@@ -10,8 +10,9 @@
   "preferGlobal": true,
   "scripts": {
     "build": "tsc",
-    "dev": "ts-node src/tui-app.ts",
-    "tui": "ts-node src/tui-app.ts",
+    "dev": "ts-node --project tsconfig.ink.json src/tui-app.ts",
+    "tui": "ts-node --project tsconfig.ink.json src/tui-app.ts",
+    "foundry:tui": "ts-node --project tsconfig.ink.json src/foundry-tui-app.ts",
     "start": "npm run tui",
     "test": "jest --clearCache && jest",
     "test:watch": "jest --watch",
@@ -32,9 +33,10 @@
     "verify:mcp": "ts-node scripts/verify-mcp-tools.ts",
     "verify:global": "ts-node scripts/research-global-opencode.ts",
     "integrate": "ts-node scripts/native-integrate.ts",
+    "validate:deliverable-scope": "node scripts/validate-deliverable-scope.js",
     "prepare": "husky install",
     "pre-commit": "lint-staged",
-    "validate": "npm run lint && npm run build && npm run test:all"
+    "validate": "npm run lint && npm run build && npm run validate:deliverable-scope && npm run test:all"
   },
   "keywords": [
     "opencode",

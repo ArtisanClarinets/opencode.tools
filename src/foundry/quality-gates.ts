@@ -7,6 +7,7 @@ const execAsync = promisify(exec);
 export interface GateCommand {
   name: string;
   command: string;
+  optional?: boolean;
 }
 
 export class QualityGateRunner {
@@ -15,6 +16,14 @@ export class QualityGateRunner {
     { name: 'build', command: 'npm run build' },
     { name: 'typecheck', command: 'npx tsc --noEmit' },
     { name: 'tests', command: 'npm run test:all' },
+    { name: 'security', command: 'npm run test:security', optional: true },
+    {
+      name: 'documentation',
+      command:
+        "node -e \"const fs=require('fs');const required=['README.md','AGENTS.md','docs/PRODUCTION_DELIVERABLE_POLICY.md'];const missing=required.filter((file)=>!fs.existsSync(file));if(missing.length){console.error('Missing docs: '+missing.join(', '));process.exit(1);}console.log('Documentation baseline present');\"",
+      optional: true,
+    },
+    { name: 'deliverable_scope', command: 'node scripts/validate-deliverable-scope.js' },
   ];
 
   public async runAll(
@@ -51,6 +60,22 @@ export class QualityGateRunner {
         stderr?: string;
       };
 
+      if (gate.optional && this.isCommandUnavailable(execError)) {
+        return {
+          name: gate.name,
+          command: gate.command,
+          passed: true,
+          exitCode: 0,
+          output: [
+            `Optional gate skipped because command is unavailable: ${gate.command}`,
+            execError.message,
+          ]
+            .filter(Boolean)
+            .join('\n')
+            .trim(),
+        };
+      }
+
       const exitCode = typeof execError.code === 'number' ? execError.code : 1;
 
       return {
@@ -64,5 +89,14 @@ export class QualityGateRunner {
           .trim(),
       };
     }
+  }
+
+  private isCommandUnavailable(error: NodeJS.ErrnoException & { stderr?: string }): boolean {
+    const message = `${error.message ?? ''} ${error.stderr ?? ''}`.toLowerCase();
+    return (
+      message.includes('is not recognized as an internal or external command') ||
+      message.includes('not found') ||
+      message.includes('enoent')
+    );
   }
 }

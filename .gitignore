@@ -2,6 +2,9 @@ node_modules/
 dist/
 coverage/
 .jest-cache/
+test-results/
 *.log
+*.zip
+nul
 .DS_Store
 .venv/

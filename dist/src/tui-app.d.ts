@@ -1,3 +1,4 @@
+import './runtime/register-path-aliases';
 /**
  * OpenCode TUI Application Entry Point
  *

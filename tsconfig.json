@@ -21,11 +21,16 @@
       "@src/*": ["src/*"],
       "agents/*": ["agents/*"],
       "tools/*": ["tools/*"],
-      "@foundry/*": ["foundry/foundry/*"]
+      "@foundry/core": ["src/foundry/core/index.ts", "foundry/foundry/core"],
+      "@foundry/core/*": ["src/foundry/core/*", "foundry/foundry/core/*"],
+      "@foundry/types": ["src/foundry/types.ts", "foundry/foundry/types/index.ts"],
+      "@foundry/types/*": ["foundry/foundry/types/*"],
+      "@foundry/*": ["src/foundry/*", "foundry/foundry/*"]
     }
   },
   "include": [
     "src/**/*",
+    "src/types/**/*",
     "agents/**/*",
     "tools/**/*",
     "examples/**/*",

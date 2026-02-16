@@ -2,89 +2,62 @@
  * Task Router Tests
  */
 
-import { TaskRouter, QueuedTask, QueueStatus } from '../../../../src/cowork/routing/task-router';
+import { TaskRouter } from '../../../../src/cowork/routing/task-router';
 import { CapabilityMatcher } from '../../../../src/cowork/routing/capability-matcher';
 import { TeamManager } from '../../../../src/cowork/team/team-manager';
 import { EventBus } from '../../../../src/cowork/orchestrator/event-bus';
-import { CollaborationProtocol } from '../../../../src/cowork/team/collaboration-protocol';
-
-// Mock dependencies
-jest.mock('../../../../src/cowork/routing/capability-matcher', () => ({
-  CapabilityMatcher: {
-    getInstance: jest.fn(() => ({
-      parseTaskCapabilities: jest.fn((desc: string) => {
-        if (desc.includes('frontend')) return ['frontend'];
-        if (desc.includes('backend')) return ['backend'];
-        return [];
-      }),
-      calculateMatchScore: jest.fn(() => 80),
-      matchTaskToAgents: jest.fn(() => [{
-        agentId: 'agent-1',
-        roleId: 'dev-1',
-        score: 80,
-        matchedCapabilities: ['frontend'],
-        missingCapabilities: [],
-        reason: 'Good match'
-      }])
-    }))
-  }
-}));
-
-jest.mock('../../../../src/cowork/team/team-manager', () => ({
-  TeamManager: {
-    getInstance: jest.fn(() => ({
-      listActiveTeams: jest.fn(() => [{
-        id: 'team-1',
-        members: new Map([
-          ['agent-1', {
-            agentId: 'agent-1',
-            roleId: 'dev-1',
-            name: 'Developer',
-            status: 'idle',
-            capabilities: ['frontend']
-          }]
-        ])
-      }])
-    }))
-  }
-}));
-
-jest.mock('../../../../src/cowork/orchestrator/event-bus', () => ({
-  EventBus: {
-    getInstance: jest.fn(() => ({
-      publish: jest.fn()
-    }))
-  }
-}));
-
-jest.mock('../../../../src/cowork/team/collaboration-protocol', () => ({
-  CollaborationProtocol: {
-    getInstance: jest.fn(() => ({
-      escalate: jest.fn()
-    }))
-  }
-}));
+import { resetCoworkSingletonsForTests } from '../test-helpers';
 
 describe('TaskRouter', () => {
   let router: TaskRouter;
-  let mockEventBus: { publish: jest.Mock };
+  let publishSpy: jest.SpyInstance;
+  let teamManager: TeamManager;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.useFakeTimers();
-    
-    mockEventBus = {
-      publish: jest.fn()
-    };
-    (EventBus.getInstance as jest.Mock).mockReturnValue(mockEventBus);
+    resetCoworkSingletonsForTests();
 
-    TaskRouter['instance'] = undefined as unknown as TaskRouter;
+    teamManager = TeamManager.getInstance();
+    teamManager.registerRoleMapping({
+      roleId: 'DEV',
+      roleName: 'Developer',
+      agentId: 'agent-1',
+      capabilities: ['frontend', 'backend', 'code-review'],
+      vetoGates: [],
+      approvalGates: []
+    });
+    teamManager.formTeam({
+      projectId: 'proj-1',
+      projectName: 'Router Test Project',
+      requiredRoles: ['DEV'],
+      leadRoleId: 'DEV'
+    });
+
+    const matcher = CapabilityMatcher.getInstance();
+    jest.spyOn(matcher, 'parseTaskCapabilities').mockImplementation((desc: string) => {
+      if (desc.includes('frontend')) return ['frontend'];
+      if (desc.includes('backend')) return ['backend'];
+      return [];
+    });
+    jest.spyOn(matcher, 'calculateMatchScore').mockReturnValue(80);
+    jest.spyOn(matcher, 'matchTaskToAgents').mockImplementation((taskReq, members) => {
+      if (members.length === 0) return [];
+      return [{
+        agentId: members[0].agentId,
+        roleId: members[0].roleId,
+        score: 80,
+        matchedCapabilities: taskReq.requiredCapabilities,
+        missingCapabilities: [],
+        reason: 'Good match'
+      }];
+    });
+
+    publishSpy = jest.spyOn(EventBus.getInstance(), 'publish');
     router = TaskRouter.getInstance();
   });
 
   afterEach(() => {
-    jest.useRealTimers();
-    router.clear();
+    resetCoworkSingletonsForTests();
   });
 
   describe('getInstance', () => {
@@ -109,7 +82,7 @@ describe('TaskRouter', () => {
       expect(task.taskId).toBe('task-1');
       expect(task.status).toBe('assigned'); // Auto-assigned
       expect(task.priority).toBeGreaterThan(0);
-      expect(mockEventBus.publish).toHaveBeenCalledWith(
+      expect(publishSpy).toHaveBeenCalledWith(
         'task:submitted',
         expect.any(Object)
       );
@@ -172,7 +145,7 @@ describe('TaskRouter', () => {
       expect(success).toBe(true);
       expect(taskFromRouter?.status).toBe('assigned');
       expect(taskFromRouter?.assignedAgentId).toBe('agent-1');
-      expect(mockEventBus.publish).toHaveBeenCalledWith(
+      expect(publishSpy).toHaveBeenCalledWith(
         'task:assigned',
         expect.any(Object)
       );
@@ -265,7 +238,7 @@ describe('TaskRouter', () => {
       const completedTask = router.getTask(task.id);
       expect(completedTask?.status).toBe('completed');
       expect(completedTask?.result).toEqual(result);
-      expect(mockEventBus.publish).toHaveBeenCalledWith(
+      expect(publishSpy).toHaveBeenCalledWith(
         'task:completed',
         expect.objectContaining({ taskId: task.id })
       );
@@ -310,7 +283,7 @@ describe('TaskRouter', () => {
 
       const failedTask = router.getTask(task.id);
       expect(failedTask?.status).toBe('failed');
-      expect(mockEventBus.publish).toHaveBeenCalledWith(
+      expect(publishSpy).toHaveBeenCalledWith(
         'task:failed',
         expect.any(Object)
       );
@@ -339,7 +312,7 @@ describe('TaskRouter', () => {
       expect(success).toBe(true);
       expect(taskFromRouter?.retryCount).toBe(1);
       expect(taskFromRouter?.status).toBe('queued');
-      expect(mockEventBus.publish).toHaveBeenCalledWith(
+      expect(publishSpy).toHaveBeenCalledWith(
         'task:retry_scheduled',
         expect.any(Object)
       );
@@ -403,7 +376,7 @@ describe('TaskRouter', () => {
 
       expect(success).toBe(true);
       expect(router.getTask(task.id)?.priority).toBe(90);
-      expect(mockEventBus.publish).toHaveBeenCalledWith(
+      expect(publishSpy).toHaveBeenCalledWith(
         'task:priority_changed',
         expect.any(Object)
       );
@@ -428,6 +401,19 @@ describe('TaskRouter', () => {
 
   describe('handleAgentFailure', () => {
     it('should reassign tasks from failed agent', () => {
+      teamManager.registerRoleMapping({
+        roleId: 'FAILING_DEV',
+        roleName: 'Failing Developer',
+        agentId: 'failing-agent',
+        capabilities: ['frontend'],
+        vetoGates: [],
+        approvalGates: []
+      });
+      const team = teamManager.getTeamForProject('proj-1');
+      if (team) {
+        teamManager.addMember(team.id, 'FAILING_DEV');
+      }
+
       // Submit and assign task
       const task = router.submitTask({
         taskId: 'task-1',
@@ -437,15 +423,20 @@ describe('TaskRouter', () => {
         estimatedEffort: 'small'
       });
 
-      // Manually assign to specific agent
+      const taskFromRouter = router.getTask(task.id);
+      if (taskFromRouter) {
+        taskFromRouter.status = 'queued';
+        taskFromRouter.assignedAgentId = undefined;
+      }
       router.assignTask(task.id, 'failing-agent');
 
       // Handle failure
       router.handleAgentFailure('failing-agent');
 
       const reassignedTask = router.getTask(task.id);
-      expect(reassignedTask?.status).toBe('queued');
-      expect(mockEventBus.publish).toHaveBeenCalledWith(
+      expect(reassignedTask?.status).toBe('assigned');
+      expect(reassignedTask?.assignedAgentId).toBe('agent-1');
+      expect(publishSpy).toHaveBeenCalledWith(
         'task:agent_failure_handled',
         expect.any(Object)
       );

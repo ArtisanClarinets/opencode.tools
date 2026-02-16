@@ -83,7 +83,17 @@ describe('AgentCoordinator', () => {
 
       const artifacts = blackboard.getAllArtifacts();
       const messageArtifact = artifacts.find(
-        artifact => artifact.type === 'agent_message' && artifact.data.id === envelope.id
+        artifact => {
+          if (artifact.type !== 'agent_message') {
+            return false;
+          }
+
+          if (typeof artifact.data !== 'object' || artifact.data === null) {
+            return false;
+          }
+
+          return 'id' in artifact.data && artifact.data.id === envelope.id;
+        }
       );
 
       expect(messageArtifact).toBeDefined();

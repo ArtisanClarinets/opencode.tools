@@ -40,3 +40,9 @@ You are a senior software engineer. Develop a new feature from specification.
 - Update README if needed
 - Add API documentation
 - Document any breaking changes
+
+## Delivery Guardrails
+- Output must be production-ready and project-specific (no placeholder boilerplate).
+- Final delivery scope is code/docs/tests only.
+- Exclude generated artifacts (`dist/`, `coverage/`, logs, archives, binaries) unless explicitly approved.
+- Follow `docs/PRODUCTION_DELIVERABLE_POLICY.md`.

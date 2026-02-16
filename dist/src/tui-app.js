@@ -34,6 +34,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.startTui = startTui;
+require("./runtime/register-path-aliases");
 const React = __importStar(require("react"));
 const ink_1 = require("ink");
 const App_1 = require("./tui/App");

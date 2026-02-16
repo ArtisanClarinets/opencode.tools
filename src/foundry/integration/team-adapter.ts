@@ -80,6 +80,18 @@ const DEFAULT_FOUNDRY_ROLES: FoundryRole[] = [
     vetoes: ['quality_gate'],
     approvalGates: ['qa_approval'],
   },
+  {
+    id: 'UX_DESIGNER',
+    name: 'UX Designer',
+    can: ['journey_design', 'interaction_design', 'usability_review'],
+    vetoes: [],
+  },
+  {
+    id: 'DATABASE_ARCHITECT',
+    name: 'Database Architect',
+    can: ['schema_design', 'index_optimization', 'data_integrity_review'],
+    vetoes: [],
+  },
 ];
 
 // Map Foundry roles to Cowork agent IDs
@@ -93,6 +105,8 @@ const ROLE_TO_AGENT_MAP: Record<string, string> = {
   SECURITY_LEAD: 'security',
   TECH_WRITER: 'docs',
   SRE_DEVOPS: 'performance',
+  UX_DESIGNER: 'implementer',
+  DATABASE_ARCHITECT: 'architect',
 };
 
 // Capabilities per role
@@ -106,6 +120,8 @@ const ROLE_CAPABILITIES: Record<string, string[]> = {
   QA_LEAD: ['peer-review', 'test-planning', 'acceptance-testing'],
   PRODUCT_MANAGER: ['discovery', 'requirements-analysis'],
   TECH_WRITER: ['documentation', 'technical-writing'],
+  UX_DESIGNER: ['ux-design', 'interaction-design', 'accessibility-design'],
+  DATABASE_ARCHITECT: ['database-design', 'migration-planning', 'query-optimization'],
 };
 
 export class FoundryTeamAdapter {

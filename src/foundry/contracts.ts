@@ -1,4 +1,11 @@
 import type { StatePhase } from '@foundry/types';
+import type {
+  CompletionCriteriaSpec,
+  CompletionCriteriaVerificationReport,
+} from './completion-criteria';
+import type { DeliverableScopeReport } from './deliverable-scope';
+import type { FoundryIntakeDocumentInput, FoundryIntakeProcessingResult } from './intake-document-processor';
+import type { FoundryExecutionPlan } from './plan-developer';
 
 export type FoundryTaskStatus = 'pending' | 'in_progress' | 'completed' | 'failed';
 
@@ -47,6 +54,11 @@ export interface FoundryExecutionRequest {
   description?: string;
   maxIterations?: number;
   runQualityGates?: boolean;
+  enforceDeliverableScope?: boolean;
+  deliverableScopeAllowList?: string[];
+  intakeDocuments?: FoundryIntakeDocumentInput[];
+  completionCriteriaDsl?: string;
+  completionCriteriaSpec?: CompletionCriteriaSpec;
 }
 
 export interface FoundryQualityGateResult {
@@ -72,6 +84,10 @@ export interface FoundryExecutionReport {
   messages: FoundryMessage[];
   gateResults: FoundryQualityGateResult[];
   review: FoundryReviewResult;
+  intake?: FoundryIntakeProcessingResult;
+  plan?: FoundryExecutionPlan;
+  completionCriteriaReport?: CompletionCriteriaVerificationReport;
+  deliverableScopeReport?: DeliverableScopeReport;
   startedAt: string;
   finishedAt: string;
 }

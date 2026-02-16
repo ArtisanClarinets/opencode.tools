@@ -2,6 +2,8 @@
 
 Complete API documentation for the Foundry-Cowork Integration.
 
+Production deliverable policy baseline: `docs/PRODUCTION_DELIVERABLE_POLICY.md`.
+
 ## Table of Contents
 
 - [CollaborativeWorkspace](#collaborativeworkspace)
@@ -10,10 +12,22 @@ Complete API documentation for the Foundry-Cowork Integration.
 - [ParallelStateMonitor](#parallelstatemonitor)
 - [TaskRouter](#taskrouter)
 - [EvidenceCollector](#evidencecollector)
+- [Deliverable Scope Policy](#deliverable-scope-policy)
 - [Domain Orchestrators](#domain-orchestrators)
 - [Integration Bridge](#integration-bridge)
 
 ---
+
+## Deliverable Scope Policy
+
+### Module: `src/foundry/deliverable-scope.ts`
+
+- `evaluateRepositoryDeliverableScope(repoRoot, options)` evaluates changed artifacts against code/docs/tests scope.
+- `evaluateDeliverableScope(paths, options)` classifies provided paths and returns included/excluded reports.
+- `FoundryExecutionRequest.enforceDeliverableScope` defaults to strict enforcement in Foundry orchestration.
+- `FoundryExecutionReport.deliverableScopeReport` exposes release-scope verification results, including `blockingExcluded`.
+
+Validation command: `npm run validate:deliverable-scope`
 
 ## CollaborativeWorkspace
 

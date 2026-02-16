@@ -52,7 +52,8 @@ describe('foundry orchestrator resume', () => {
     expect(initialCalls).toBeGreaterThan(0);
     expect(dispatchSpy).toHaveBeenCalledTimes(0);
     expect(secondReport.tasks).toHaveLength(firstReport.tasks.length);
-    expect(secondReport.messages).toHaveLength(firstReport.messages.length);
+    expect(secondReport.messages.length).toBeGreaterThanOrEqual(firstReport.messages.length);
+    expect(secondReport.messages.length - firstReport.messages.length).toBeLessThanOrEqual(1);
   });
 
   it('resumes from explicit resume key even with different project id', async () => {

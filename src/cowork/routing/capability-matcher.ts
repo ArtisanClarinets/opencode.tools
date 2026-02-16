@@ -108,6 +108,14 @@ export class CapabilityMatcher {
 
     // Calculate capability match (max 60 points)
     const capabilityScore = this.calculateCapabilityScore(task, agent);
+
+    // Hard fail when explicit requirements have zero capability match.
+    // This keeps routing deterministic and avoids selecting agents purely
+    // from availability/priority when they cannot perform the task.
+    if (task.requiredCapabilities.length > 0 && capabilityScore === 0) {
+      return 0;
+    }
+
     score += capabilityScore * 0.6;
 
     // Check agent availability (max 20 points)

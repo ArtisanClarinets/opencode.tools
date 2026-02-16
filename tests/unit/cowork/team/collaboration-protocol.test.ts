@@ -9,8 +9,7 @@ import { CollaborationProtocol } from '../../../../src/cowork/team/collaboration
 import { TeamManager } from '../../../../src/cowork/team/team-manager';
 import { EventBus } from '../../../../src/cowork/orchestrator/event-bus';
 import { Blackboard } from '../../../../src/cowork/orchestrator/blackboard';
-import { ArtifactVersioning } from '../../../../src/cowork/collaboration/artifact-versioning';
-import { FeedbackThreads } from '../../../../src/cowork/collaboration/feedback-threads';
+import { resetCoworkSingletonsForTests } from '../test-helpers';
 
 describe('CollaborationProtocol', () => {
   let protocol: CollaborationProtocol;
@@ -19,9 +18,7 @@ describe('CollaborationProtocol', () => {
   let blackboard: Blackboard;
 
   beforeEach(() => {
-    // Clear singletons
-    ArtifactVersioning.getInstance().clear();
-    FeedbackThreads.getInstance().clear();
+    resetCoworkSingletonsForTests();
     
     // Get fresh instances
     protocol = CollaborationProtocol.getInstance();
@@ -29,35 +26,47 @@ describe('CollaborationProtocol', () => {
     eventBus = EventBus.getInstance();
     blackboard = Blackboard.getInstance();
     
-    // Clear mocks
     jest.clearAllMocks();
   });
 
   afterEach(() => {
-    protocol.clear();
-    teamManager.clear();
+    resetCoworkSingletonsForTests();
   });
 
   describe('Request Help', () => {
     it('should create and send help request', async () => {
+      protocol.onRequest('agent-2', (request) => {
+        protocol.respondToRequest(request.id, true, { helper: 'agent-2' }, 'I can help');
+      });
+
       const response = await protocol.requestHelp(
         'agent-1',
         'agent-2',
         'Need help with async/await',
-        { file: 'test.ts', line: 42 }
+        { file: 'test.ts', line: 42 },
+        'normal',
+        100
       );
 
       expect(response).toBeDefined();
       expect(response.timestamp).toBeDefined();
+      expect(response.accepted).toBe(true);
     });
 
     it('should emit help requested event', async () => {
       const publishSpy = jest.spyOn(eventBus, 'publish');
 
+      protocol.onRequest('agent-2', (request) => {
+        protocol.respondToRequest(request.id, true, undefined, 'ack');
+      });
+
       await protocol.requestHelp(
         'agent-1',
         'agent-2',
-        'Need help'
+        'Need help',
+        undefined,
+        'normal',
+        100
       );
 
       expect(publishSpy).toHaveBeenCalledWith(
@@ -157,22 +166,37 @@ describe('CollaborationProtocol', () => {
     });
 
     it('should request code review', async () => {
+      protocol.onRequest('lead-1', (request) => {
+        protocol.respondToRequest(request.id, true, undefined, 'review accepted');
+      });
+
       const response = await protocol.requestReview(
         'dev-1',
         'artifact-123',
-        'code'
+        'code',
+        undefined,
+        'normal',
+        100
       );
 
       expect(response).toBeDefined();
+      expect(response.accepted).toBe(true);
     });
 
     it('should emit review requested event', async () => {
       const publishSpy = jest.spyOn(eventBus, 'publish');
 
+      protocol.onRequest('lead-1', (request) => {
+        protocol.respondToRequest(request.id, true, undefined, 'ok');
+      });
+
       await protocol.requestReview(
         'dev-1',
         'artifact-123',
-        'code'
+        'code',
+        undefined,
+        'normal',
+        100
       );
 
       expect(publishSpy).toHaveBeenCalledWith(
@@ -215,21 +239,32 @@ describe('CollaborationProtocol', () => {
     });
 
     it('should escalate issue to team lead', async () => {
+      protocol.onRequest('cto-1', (request) => {
+        protocol.respondToRequest(request.id, true, undefined, 'escalation acknowledged');
+      });
+
       const response = await protocol.escalate(
         'dev-1',
         {
           title: 'Critical Bug',
           description: 'System is down',
           severity: 'critical'
-        }
+        },
+        [],
+        'high',
+        120
       );
 
       expect(response).toBeDefined();
-      expect(response.escalated).toBe(false); // No response handler, times out
+      expect(response.escalated).toBe(true);
     });
 
     it('should emit escalation event', async () => {
       const publishSpy = jest.spyOn(eventBus, 'publish');
+
+      protocol.onRequest('cto-1', (request) => {
+        protocol.respondToRequest(request.id, true, undefined, 'ack');
+      });
 
       await protocol.escalate(
         'dev-1',
@@ -237,7 +272,10 @@ describe('CollaborationProtocol', () => {
           title: 'Security Issue',
           description: 'Data breach detected',
           severity: 'critical'
-        }
+        },
+        [],
+        'high',
+        120
       );
 
       expect(publishSpy).toHaveBeenCalledWith(
@@ -287,17 +325,16 @@ describe('CollaborationProtocol', () => {
       const unsubscribe = protocol.onRequest('agent-1', callback);
 
       // Create a request
-      protocol.requestHelp('agent-2', 'agent-1', 'Need help');
+      protocol.requestHelp('agent-2', 'agent-1', 'Need help', undefined, 'normal', 100);
 
-      // Should not be called immediately since requestHelp returns a promise
-      expect(callback).not.toHaveBeenCalled();
+      expect(callback).toHaveBeenCalled();
 
       unsubscribe();
     });
 
     it('should get pending requests', () => {
-      protocol.requestHelp('agent-1', 'agent-2', 'Need help 1', undefined, 'normal', 5000);
-      protocol.requestHelp('agent-1', 'agent-2', 'Need help 2', undefined, 'normal', 5000);
+      protocol.requestHelp('agent-1', 'agent-2', 'Need help 1', undefined, 'normal', 100);
+      protocol.requestHelp('agent-1', 'agent-2', 'Need help 2', undefined, 'normal', 100);
 
       const pending = protocol.getPendingRequests('agent-2');
       expect(pending).toHaveLength(2);
@@ -328,7 +365,7 @@ describe('CollaborationProtocol', () => {
 
     it('should complete a request', () => {
       // Create and accept a request
-      protocol.requestHelp('agent-1', 'agent-2', 'Need help', undefined, 'normal', 5000);
+      protocol.requestHelp('agent-1', 'agent-2', 'Need help', undefined, 'normal', 100);
       const pending = protocol.getPendingRequests('agent-2');
       protocol.respondToRequest(pending[0].id, true);
 
@@ -342,28 +379,32 @@ describe('CollaborationProtocol', () => {
       // Create request with short timeout
       protocol.requestHelp('agent-1', 'agent-2', 'Need help', undefined, 'normal', 50);
 
+       const pendingBefore = protocol.getPendingRequests('agent-2');
+       expect(pendingBefore.length).toBeGreaterThan(0);
+       const requestId = pendingBefore[0].id;
+
       // Wait for expiration
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      // Manually trigger cleanup
-      const pendingBefore = protocol.getPendingRequests('agent-2');
-      expect(pendingBefore.length).toBeGreaterThan(0);
+      protocol.triggerCleanupForTests();
 
-      // The request should be in expired state
-      const request = protocol.getRequest(pendingBefore[0].id);
-      expect(request?.status).toBe('pending'); // Still pending until cleanup
+      const pendingAfter = protocol.getPendingRequests('agent-2');
+      expect(pendingAfter).toHaveLength(0);
+
+      const request = protocol.getRequest(requestId);
+      expect(request?.status).toBe('expired');
     });
 
     it('should get all requests', () => {
-      protocol.requestHelp('agent-1', 'agent-2', 'Help 1', undefined, 'normal', 5000);
-      protocol.requestHelp('agent-3', 'agent-4', 'Help 2', undefined, 'normal', 5000);
+      protocol.requestHelp('agent-1', 'agent-2', 'Help 1', undefined, 'normal', 100);
+      protocol.requestHelp('agent-3', 'agent-4', 'Help 2', undefined, 'normal', 100);
 
       const all = protocol.getAllRequests();
       expect(all).toHaveLength(2);
     });
 
     it('should get request by ID', () => {
-      protocol.requestHelp('agent-1', 'agent-2', 'Help', undefined, 'normal', 5000);
+      protocol.requestHelp('agent-1', 'agent-2', 'Help', undefined, 'normal', 100);
       const pending = protocol.getPendingRequests('agent-2');
 
       const found = protocol.getRequest(pending[0].id);

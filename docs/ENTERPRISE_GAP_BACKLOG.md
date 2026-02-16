@@ -16,8 +16,11 @@ This backlog tracks what remains to make OpenCode Tools a complete, corporate-le
 - Cowork plugin/runtime architecture in `src/cowork/*`.
 - Cowork Phase 0 foundation modules for persistence contracts, PostgreSQL manager/migrations, and validated config loading in `src/cowork/persistence/*` and `src/cowork/config/*`.
 - Quality gate runner in `src/foundry/quality-gates.ts`.
+- Deliverable scope enforcement (`code/docs/tests` only) in `src/foundry/deliverable-scope.ts` and `scripts/validate-deliverable-scope.js`.
 - Governance/security primitives in `src/governance/*` and `src/security/*`.
 - Broad test suites across unit/integration/e2e.
+
+Policy reference: `docs/PRODUCTION_DELIVERABLE_POLICY.md`.
 
 ## High-Priority Backlog
 

@@ -2,6 +2,8 @@
 
 This document describes the Phase 1 Postgres-backed persistence and event-driven workflow foundation for the Cowork runtime.
 
+Production deliverable policy baseline (code/docs/tests-only release scope): `docs/PRODUCTION_DELIVERABLE_POLICY.md`.
+
 ## What Is Persisted
 
 - `cowork_workspace_state`: Workspace lifecycle and metadata (create/open/close/archive/delete).

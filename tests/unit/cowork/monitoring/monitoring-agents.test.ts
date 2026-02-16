@@ -87,15 +87,20 @@ describe('Monitoring Agents', () => {
     });
 
     it('should publish findings via event bus', async () => {
-      // Force a finding by running multiple times
-      let findings: Finding[] = [];
-      for (let i = 0; i < 20; i++) {
-        const result = await agent.run();
-        findings = findings.concat(result.findings);
-      }
+      jest.spyOn(agent as unknown as { runSASTScan: () => Promise<Finding[]> }, 'runSASTScan')
+        .mockResolvedValue([
+          {
+            id: 'forced-sast-finding',
+            type: 'sql_injection',
+            severity: 'high',
+            title: 'Forced SAST finding',
+            description: 'Deterministic finding for test'
+          }
+        ]);
 
-      // We should have findings (random generation, but high probability)
-      expect(findings.length).toBeGreaterThan(0);
+      const result = await agent.run();
+
+      expect(result.findings.length).toBeGreaterThan(0);
     });
   });
 
@@ -134,7 +139,8 @@ describe('Monitoring Agents', () => {
       expect(result.metrics.controlsChecked).toBeGreaterThan(0);
     });
 
-    it('should add and validate custom controls', () => {
+    it('should add and validate custom controls', async () => {
+      await agent.run(); // Initialize default controls
       agent.addControl('custom-1', 'Custom Control');
       agent.validateControl('custom-1');
 
@@ -190,13 +196,15 @@ describe('Monitoring Agents', () => {
     });
 
     it('should detect anomalies in high error rates', async () => {
-      // Force high error rate scenario
-      jest.spyOn(global.Math, 'random').mockReturnValue(0.99); // Will generate high error rate
+      jest.spyOn(agent as unknown as { collectErrorMetrics: () => Record<string, number> }, 'collectErrorMetrics')
+        .mockReturnValue({
+          errorRate: 1.5,
+          totalErrors: 3,
+          criticalErrors: 1,
+          warnings: 2
+        });
 
       const result = await agent.run();
-
-      // Restore random
-      (global.Math.random as jest.Mock).mockRestore();
 
       // Should have detected anomaly
       const highErrorFinding = result.findings.find(f => f.type === 'high_error_rate');
@@ -204,19 +212,15 @@ describe('Monitoring Agents', () => {
     });
 
     it('should detect high resource usage', async () => {
-      // Force high resource usage
-      const originalRandom = Math.random;
-      let callCount = 0;
-      jest.spyOn(global.Math, 'random').mockImplementation(() => {
-        callCount++;
-        // First few calls for resource metrics (cpuUsage, memoryUsage)
-        if (callCount <= 10) return 0.95;
-        return 0.5;
-      });
+      jest.spyOn(agent as unknown as { collectSystemMetrics: () => Record<string, number> }, 'collectSystemMetrics')
+        .mockReturnValue({
+          cpuUsage: 92,
+          memoryUsage: 88,
+          diskUsage: 55,
+          networkLatency: 20
+        });
 
       const result = await agent.run();
-
-      (global.Math.random as jest.Mock).mockRestore();
 
       // Should have findings for high resource usage
       const resourceFindings = result.findings.filter(f => 
@@ -359,10 +363,10 @@ describe('Monitoring Agents', () => {
       
       // Wait for execution
       await new Promise(resolve => setTimeout(resolve, 100));
-      
-      errorAgent.stop();
 
       expect(errorAgent.status).toBe('error');
+      
+      errorAgent.stop();
       
       // Check that error was published
       const errorCalls = mockEventBus.publish.mock.calls.filter(

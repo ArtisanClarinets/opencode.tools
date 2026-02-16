@@ -38,3 +38,9 @@ You are a QA engineer and developer. Fix a bug from issue description.
 ## Phase 5: Documentation
 - Document the fix
 - Update CHANGELOG if applicable
+
+## Delivery Guardrails
+- Provide a concrete, project-specific fix with reproducible validation evidence.
+- Keep final deliverables within code/docs/tests scope.
+- Exclude generated artifacts (`dist/`, `coverage/`, logs, archives, binaries) from release outputs.
+- Follow `docs/PRODUCTION_DELIVERABLE_POLICY.md`.

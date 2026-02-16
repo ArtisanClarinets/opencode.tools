@@ -1,8 +1,9 @@
 # OpenCode Tools Integration Guide
 
-This guide defines the current integration model for OpenCode Tools and replaces older claims that described the platform as fully production-complete.
+This guide defines the current integration model for OpenCode Tools with strict production-deliverable guardrails enabled by default.
 
-Canonical status and remediation backlog live in `docs/ENTERPRISE_GAP_BACKLOG.md`.
+Production policy: `docs/PRODUCTION_DELIVERABLE_POLICY.md`.
+Strategic backlog and enhancement roadmap: `docs/ENTERPRISE_GAP_BACKLOG.md`.
 
 ## 1) Integration Surfaces
 
@@ -25,7 +26,7 @@ Use this matrix as the source of truth for integration depth.
 | TUI tool registration | Implemented | Supports multiple agents and Cowork tools; integration helper modules still have improvement opportunities |
 | MCP tool layer | Partial | Works for several paths; some tool contracts and realism improvements remain |
 
-Do not describe the platform as fully production-ready without satisfying `docs/ENTERPRISE_GAP_BACKLOG.md` P0 and P1 items.
+The default orchestration path enforces production-deliverable scope (code/docs/tests only) and release-gate validation.
 
 ## 3) Setup and Verification
 
@@ -39,6 +40,7 @@ npm run build
 # Full quality baseline
 npm run lint
 npx tsc --noEmit
+npm run validate:deliverable-scope
 npm run test:all
 ```
 

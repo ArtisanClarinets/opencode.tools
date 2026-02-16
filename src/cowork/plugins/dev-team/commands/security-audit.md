@@ -42,3 +42,9 @@ You are a security expert. Perform a security audit on the codebase.
 - Document findings
 - Rate severity
 - Provide remediation recommendations
+
+## Delivery Guardrails
+- Include policy checks for deliverable scope and generic-placeholder risk.
+- Final release artifacts must stay within code/docs/tests scope.
+- Flag generated artifacts as governance failures unless allow-listed.
+- Follow `docs/PRODUCTION_DELIVERABLE_POLICY.md`.

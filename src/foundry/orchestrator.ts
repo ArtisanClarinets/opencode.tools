@@ -13,6 +13,23 @@ import { SessionPersistenceAdapter } from '../integration/session-persistence-ad
 import { UnifiedEvidenceStore, type JsonValue } from '../integration/unified-evidence-store';
 import type { StateTransitionMetadata, UnifiedStateAction } from '../integration/types';
 import type {
+  CompletionCriteriaVerificationReport,
+  CompletionCriteriaSpec,
+} from './completion-criteria';
+import {
+  CompletionCriteriaVerifier,
+  parseCompletionCriteriaDsl,
+  validateCompletionCriteria,
+} from './completion-criteria';
+import {
+  evaluateRepositoryDeliverableScope,
+  type DeliverableScopeReport,
+} from './deliverable-scope';
+import { IntakeDocumentProcessor, type FoundryIntakeProcessingResult } from './intake-document-processor';
+import { PlanDeveloper, type FoundryExecutionPlan } from './plan-developer';
+import { buildExplicitRolePrompt } from './role-prompts';
+import { TaskDelegationEngine } from './task-delegation-engine';
+import type {
   FoundryExecutionReport,
   FoundryExecutionRequest,
   FoundryMessage,
@@ -46,10 +63,18 @@ export class FoundryOrchestrator {
     persistenceFilePath: path.join(os.tmpdir(), 'opencode-tools', 'foundry-evidence-store.json'),
   });
   private readonly db = Database.Client();
+  private readonly intakeProcessor = new IntakeDocumentProcessor();
+  private readonly planDeveloper = new PlanDeveloper();
+  private readonly delegationEngine = new TaskDelegationEngine({ maxConcurrency: 2 });
   private tasks: FoundryTask[] = [];
   private messages: FoundryMessage[] = [];
   private stateStore: UnifiedStateStore | null = null;
   private stateContext: { projectId: string; runId: string; sessionId: string } | null = null;
+  private activePlan: FoundryExecutionPlan | null = null;
+  private activeIntake: FoundryIntakeProcessingResult | null = null;
+  private activeCompletionCriteria: CompletionCriteriaSpec | null = null;
+  private activeCriteriaReport: CompletionCriteriaVerificationReport | null = null;
+  private activeDeliverableScopeReport: DeliverableScopeReport | null = null;
 
   public async execute(request: FoundryExecutionRequest): Promise<FoundryExecutionReport> {
     const startedAt = new Date().toISOString();
@@ -61,6 +86,35 @@ export class FoundryOrchestrator {
     this.tasks = [...checkpoint.tasks];
     this.messages = [...checkpoint.messages];
     this.collaborationHub.clear();
+    this.activeIntake = await this.processIntakeDocuments(request);
+    this.activeCompletionCriteria = this.resolveCompletionCriteria(request);
+    this.activePlan = this.planDeveloper.developPlan({
+      projectName: request.projectName,
+      description: request.description,
+      industry: request.industry,
+      completionCriteria: this.activeCompletionCriteria ?? undefined,
+      intakeContext: this.activeIntake?.mergedContext,
+    });
+    this.activeCriteriaReport = null;
+    this.activeDeliverableScopeReport = null;
+
+    await this.delegationEngine.addTasks([
+      {
+        id: `plan-${request.projectId}`,
+        title: 'Develop Foundry execution plan',
+        roleId: 'PRODUCT_MANAGER',
+        priority: 'high',
+        dependsOn: [],
+        payload: {
+          projectId: request.projectId,
+          summary: this.activePlan.executiveSummary,
+        },
+      },
+    ]);
+    const seededPlanTask = await this.delegationEngine.getNextTask(['PRODUCT_MANAGER']);
+    if (seededPlanTask) {
+      await this.delegationEngine.markTaskCompleted(seededPlanTask.id);
+    }
 
     this.coworkBridge.getEventBus().publish('workflow:start', {
       projectId: request.projectId,
@@ -78,6 +132,8 @@ export class FoundryOrchestrator {
       projectName: request.projectName,
       resumeKey,
       startedAt,
+      intake: this.activeIntake?.mergedContext,
+      plan: this.activePlan,
     });
 
     // Validate bridge health before execution
@@ -315,6 +371,43 @@ export class FoundryOrchestrator {
       }
 
       if (stateMachine.getCurrentPhase() !== 'aborted') {
+        this.activeCriteriaReport = await this.verifyCompletionCriteria(request.repoRoot);
+        if (this.activeCriteriaReport) {
+          this.appendEvidence('completion_criteria_verification', 'foundry', this.activeCriteriaReport);
+          this.recordBroadcast(
+            'QA_LEAD',
+            'criteria:verification',
+            this.activeCriteriaReport.passed
+              ? 'Completion criteria verification passed.'
+              : 'Completion criteria verification failed. Remediation is required before release.',
+            {
+              passed: this.activeCriteriaReport.passed,
+              errors: this.activeCriteriaReport.errors,
+            },
+          );
+        }
+
+        const deliverableScopeReport = this.evaluateDeliverableScope(request);
+        this.activeDeliverableScopeReport = deliverableScopeReport;
+        this.appendEvidence('deliverable_scope_verification', 'foundry', deliverableScopeReport);
+        this.recordBroadcast(
+          'QA_LEAD',
+          'deliverable:scope',
+          deliverableScopeReport.passed
+            ? 'Deliverable scope verification passed (code/docs/tests only).'
+            : 'Deliverable scope verification failed. Excluded non-source artifacts were detected.',
+          {
+            passed: deliverableScopeReport.passed,
+            strict: deliverableScopeReport.strict,
+            includedCount: deliverableScopeReport.included.length,
+            excludedCount: deliverableScopeReport.excluded.length,
+            blockingCount: deliverableScopeReport.blockingExcluded.length,
+            excludedPaths: deliverableScopeReport.excluded.map((entry) => entry.normalizedPath),
+          },
+        );
+      }
+
+      if (stateMachine.getCurrentPhase() !== 'aborted') {
         await this.transitionStep(
           stateMachine,
           'APPROVE_PHASE',
@@ -395,6 +488,10 @@ export class FoundryOrchestrator {
       messages: [...this.messages],
       gateResults,
       review,
+      intake: this.activeIntake ?? undefined,
+      plan: this.activePlan ?? undefined,
+      completionCriteriaReport: this.activeCriteriaReport ?? undefined,
+      deliverableScopeReport: this.activeDeliverableScopeReport ?? undefined,
       startedAt,
       finishedAt,
     };
@@ -424,12 +521,34 @@ export class FoundryOrchestrator {
       reviewTask,
     );
 
+    const deliverableScopeStrict = request.enforceDeliverableScope !== false;
+    const deliverableScopePassed = this.activeDeliverableScopeReport?.passed ?? true;
+    const deliverableScopeNotes = this.activeDeliverableScopeReport
+      ? this.activeDeliverableScopeReport.passed
+        ? 'Deliverable scope verification passed (code/docs/tests only).'
+        : `Deliverable scope verification failed: ${this.activeDeliverableScopeReport.excluded
+          .map((entry) => entry.normalizedPath)
+          .join(', ')}`
+      : 'No deliverable scope verification report generated.';
+
     return {
-      passed: ok && failedGates === 0,
+      passed: ok
+        && failedGates === 0
+        && (this.activeCriteriaReport?.passed ?? true)
+        && (!deliverableScopeStrict || deliverableScopePassed),
       reviewer: 'QA_LEAD',
       notes: [
         ok ? 'QA review completed successfully.' : 'QA review failed or unavailable.',
         failedGates === 0 ? 'All quality gates passed.' : 'One or more quality gates failed.',
+        this.activeCriteriaReport
+          ? this.activeCriteriaReport.passed
+            ? 'Completion criteria verification passed.'
+            : 'Completion criteria verification failed.'
+          : 'No completion criteria verification configured.',
+        deliverableScopeNotes,
+        deliverableScopeStrict
+          ? 'Deliverable scope enforcement is strict.'
+          : 'Deliverable scope enforcement is advisory.',
       ],
     };
   }
@@ -548,6 +667,7 @@ export class FoundryOrchestrator {
     taskBody: string,
   ): Promise<boolean> {
     const phase = stateMachine.getCurrentPhase();
+    const explicitPrompt = this.buildRolePrompt(roleId, title, phase, taskBody, stateMachine.getCurrentState().context);
     const task: FoundryTask = {
       id: uuidv4(),
       title,
@@ -556,7 +676,7 @@ export class FoundryOrchestrator {
       status: 'in_progress',
       priority: 'high',
       dependsOn: [],
-      payload: { taskBody },
+      payload: { taskBody, explicitPrompt },
     };
     this.tasks.push(task);
 
@@ -588,11 +708,12 @@ export class FoundryOrchestrator {
       taskId: task.id,
     });
 
-    const result = await this.coworkBridge.dispatchRoleTask(roleId, taskBody, {
+    const result = await this.coworkBridge.dispatchRoleTask(roleId, explicitPrompt, {
       phase,
       title,
       taskId: task.id,
       sessionId: this.stateContext?.sessionId,
+      projectName: this.stateContext?.projectId,
     });
 
     if (!result || !result.metadata.success) {
@@ -696,8 +817,17 @@ export class FoundryOrchestrator {
         compliance_targets: ['internal-governance'],
         risk_tolerance: 'low',
       },
-      artifacts: {},
-      backlog: { items: [] },
+      artifacts: {
+        intake_summary: this.activeIntake ? JSON.stringify(this.activeIntake.mergedContext) : null,
+      },
+      backlog: {
+        items: this.activePlan?.workBreakdownStructure.map((item) => ({
+          id: item.id,
+          title: item.title,
+          ownerRole: item.ownerRole,
+          dependencies: item.dependencies,
+        })) ?? [],
+      },
       current_phase: 'idle',
       current_feature_id: null,
       iteration: {
@@ -705,7 +835,9 @@ export class FoundryOrchestrator {
         remediation_iteration: 0,
       },
       evidence: { items: [] },
-      last_gate_results: {},
+      last_gate_results: {
+        intake: this.activeIntake?.mergedContext ?? {},
+      },
     };
   }
 
@@ -964,6 +1096,106 @@ export class FoundryOrchestrator {
     return { value };
   }
 
+  private async processIntakeDocuments(request: FoundryExecutionRequest): Promise<FoundryIntakeProcessingResult | null> {
+    if (!request.intakeDocuments || request.intakeDocuments.length === 0) {
+      return null;
+    }
+
+    const result = await this.intakeProcessor.processDocuments(request.intakeDocuments);
+    this.appendEvidence('intake_processed', 'foundry', {
+      documentCount: result.documents.length,
+      warnings: result.warnings,
+      mergedContext: result.mergedContext,
+    });
+
+    return result;
+  }
+
+  private resolveCompletionCriteria(request: FoundryExecutionRequest): CompletionCriteriaSpec | null {
+    if (request.completionCriteriaSpec) {
+      const validation = validateCompletionCriteria(request.completionCriteriaSpec);
+      if (validation.valid) {
+        return request.completionCriteriaSpec;
+      }
+
+      this.appendEvidence('completion_criteria_invalid', 'foundry', {
+        source: 'spec',
+        errors: validation.errors,
+      });
+      return null;
+    }
+
+    if (!request.completionCriteriaDsl) {
+      return null;
+    }
+
+    const parsed = parseCompletionCriteriaDsl(request.completionCriteriaDsl);
+    if (!parsed.validation.valid) {
+      this.appendEvidence('completion_criteria_invalid', 'foundry', {
+        source: 'dsl',
+        errors: parsed.validation.errors,
+      });
+      return null;
+    }
+
+    return parsed.spec;
+  }
+
+  private async verifyCompletionCriteria(repoRoot: string): Promise<CompletionCriteriaVerificationReport | null> {
+    if (!this.activeCompletionCriteria) {
+      return null;
+    }
+
+    const verifier = new CompletionCriteriaVerifier({ cwd: repoRoot });
+    return verifier.verify(this.activeCompletionCriteria);
+  }
+
+  private evaluateDeliverableScope(request: FoundryExecutionRequest): DeliverableScopeReport {
+    return evaluateRepositoryDeliverableScope(request.repoRoot, {
+      strict: request.enforceDeliverableScope !== false,
+      allowList: request.deliverableScopeAllowList,
+    });
+  }
+
+  private buildRolePrompt(
+    roleId: string,
+    title: string,
+    phase: StatePhase,
+    taskBody: string,
+    context: StateContext,
+  ): string {
+    return buildExplicitRolePrompt({
+      roleId,
+      projectName: context.project.name ?? this.stateContext?.projectId ?? 'unknown-project',
+      phase,
+      taskTitle: title,
+      taskBody,
+      repoRoot: context.project.repo_root,
+      completionRequirements: this.collectCompletionRequirementsForTitle(title),
+      context: {
+        intake: this.activeIntake?.mergedContext ?? null,
+        plan: this.activePlan,
+      },
+    });
+  }
+
+  private collectCompletionRequirementsForTitle(title: string): string[] {
+    if (!this.activeCompletionCriteria) {
+      return [];
+    }
+
+    const loweredTitle = title.toLowerCase();
+    const matches = this.activeCompletionCriteria.criteria.filter((criterion) =>
+      loweredTitle.includes(criterion.task.toLowerCase()) || criterion.task.toLowerCase().includes(loweredTitle),
+    );
+
+    if (matches.length === 0) {
+      return this.activeCompletionCriteria.criteria.flatMap((criterion) => criterion.requires).slice(0, 8);
+    }
+
+    return matches.flatMap((criterion) => criterion.requires);
+  }
+
   private buildDiscoveryTask(request: FoundryExecutionRequest): string {
     const parts = [
       `Project: ${request.projectName}`,
@@ -1041,5 +1273,6 @@ export function createFoundryExecutionRequest(
     description: normalizedIntent,
     maxIterations: 2,
     runQualityGates,
+    enforceDeliverableScope: true,
   };
 }

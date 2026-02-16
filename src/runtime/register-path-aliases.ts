@@ -37,7 +37,17 @@ function buildAliasRoots(): Record<string, string[]> {
   const runtimeRoot = runningFromDist ? path.join(projectRoot, 'dist') : projectRoot;
 
   return {
-    '@foundry/': [path.join(runtimeRoot, 'foundry', 'foundry')],
+    '@foundry/core': [path.join(runtimeRoot, 'src', 'foundry', 'core'), path.join(runtimeRoot, 'foundry', 'foundry', 'core')],
+    '@foundry/core/': [
+      path.join(runtimeRoot, 'src', 'foundry', 'core'),
+      path.join(runtimeRoot, 'foundry', 'foundry', 'core'),
+    ],
+    '@foundry/types': [path.join(runtimeRoot, 'src', 'foundry', 'types'), path.join(runtimeRoot, 'foundry', 'foundry', 'types')],
+    '@foundry/types/': [path.join(runtimeRoot, 'foundry', 'foundry', 'types')],
+    '@foundry/': [
+      path.join(runtimeRoot, 'src', 'foundry'),
+      path.join(runtimeRoot, 'foundry', 'foundry'),
+    ],
     '@src/': [path.join(runtimeRoot, 'src')],
     '@/': [path.join(runtimeRoot, 'src'), path.join(runtimeRoot, 'foundry')],
     'src/': [path.join(runtimeRoot, 'src')],

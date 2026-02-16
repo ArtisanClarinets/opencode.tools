@@ -3,6 +3,7 @@
 This document describes the current TUI integration model for OpenCode Tools.
 
 Canonical readiness and backlog status is tracked in `docs/ENTERPRISE_GAP_BACKLOG.md`.
+Production deliverable policy is defined in `docs/PRODUCTION_DELIVERABLE_POLICY.md`.
 
 ## 1) Scope and Truth Statement
 
@@ -28,6 +29,8 @@ The orchestrator agent in `src/tui/agents/index.ts` supports interactive command
 - `run <intent>` (Foundry execution with quality gates)
 - `quick <intent>` (Foundry execution without quality gates)
 - `spawn <agentId> <task>` (direct Cowork spawn path)
+
+`run` mode reports deliverable-scope pass/fail from Foundry release validation.
 
 Natural-language input is interpreted as Foundry intent execution when no explicit command is provided.
 
@@ -64,6 +67,7 @@ After TUI integration changes, run:
 npm run lint
 npm run build
 npx tsc --noEmit
+npm run validate:deliverable-scope
 npm run test:unit
 npm run test:e2e
 ```

@@ -12,6 +12,8 @@
 
 This document provides a **complete, exhaustive autonomous coding agent prompt** to upgrade and elevate the Cowork (`src/cowork/`) codebase from its current state to a **corporate-level senior development team platform**. The goal is to enable the Foundry orchestrator to act as a complete autonomous engineering organization with multiple AI agents collaborating effectively.
 
+**Production deliverable baseline**: enforce code/docs/tests-only release scope and require bespoke, client-specific outputs. Reference `docs/PRODUCTION_DELIVERABLE_POLICY.md`.
+
 ### Current State Assessment
 - **Maturity Score**: 42/100 (Enterprise Gap Backlog)
 - **Architecture**: Strong event-driven foundation with modular design

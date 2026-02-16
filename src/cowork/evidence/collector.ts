@@ -82,6 +82,16 @@ export class EvidenceCollector {
     return EvidenceCollector.instance;
   }
 
+  public static resetForTests(): void {
+    if (!EvidenceCollector.instance) {
+      return;
+    }
+
+    EvidenceCollector.instance.stopCollecting();
+    EvidenceCollector.instance.collectedEvidence.clear();
+    EvidenceCollector.instance = undefined as unknown as EvidenceCollector;
+  }
+
   /**
    * Start collecting evidence from agent events
    */
@@ -491,9 +501,7 @@ export class EvidenceCollector {
    * Clear all evidence (for testing)
    */
   public clear(): void {
-    this.stopCollecting();
-    this.collectedEvidence.clear();
-    EvidenceCollector.instance = undefined as unknown as EvidenceCollector;
+    EvidenceCollector.resetForTests();
     logger.warn('[EvidenceCollector] All evidence cleared');
   }
 }

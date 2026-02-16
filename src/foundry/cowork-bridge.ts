@@ -25,6 +25,8 @@ const ROLE_TO_AGENT: Record<string, string> = {
   SECURITY_LEAD: 'security',
   TECH_WRITER: 'docs',
   SRE_DEVOPS: 'performance',
+  UX_DESIGNER: 'implementer',
+  DATABASE_ARCHITECT: 'architect',
 };
 
 /**

@@ -124,6 +124,9 @@ export const AGENTS: AgentDefinition[] = [
             if (lastFoundryReport) {
                 log(`Foundry Last Run: ${lastFoundryReport.status} in phase ${lastFoundryReport.phase}`);
                 log(`Quality Gates: ${lastFoundryReport.gateResults.filter(g => g.passed).length}/${lastFoundryReport.gateResults.length} passed`);
+                if (lastFoundryReport.deliverableScopeReport) {
+                    log(`Deliverable Scope: ${lastFoundryReport.deliverableScopeReport.passed ? 'pass' : 'fail'} (${lastFoundryReport.deliverableScopeReport.included.length} included, ${lastFoundryReport.deliverableScopeReport.excluded.length} excluded)`);
+                }
             }
         } else if (cmdName === 'run' || cmdName === 'quick') {
             const intent = args.join(' ').trim();
@@ -146,6 +149,9 @@ export const AGENTS: AgentDefinition[] = [
             log(`Tasks completed: ${lastFoundryReport.tasks.filter(t => t.status === 'completed').length}/${lastFoundryReport.tasks.length}`);
             if (runQualityGates) {
                 log(`Quality gates passed: ${lastFoundryReport.gateResults.filter(g => g.passed).length}/${lastFoundryReport.gateResults.length}`);
+            }
+            if (lastFoundryReport.deliverableScopeReport) {
+                log(`Deliverable scope: ${lastFoundryReport.deliverableScopeReport.passed ? 'pass' : 'fail'} (${lastFoundryReport.deliverableScopeReport.included.length} included, ${lastFoundryReport.deliverableScopeReport.excluded.length} excluded)`);
             }
             log(`Review: ${lastFoundryReport.review.passed ? 'approved' : 'changes requested'} by ${lastFoundryReport.review.reviewer}`);
         } else if (cmdName === 'spawn') {
