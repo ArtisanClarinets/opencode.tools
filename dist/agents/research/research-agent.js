@@ -46,8 +46,8 @@ class ResearchAgent {
         const maxIterations = 3;
         let companyData = [];
         let industryData = [];
-        let competitorData = [];
-        let techStackData = { frontend: [], backend: [], infrastructure: [], thirdParty: [] };
+        const competitorData = [];
+        const techStackData = { frontend: [], backend: [], infrastructure: [], thirdParty: [] };
         let sources = [];
         // Research Loop
         let gatePassed = false;

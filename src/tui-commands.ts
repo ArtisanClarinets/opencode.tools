@@ -6,6 +6,8 @@
  */
 
 import { researchTools } from './index';
+import * as readline from 'readline';
+import { TUIResearchAgent } from './tui-agents';
 
 /**
  * Research Agent TUI Command
@@ -81,7 +83,6 @@ export function registerResearchAgentWithTUI(tuiRegistry: any): void {
 async function tuiPrompt(message: string): Promise<string> {
   // This would be replaced with actual TUI prompt
   return new Promise((resolve) => {
-    const readline = require('readline');
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout
@@ -142,7 +143,7 @@ export const tuiIntegration = {
    * Get Research Agent instance for direct TUI access
    */
   getAgent() {
-    return new (require('./tui-agents').TUIResearchAgent)();
+    return new TUIResearchAgent();
   }
 };
 

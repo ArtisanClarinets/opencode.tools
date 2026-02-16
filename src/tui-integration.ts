@@ -1,5 +1,15 @@
 import { TUIResearchAgent } from './tui-agents';
+import { TUIArchitectureAgent } from './tui-agents/tui-architecture-agent';
+import { TUICodeGenAgent } from './tui-agents/tui-codegen-agent';
 import { ResearchParams } from './tui-agents';
+import * as fs from 'fs';
+import * as path from 'path';
+import { spawn } from 'child_process';
+import { discoverBundledPlugins, PluginManifest } from './plugins/discovery';
+import { loadAllPlugins } from './cowork/plugin-loader';
+import { CommandRegistry } from './cowork/registries/command-registry';
+import { AgentRegistry } from './cowork/registries/agent-registry';
+import { CoworkOrchestrator } from './cowork/orchestrator/cowork-orchestrator';
 
 /**
  * OpenCode TUI Tools Registration
@@ -13,7 +23,7 @@ export interface TUITool {
   id: string;
   name: string;
   description: string;
-  category: 'research' | 'documentation' | 'codegen' | 'qa' | 'delivery';
+  category: 'research' | 'documentation' | 'codegen' | 'qa' | 'delivery' | 'cowork';
   handler: (args: any) => Promise<any>;
   parameters?: TUIParameter[];
 }
@@ -71,9 +81,158 @@ export function registerTUITools(): TUITool[] {
       }
     ]
   });
+
+  // Register Architecture Agent
+  tools.push({
+    id: 'architecture-agent',
+    name: 'Architecture Agent',
+    description: 'System design and backlog generation',
+    category: 'documentation',
+    handler: async () => {
+      const agent = new TUIArchitectureAgent();
+      await agent.runInteractive();
+      return { success: true };
+    }
+  });
+
+  // Register CodeGen Agent
+  tools.push({
+    id: 'codegen-agent',
+    name: 'CodeGen Agent',
+    description: 'Feature scaffolding and code generation',
+    category: 'codegen',
+    handler: async () => {
+      const agent = new TUICodeGenAgent();
+      await agent.runInteractive();
+      return { success: true };
+    }
+  });
   
+  // Discover bundled plugin manifests and register them as TUI tools (read-only discovery)
+  const manifests = discoverBundledPlugins();
+  for (const manifest of manifests) {
+    try {
+      const toolId = manifest.id || `plugin:${manifest.name}`;
+      const toolName = manifest.name || toolId;
+      const description = `Plugin adapterType=${manifest.adapterType} capabilities=${(manifest.capabilities||[]).join(', ')} license=${manifest.license || 'unknown'}`;
+
+      tools.push({
+        id: toolId,
+        name: toolName,
+        description,
+        category: 'research',
+        handler: async (args: any) => {
+          // By default return manifest metadata. To execute the plugin set args.run = true
+          if (!args || !args.run) {
+            return { manifest };
+          }
+
+          // Execution requested - run the entryPoint.cmd if provided (best-effort)
+          const cmd: string[] = manifest.entryPoint?.cmd || [];
+          if (!Array.isArray(cmd) || cmd.length === 0) {
+            throw new Error('No executable command declared in plugin manifest');
+          }
+
+          const child = spawn(cmd[0], cmd.slice(1), { stdio: ['pipe', 'pipe', 'pipe'] });
+          let stdout = '';
+          let stderr = '';
+          child.stdout.on('data', d => (stdout += d.toString()));
+          child.stderr.on('data', d => (stderr += d.toString()));
+
+          const exitCode: number = await new Promise((resolve) => child.on('close', resolve));
+          if (exitCode !== 0) {
+            throw new Error(`Plugin process exited with code=${exitCode} stderr=${stderr}`);
+          }
+
+          // Try parsing JSON output, otherwise return raw stdout
+          try {
+            return JSON.parse(stdout);
+          } catch (err) {
+            return { stdout, stderr };
+          }
+        }
+      });
+    } catch (err) {
+      // ignore malformed manifest
+    }
+  }
+
+  // ============================================================
+  // Cowork Plugin System
+  // ============================================================
+  
+  // Load Cowork plugins and register commands/agents
+  try {
+    const plugins = loadAllPlugins();
+    
+    const commandRegistry = CommandRegistry.getInstance();
+    const agentRegistry = AgentRegistry.getInstance();
+    
+    // Register plugins with registries
+    for (const plugin of plugins) {
+      commandRegistry.registerMany(plugin.commands);
+      agentRegistry.registerMany(plugin.agents);
+    }
+    
+    // Register Cowork commands as TUI tools
+    const commands = commandRegistry.list();
+    for (const cmd of commands) {
+      tools.push({
+        id: `cowork:command:${cmd.id}`,
+        name: cmd.name,
+        description: cmd.description,
+        category: 'cowork',
+        handler: async (args: any) => {
+          const orchestrator = new CoworkOrchestrator();
+          return await orchestrator.execute(cmd.id, args._ ?? []);
+        },
+        parameters: [
+          {
+            name: 'args',
+            type: 'array',
+            required: false,
+            description: cmd.argumentHint || 'Command arguments'
+          }
+        ]
+      });
+    }
+    
+    // Register Cowork agents as TUI tools
+    const agents = agentRegistry.list();
+    for (const agent of agents) {
+      tools.push({
+        id: `cowork:agent:${agent.id}`,
+        name: agent.name,
+        description: agent.description,
+        category: 'cowork',
+        handler: async (args: any) => {
+          const orchestrator = new CoworkOrchestrator();
+          return await orchestrator.spawnAgent(agent.id, args.task || 'Execute agent task', args.context);
+        },
+        parameters: [
+          {
+            name: 'task',
+            type: 'string',
+            required: true,
+            description: 'Task prompt for the agent'
+          },
+          {
+            name: 'context',
+            type: 'array',
+            required: false,
+            description: 'Additional context data'
+          }
+        ]
+      });
+    }
+  } catch (err) {
+    console.warn('Failed to load Cowork plugins:', err);
+  }
+
   return tools;
 }
+
+// discovery is delegated to src/plugins/discovery.ts
 
 interface ResearchArgs {
   mode: 'interactive' | 'brief' | 'quick';

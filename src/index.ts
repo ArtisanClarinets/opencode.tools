@@ -6,6 +6,7 @@
  */
 
 import { registerTUITools } from './tui-integration';
+import { discoverBundledPlugins, discoverSystemPlugins } from './plugins/discovery';
 import { TUIResearchAgent } from './tui-agents';
 
 // Export the tool registration function
@@ -22,7 +23,24 @@ export type { TUITool, TUIParameter } from './tui-integration';
  * Get all available TUI tools
  */
 export function getAvailableTools() {
-  return registerTUITools();
+  // Also include discovered plugin manifests as metadata
+  const tools = registerTUITools();
+  try {
+    const manifests = discoverBundledPlugins();
+    for (const m of manifests) {
+      tools.push({ id: m.id, name: m.name, description: `Discovered plugin (${m.adapterType})`, category: 'research', handler: async () => ({ manifest: m }) });
+    }
+
+    // Also include any plugins already registered in the user's OpenCode home
+    const system = discoverSystemPlugins();
+    for (const m of system) {
+      tools.push({ id: m.id, name: m.name, description: `System-registered plugin (${m.adapterType})`, category: 'research', handler: async () => ({ manifest: m }) });
+    }
+  } catch (err) {
+    // ignore
+  }
+
+  return tools;
 }
 
 /**

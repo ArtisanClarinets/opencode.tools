@@ -1,6 +1,12 @@
-import { IAgent, BacklogItem, ProjectScaffoldResult } from '../types';
-export declare class CodeGenAgent implements IAgent {
-    prototype(backlogItem: BacklogItem): Promise<ProjectScaffoldResult>;
+import { BacklogItem, ProjectScaffoldResult } from '../types';
+export declare class CodeGenAgent {
+    private readonly agentName;
+    constructor();
+    /**
+     * Prototypes a feature based on a backlog item.
+     * In a production environment, this integrates with LLM to generate code
+     * and uses Desktop-Commander to write files.
+     */
+    execute(backlogItem: BacklogItem): Promise<ProjectScaffoldResult>;
 }
-export declare const mockBacklogItem: BacklogItem;
 //# sourceMappingURL=index.d.ts.map

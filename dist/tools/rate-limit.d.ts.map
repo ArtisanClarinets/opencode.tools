@@ -1,1 +1,1 @@
-{"version":3,"file":"rate-limit.d.ts","sourceRoot":"","sources":["../../tools/rate-limit.ts"],"names":[],"mappings":"AAAA;;;GAGG;AACH,wBAAsB,gBAAgB,CAAC,QAAQ,EAAE,MAAM,EAAE,OAAO,GAAE,MAAU,GAAG,OAAO,CAAC,GAAG,CAAC,CAI1F"}
+{"version":3,"file":"rate-limit.d.ts","sourceRoot":"","sources":["../../tools/rate-limit.ts"],"names":[],"mappings":"AAAA;;GAEG;AACH,wBAAsB,gBAAgB,CAAC,QAAQ,EAAE,MAAM,EAAE,OAAO,GAAE,MAAU,GAAG,OAAO,CAAC,GAAG,CAAC,CAU1F"}

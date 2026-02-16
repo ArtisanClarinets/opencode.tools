@@ -122,8 +122,8 @@ class TUIResearchAgent {
      */
     async tuiPrompt(message) {
         // This is a placeholder - in real TUI, this would use the TUI's prompt system
+        const readline = await Promise.resolve().then(() => __importStar(require('readline')));
         return new Promise((resolve) => {
-            const readline = require('readline');
             const rl = readline.createInterface({
                 input: process.stdin,
                 output: process.stdout

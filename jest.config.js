@@ -13,7 +13,7 @@ module.exports = {
     '/.git/'
   ],
   transformIgnorePatterns: [
-    'node_modules/(?!uuid)'
+    'node_modules/(?!(uuid|mermaid|sharp))'
   ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
@@ -25,7 +25,10 @@ module.exports = {
     // Support non-prefixed imports as per AGENTS.md
     '^src/(.*)$': '<rootDir>/src/$1',
     '^agents/(.*)$': '<rootDir>/agents/$1',
-    '^tools/(.*)$': '<rootDir>/tools/$1'
+    '^tools/(.*)$': '<rootDir>/tools/$1',
+    // ESM module mappings
+    '^mermaid$': '<rootDir>/node_modules/mermaid/dist/mermaid.esm.min.mjs',
+    '^sharp$': '<rootDir>/node_modules/sharp/lib/sharp.js'
   },
   collectCoverageFrom: [
     'src/**/*.ts',

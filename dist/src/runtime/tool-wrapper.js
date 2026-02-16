@@ -47,7 +47,7 @@ class ToolWrapper {
                 timestamp: new Date().toISOString(),
                 durationMs: duration,
                 success,
-                output: result,
+                output: result, // Can be undefined if tool threw before returning
                 error: error ? { message: error.message, stack: error.stack } : undefined
             };
             // Audit Log (Redacted inside logger)

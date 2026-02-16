@@ -60,8 +60,8 @@ export class ResearchAgent {
     const maxIterations = 3;
     let companyData: SearchResult[] = [];
     let industryData: SearchResult[] = [];
-    let competitorData: Competitor[] = [];
-    let techStackData: TechStack = { frontend: [], backend: [], infrastructure: [], thirdParty: [] };
+    const competitorData: Competitor[] = [];
+    const techStackData: TechStack = { frontend: [], backend: [], infrastructure: [], thirdParty: [] };
     let sources: Source[] = [];
 
     // Research Loop

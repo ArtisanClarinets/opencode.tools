@@ -34,7 +34,12 @@ export class PolicyEngine {
     const passed = passingReviews.length >= gate.requiredApprovals;
 
     // Log gate result to run manifest
-    const manifest = this.runStore.getContext().manifest;
+    const context = this.runStore.getContext();
+    const manifest = context.manifest;
+    
+    // Link artifacts from the current run context
+    const artifactsChecked = manifest.artifacts.map((a: any) => a.id);
+
     manifest.gates.push({
       gateId,
       status: passed ? 'passed' : 'failed',
@@ -42,7 +47,7 @@ export class PolicyEngine {
       reason: passed 
         ? `Passed with ${passingReviews.length} approvals` 
         : `Failed: requires ${gate.requiredApprovals} approvals, got ${passingReviews.length}`,
-      artifactsChecked: [] // TODO: link artifacts
+      artifactsChecked
     });
 
     if (!passed && gate.blocking) {

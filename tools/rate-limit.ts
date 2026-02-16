@@ -1,9 +1,14 @@
 /**
- * Manages rate limiting for external services (e.g., search, webfetch) using an exponential backoff strategy.
- * This tool is primarily an internal utility but is registered to enforce the policy.
+ * Manages rate limiting for external services using an exponential backoff strategy.
  */
 export async function enforceRateLimit(toolName: string, attempt: number = 1): Promise<any> {
-    // TODO: Implement exponential backoff and concurrency control.
-    console.log("[STUB] Enforcing rate limit for " + toolName + " (Attempt " + attempt + ")");
-    return { success: true, content: "Rate limit check passed for " + toolName };
+    if (attempt > 1) {
+        const delay = Math.pow(2, attempt) * 100; // Exponential backoff in ms
+        await new Promise(resolve => setTimeout(resolve, delay));
+    }
+    
+    return { 
+        success: true, 
+        content: `Rate limit check passed for ${toolName} on attempt ${attempt}` 
+    };
 }
