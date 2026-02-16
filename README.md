@@ -17,7 +17,7 @@ OpenCode Tools provides a multi-agent runtime that combines Foundry orchestratio
 ## Core Capabilities
 
 - **Foundry Orchestration**: phased execution, iterative loops, peer review, and release gating.
-- **Cowork Runtime**: command registry, agent registry, plugin loading, permission gates, event bus, blackboard artifacts.
+- **Cowork Runtime**: command registry, agent registry, plugin loading, permission gates, persistent event bus, Postgres-backed workspace/blackboard storage, and a Phase 1 workflow foundation.
 - **Specialized Agents**: research, docs, architecture, codegen, QA, delivery, PDF generation.
 - **Operator Interfaces**: interactive TUI and CLI commands for orchestration and plugin operations.
 
@@ -85,6 +85,17 @@ Enable collaboration features in `opencode.json`:
 ```
 
 See [Foundry-Cowork Integration Guide](docs/FOUNDRY_COWORK_INTEGRATION_GUIDE.md) for detailed documentation.
+
+Cowork runtime persistence and config can also be wired via environment:
+
+```bash
+COWORK_PERSISTENCE_CONNECTION_STRING=postgres://localhost:5432/opencode
+COWORK_PERSISTENCE_MAX_CONNECTIONS=20
+COWORK_PERSISTENCE_AUTO_MIGRATE=true
+COWORK_TENANT_ID=default
+COWORK_TENANT_NAME="Default Tenant"
+COWORK_TENANT_OWNER_ID=default-owner
+```
 
 ## Quick Start
 
@@ -177,6 +188,9 @@ npm run test:security
 
 # Full pipeline
 npm run test:all
+
+# Cowork Postgres integration tests (requires Docker)
+npx jest tests/integration/cowork/persistence-and-eventing.integration.test.ts --runInBand
 ```
 
 `test:security` currently runs with `--passWithNoTests`, so it exits cleanly when no dedicated security tests are present.
@@ -206,6 +220,7 @@ npm run test:all
 - **Collaborative Teams Guide**: `docs/FOUNDRY_COWORK_INTEGRATION_GUIDE.md`
 - **API Reference**: `docs/API_REFERENCE.md`
 - **Implementation Summary**: `docs/IMPLEMENTATION_SUMMARY.md`
+- **Cowork Persistence/Eventing/Workflows (Phase 1)**: `docs/COWORK_PERSISTENCE_EVENTING_WORKFLOWS.md`
 - Enterprise backlog and roadmap: `docs/ENTERPRISE_GAP_BACKLOG.md`
 
 ## Contributing

@@ -16,6 +16,8 @@ This guide defines practical standards for contributors and coding agents workin
 - TUI entry: `src/tui-app.ts`
 - Foundry orchestration: `src/foundry/*`
 - Cowork runtime and plugin system: `src/cowork/*`
+- Cowork Postgres persistence + tenancy/event stores: `src/cowork/persistence/*`
+- Cowork workflow foundation: `src/cowork/workflow/*`
 - Agent implementations: `agents/*`
 - MCP server and tool adapters: `tools/*`
 
@@ -99,6 +101,7 @@ opencode-tools verify
 - **Foundry orchestration changes**: run unit tests plus end-to-end orchestration path checks.
 - **Cowork runtime changes**: run `tests/unit/cowork/*` suites.
 - **Agent or tool changes**: add or update targeted unit/integration tests.
+- **Cowork persistence/eventing/workflow changes**: run unit coverage plus `tests/integration/cowork/persistence-and-eventing.integration.test.ts` with Docker available.
 - **CLI/TUI behavior changes**: validate command path and visible operator output.
 
 At minimum, run `npm run lint`, `npm run build`, `npx tsc --noEmit`, and relevant test suites before finalizing.
