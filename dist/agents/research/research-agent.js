@@ -27,6 +27,12 @@ class ResearchAgent {
         const runId = this.generateRunId();
         const timestamp = new Date().toISOString();
         logger_1.logger.info('Research Agent started', { runId, company: input.brief.company });
+        // Validate Input
+        const validation = types_1.ResearchInputSchema.safeParse(input);
+        if (!validation.success) {
+            throw new ResearchError('Invalid input provided', { errors: validation.error.issues });
+        }
+        const validatedInput = validation.data;
         // Initialize Research Record in Database
         const recordId = (0, uuid_1.v4)();
         await this.db.saveResearch({

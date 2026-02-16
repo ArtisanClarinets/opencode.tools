@@ -1,4 +1,4 @@
-import { Database, ResearchRecord } from './types';
+import { Database, ResearchRecord, ResearchFinding } from './types';
 export declare class JsonDatabase implements Database {
     private dbPath;
     private data;
@@ -10,7 +10,7 @@ export declare class JsonDatabase implements Database {
     getResearch(id: string): Promise<ResearchRecord | null>;
     getAllResearch(): Promise<ResearchRecord[]>;
     private isValidResearchId;
+    addFinding(researchId: string, finding: ResearchFinding): Promise<void>;
     updateStatus(researchId: string, status: ResearchRecord['status']): Promise<void>;
-    if(record: any): void;
 }
 //# sourceMappingURL=json-db.d.ts.map
