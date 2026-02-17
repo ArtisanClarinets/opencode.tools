@@ -81,7 +81,7 @@ export class FoundryCoworkBridge {
   private healthCheckErrors: string[] = [];
 
   constructor(options: FoundryCoworkBridgeOptions = {}) {
-    this.orchestrator = options.orchestrator || new CoworkOrchestrator();
+    this.orchestrator = options.orchestrator || CoworkOrchestrator.getInstance();
     this.eventBus = options.eventBus || EventBus.getInstance();
     this.blackboard = options.blackboard || Blackboard.getInstance();
 
@@ -407,11 +407,21 @@ export class FoundryCoworkBridge {
   }
 }
 
+let warmedBridge: FoundryCoworkBridge | null = null;
+
 /**
  * Create a warmed-up bridge instance
  */
 export function createWarmedUpBridge(
   options: Omit<FoundryCoworkBridgeOptions, 'eagerInit'> = {}
 ): FoundryCoworkBridge {
-  return new FoundryCoworkBridge({ ...options, eagerInit: true });
+  if (!warmedBridge) {
+    warmedBridge = new FoundryCoworkBridge({ ...options, eagerInit: true });
+  }
+
+  return warmedBridge;
+}
+
+export function resetWarmedUpBridgeForTests(): void {
+  warmedBridge = null;
 }

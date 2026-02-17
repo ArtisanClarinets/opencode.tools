@@ -16,6 +16,9 @@ export const FoundryScreenSchema = z.enum([
   'execution',
   'chat',
   'settings',
+  'workspaces',
+  'workspace',
+  'audit',
 ]);
 export type FoundryScreen = z.infer<typeof FoundryScreenSchema>;
 
@@ -26,6 +29,9 @@ export const SCREEN_ORDER: readonly FoundryScreen[] = [
   'execution',
   'chat',
   'settings',
+  'workspaces',
+  'workspace',
+  'audit',
 ];
 
 export const SCREEN_LABELS: Record<FoundryScreen, string> = {
@@ -35,6 +41,9 @@ export const SCREEN_LABELS: Record<FoundryScreen, string> = {
   execution: 'Execution',
   chat: 'Chat',
   settings: 'Settings',
+  workspaces: 'Workspaces',
+  workspace: 'Workspace Detail',
+  audit: 'Audit & Evidence',
 };
 
 export const SCREEN_SHORTCUTS: Record<FoundryScreen, string> = {
@@ -44,6 +53,9 @@ export const SCREEN_SHORTCUTS: Record<FoundryScreen, string> = {
   execution: '4',
   chat: '5',
   settings: '6',
+  workspaces: '7',
+  workspace: '8',
+  audit: '9',
 };
 
 // =============================================================================
