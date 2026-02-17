@@ -139,6 +139,12 @@ async function initializeSubsystems(args: FoundryTUIArguments): Promise<FoundryT
   await collaborationBridge.initialize();
   logger.info('[FoundryTUI] FoundryCollaborationBridge initialized');
 
+  const runtime = TuiRuntime.getInstance();
+  await runtime.initialize((_action) => {
+    // Store dispatch is connected from React tree; runtime can bootstrap here safely.
+  });
+  logger.info('[FoundryTUI] TUI runtime initialized');
+
   // If project ID specified, validate it exists or prepare for it
   if (args.project) {
     logger.info(`[FoundryTUI] Project specified: ${args.project}`);
