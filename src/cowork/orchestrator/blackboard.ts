@@ -1,10 +1,13 @@
+import { v4 as uuidv4 } from 'uuid';
+import { CoworkConfigManager } from 'src/cowork/config/cowork-config-manager';
+import { PostgresPersistenceManager } from 'src/cowork/persistence/postgres-persistence-manager';
 import { EventBus } from './event-bus';
 
 /**
  * Shared Context (Blackboard) for real-time collaboration
  */
 
-export interface Artifact<T = any> {
+export interface Artifact<T = unknown> {
   id: string;
   type: string;
   key: string;
@@ -31,9 +34,13 @@ export class Blackboard {
   private feedbacks: FeedbackEntry[] = [];
   private state: ProjectStatus = 'drafting';
   private eventBus: EventBus;
+  private persistenceManager: PostgresPersistenceManager | null = null;
+  private workspaceId: string | null = null;
+  private tenantId: string;
 
   private constructor() {
     this.eventBus = EventBus.getInstance();
+    this.tenantId = CoworkConfigManager.getInstance().getPersistenceConfig().tenantId;
   }
 
   public static getInstance(): Blackboard {
@@ -41,6 +48,19 @@ export class Blackboard {
       Blackboard.instance = new Blackboard();
     }
     return Blackboard.instance;
+  }
+
+  public async configurePersistence(persistenceManager: PostgresPersistenceManager, workspaceId: string): Promise<void> {
+    this.persistenceManager = persistenceManager;
+    this.workspaceId = workspaceId;
+    await this.persistenceManager.initialize();
+  }
+
+  public hydrateFromPersistence(artifacts: Artifact[]): void {
+    this.artifacts.clear();
+    for (const artifact of artifacts) {
+      this.artifacts.set(artifact.key, artifact);
+    }
   }
 
   public getArtifact<T>(key: string): T | undefined {
@@ -61,8 +81,16 @@ export class Blackboard {
       timestamp: new Date().toISOString()
     };
     this.artifacts.set(key, artifact);
-    this.eventBus.publish(`artifact:updated:${key}`, artifact);
-    this.eventBus.publish('artifact:any:updated', artifact);
+    void this.eventBus.publish(`artifact:updated:${key}`, artifact);
+    void this.eventBus.publish('artifact:any:updated', artifact);
+    void this.eventBus.publish('blackboard:entry:created', artifact, {
+      aggregateId: this.workspaceId || key,
+      aggregateType: 'blackboard',
+      version: 1
+    });
+    this.persistArtifact(artifact).catch((error: unknown) => {
+      console.error('Blackboard persistence failed', error);
+    });
   }
 
   public addFeedback(from: string, targetId: string, content: string, severity: FeedbackEntry['severity']): void {
@@ -76,7 +104,11 @@ export class Blackboard {
       timestamp: new Date().toISOString()
     };
     this.feedbacks.push(feedback);
-    this.eventBus.publish('feedback:added', feedback);
+    void this.eventBus.publish('feedback:added', feedback, {
+      aggregateId: this.workspaceId || targetId,
+      aggregateType: 'feedback',
+      version: 1
+    });
   }
 
   public getFeedbacks(): FeedbackEntry[] {
@@ -86,7 +118,11 @@ export class Blackboard {
   public transitionTo(newState: ProjectStatus): void {
     const oldState = this.state;
     this.state = newState;
-    this.eventBus.publish('state:transition', { from: oldState, to: newState });
+    void this.eventBus.publish('state:transition', { from: oldState, to: newState }, {
+      aggregateId: this.workspaceId || 'project',
+      aggregateType: 'workspace',
+      version: 1
+    });
   }
 
   public getState(): ProjectStatus {
@@ -97,5 +133,24 @@ export class Blackboard {
     this.artifacts.clear();
     this.feedbacks = [];
     this.state = 'drafting';
+  }
+
+  private async persistArtifact<T>(artifact: Artifact<T>): Promise<void> {
+    if (!this.persistenceManager || !this.workspaceId) {
+      return;
+    }
+
+    const version = await this.persistenceManager.getNextEntryVersion(this.workspaceId, artifact.key, this.tenantId);
+    await this.persistenceManager.upsertBlackboardEntry({
+      id: uuidv4(),
+      workspaceId: this.workspaceId,
+      tenantId: this.tenantId,
+      entryType: artifact.type,
+      entryKey: artifact.key,
+      payload: artifact.data,
+      version,
+      createdBy: artifact.source,
+      createdAt: artifact.timestamp
+    });
   }
 }

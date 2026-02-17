@@ -37,12 +37,18 @@ exports.startTui = startTui;
 const React = __importStar(require("react"));
 const ink_1 = require("ink");
 const App_1 = require("./tui/App");
+const tui_foundry_1 = require("src/tui-foundry");
 /**
  * OpenCode TUI Application Entry Point
  *
  * Replaces the previous readline-based implementation with a React Ink TUI.
  */
 async function startTui() {
+    const defaultAgent = process.env.DEFAULT_AGENT || process.env.default_agent;
+    if (defaultAgent === 'foundry') {
+        await (0, tui_foundry_1.startFoundryTui)();
+        return;
+    }
     // Clear the console for a clean TUI start
     process.stdout.write('\x1b[2J\x1b[0f');
     // Render the Ink app

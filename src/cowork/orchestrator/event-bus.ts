@@ -2,13 +2,22 @@
  * Event Bus for Inter-Agent Communication
  */
 
-export type EventCallback = (payload: any) => void | Promise<void>;
+import { v4 as uuidv4 } from 'uuid';
+import { CoworkConfigManager } from 'src/cowork/config/cowork-config-manager';
+import { PostgresPersistenceManager } from 'src/cowork/persistence/postgres-persistence-manager';
+import { CoworkEventRecord } from 'src/cowork/persistence/types';
+
+export type EventCallback = (payload: unknown, event?: CoworkEventRecord) => void | Promise<void>;
 
 export class EventBus {
   private static instance: EventBus;
   private listeners: Map<string, Set<EventCallback>> = new Map();
+  private persistenceManager: PostgresPersistenceManager | null = null;
+  private tenantId: string;
 
-  private constructor() {}
+  private constructor() {
+    this.tenantId = CoworkConfigManager.getInstance().getPersistenceConfig().tenantId;
+  }
 
   public static getInstance(): EventBus {
     if (!EventBus.instance) {
@@ -17,19 +26,37 @@ export class EventBus {
     return EventBus.instance;
   }
 
-  public publish(event: string, payload: any): void {
-    const eventListeners = this.listeners.get(event);
-    if (eventListeners) {
-      eventListeners.forEach(callback => {
-        try {
-          const result = callback(payload);
-          if (result instanceof Promise) {
-            result.catch(err => console.error(`[EventBus] Error in async listener for ${event}:`, err));
-          }
-        } catch (err) {
-          console.error(`[EventBus] Error in listener for ${event}:`, err);
-        }
-      });
+  public async configurePersistence(persistenceManager: PostgresPersistenceManager): Promise<void> {
+    this.persistenceManager = persistenceManager;
+    await this.persistenceManager.initialize();
+  }
+
+  public async publish(event: string, payload: unknown, metadata?: Record<string, unknown>): Promise<void> {
+    let persistedEvent: CoworkEventRecord | undefined;
+
+    if (this.persistenceManager) {
+      persistedEvent = {
+        eventId: uuidv4(),
+        tenantId: this.tenantId,
+        aggregateId: (metadata?.aggregateId as string) || event,
+        aggregateType: (metadata?.aggregateType as string) || 'event',
+        type: event,
+        payload,
+        metadata: metadata || {},
+        version: Number(metadata?.version || 1),
+        occurredAt: new Date().toISOString()
+      };
+
+      await this.persistenceManager.appendEvent(persistedEvent);
+    }
+
+    const callbacks = this.getCallbacksForEvent(event);
+    for (const callback of callbacks) {
+      await callback(payload, persistedEvent);
+    }
+
+    if (persistedEvent && this.persistenceManager) {
+      await this.persistenceManager.markEventDelivered(persistedEvent.eventId);
     }
   }
 
@@ -45,5 +72,28 @@ export class EventBus {
     if (eventListeners) {
       eventListeners.delete(callback);
     }
+  }
+
+  public async replayUndeliveredEvents(limit = 100): Promise<number> {
+    if (!this.persistenceManager) {
+      return 0;
+    }
+
+    const events = await this.persistenceManager.listUndeliveredEvents(limit);
+    for (const event of events) {
+      const callbacks = this.getCallbacksForEvent(event.type);
+      for (const callback of callbacks) {
+        await callback(event.payload, event);
+      }
+      await this.persistenceManager.markEventDelivered(event.eventId);
+    }
+
+    return events.length;
+  }
+
+  private getCallbacksForEvent(eventName: string): EventCallback[] {
+    const direct = this.listeners.get(eventName) || new Set<EventCallback>();
+    const wildcard = this.listeners.get('*') || new Set<EventCallback>();
+    return [...direct, ...wildcard];
   }
 }
