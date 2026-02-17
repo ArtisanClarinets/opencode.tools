@@ -83,6 +83,8 @@ export interface TaskContext {
   messaging?: AgentMessagingSystem;
   /** Session ID for tracking */
   sessionId?: string;
+  /** Workspace ID for project isolation */
+  workspaceId?: string;
 }
 
 /**
@@ -278,7 +280,7 @@ export class AgentSpawner {
         }
 
         // Use the AgentRunner to execute the agent using LLM loop
-        this.agentRunner.run(agent.id, context.task, enhancedContext)
+        this.agentRunner.run(agent.id, context.task, enhancedContext, { systemPrompt: agent.body })
             .then(result => {
                 clearTimeout(timeoutId);
                 if (result.success) {

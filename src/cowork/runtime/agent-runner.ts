@@ -12,6 +12,8 @@ export interface AgentRunOptions {
   onProgress?: (percent: number, message: string) => void;
   /** Structured stream callback for runtime events */
   onStream?: AgentStreamCallback;
+  /** Custom system prompt for agent persona */
+  systemPrompt?: string;
 }
 
 /**
@@ -51,8 +53,14 @@ export class AgentRunner {
    * Run an agent task
    */
   public async run(agentId: string, task: string, context?: any, options?: AgentRunOptions): Promise<AgentExecutionResult> {
+    // Build system prompt: use provided persona prompt with agent identification, or fallback to generic
+    const personaPrompt = options?.systemPrompt ?? context?.systemPrompt;
+    const systemContent = personaPrompt
+      ? `You are agent ${agentId}.\n\n${personaPrompt}`
+      : `You are agent ${agentId}. Your goal is to complete the user task.`;
+
     const messages: LLMMessage[] = [
-      { role: 'system', content: `You are agent ${agentId}. Your goal is to complete the user task.` },
+      { role: 'system', content: systemContent },
       { role: 'user', content: task }
     ];
 

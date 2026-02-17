@@ -14,6 +14,7 @@ import { ParallelStateMonitor } from '@/cowork/monitoring/parallel-state-monitor
 import { EvidenceCollector } from '@/cowork/evidence/collector';
 import { CollaborationProtocol } from '@/cowork/team/collaboration-protocol';
 import { TeamManager } from '@/cowork/team/team-manager';
+import { CollaborationRequestWorker } from '@/cowork/team/collaboration-request-worker';
 import { DevelopmentTeam, TeamMember } from '@/cowork/team/team-types';
 import { CollaborativeWorkspace } from '@/cowork/collaboration/collaborative-workspace';
 import { FoundryTeamAdapter } from './team-adapter';
@@ -88,6 +89,7 @@ export class FoundryCollaborationBridge {
   private releaseOrchestrator: ReleaseDomainOrchestrator;
   private projectContexts: Map<string, ProjectContext> = new Map();
   private teamActivities: Map<string, TeamActivity[]> = new Map();
+  private requestWorker: CollaborationRequestWorker | null = null;
   private initialized = false;
 
   constructor(foundryOrchestrator?: FoundryOrchestrator) {
@@ -120,6 +122,9 @@ export class FoundryCollaborationBridge {
     // Start evidence collection
     this.evidenceCollector.startCollecting();
 
+    // Start collaboration request worker
+    this.startRequestWorker();
+
     // Set up event listeners for TUI visibility
     this.setupEventListeners();
 
@@ -147,17 +152,28 @@ export class FoundryCollaborationBridge {
       'CTO_ORCHESTRATOR'
     );
 
-    // Get workspace
-    const workspace = this.workspace.getWorkspacesForProject(request.projectId)[0];
+    // Get workspace from team (source of truth)
+    let workspace = this.workspace.getWorkspace(team.workspaceId);
+    
+    // Fallback: create workspace if it doesn't exist (shouldn't happen normally)
+    if (!workspace) {
+      logger.warn(`[FoundryCollaborationBridge] Workspace ${team.workspaceId} not found for team ${team.id}, creating new workspace`);
+      workspace = this.workspace.createWorkspace(
+        request.projectId,
+        `${request.projectName} Team Workspace`,
+        'foundry-bridge',
+        { description: `Workspace for ${request.projectName} development team` }
+      );
+    }
 
     // Start parallel monitoring
     this.parallelStateMonitor.startMonitoring(request.projectId);
 
-    // Create project context
+    // Create project context with correct workspace ID from team
     const context: ProjectContext = {
       projectId: request.projectId,
       team,
-      workspaceId: workspace?.id || '',
+      workspaceId: workspace.id,
       monitoringEnabled: true,
     };
 
@@ -489,7 +505,57 @@ export class FoundryCollaborationBridge {
     };
   }
 
+  /**
+   * Stop the bridge and cleanup resources
+   */
+  public stop(): void {
+    if (!this.initialized) {
+      return;
+    }
+
+    // Stop the request worker
+    this.stopRequestWorker();
+
+    this.initialized = false;
+
+    logger.info('[FoundryCollaborationBridge] Stopped');
+  }
+
   // Private helper methods
+
+  private startRequestWorker(): void {
+    // Get all team members to register with the worker
+    const allTeams = this.teamManager.listAllTeams();
+    const agentIds: string[] = [];
+
+    for (const team of allTeams) {
+      for (const member of team.members.values()) {
+        agentIds.push(member.agentId);
+      }
+    }
+
+    if (agentIds.length === 0) {
+      logger.warn('[FoundryCollaborationBridge] No agents found for request worker');
+      return;
+    }
+
+    this.requestWorker = new CollaborationRequestWorker({
+      agentIds,
+      defaultTimeout: 300000, // 5 minutes
+      maxConcurrentRequests: 3,
+      autoStart: true,
+    });
+
+    logger.info(`[FoundryCollaborationBridge] Started request worker with ${agentIds.length} agents`);
+  }
+
+  private stopRequestWorker(): void {
+    if (this.requestWorker) {
+      this.requestWorker.stop();
+      this.requestWorker = null;
+      logger.info('[FoundryCollaborationBridge] Stopped request worker');
+    }
+  }
 
   private setupEventListeners(): void {
     // Listen for monitoring findings

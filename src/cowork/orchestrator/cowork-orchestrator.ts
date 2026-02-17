@@ -237,15 +237,17 @@ export class CoworkOrchestrator {
    * @param task - Task prompt
    * @param context - Additional context
    * @param sessionId - Optional session ID for tracking
+   * @param workspaceId - Optional workspace ID for project isolation (defaults to 'global')
    * @returns Agent result
    */
   public async spawnAgent(
     agentId: string,
     task: string,
     context?: Record<string, unknown>,
-    sessionId?: string
+    sessionId?: string,
+    workspaceId: string = 'global'
   ): Promise<AgentResult> {
-    const sharedArtifacts = this.blackboard.getAllArtifacts();
+    const sharedArtifacts = this.blackboard.getAllArtifacts(workspaceId);
     const derivedSessionId = sessionId || (typeof context?.sessionId === 'string' ? context.sessionId : undefined);
 
     this.addTranscriptEntry({
@@ -283,6 +285,7 @@ export class CoworkOrchestrator {
       },
       messaging,
       sessionId: derivedSessionId,
+      workspaceId,
     };
 
     try {
@@ -295,7 +298,8 @@ export class CoworkOrchestrator {
           `agent_output:${agentId}`,
           result.output,
           agentId,
-          'agent_output'
+          'agent_output',
+          { workspaceId }
         );
 
         this.addTranscriptEntry({

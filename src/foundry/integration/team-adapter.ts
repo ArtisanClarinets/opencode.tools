@@ -96,7 +96,7 @@ const DEFAULT_FOUNDRY_ROLES: FoundryRole[] = [
 
 // Map Foundry roles to Cowork agent IDs
 const ROLE_TO_AGENT_MAP: Record<string, string> = {
-  CTO_ORCHESTRATOR: 'architect',
+  CTO_ORCHESTRATOR: 'cto',
   PRODUCT_MANAGER: 'pm',
   STAFF_BACKEND_ENGINEER: 'implementer',
   STAFF_FRONTEND_ENGINEER: 'implementer',

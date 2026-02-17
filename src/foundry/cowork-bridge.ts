@@ -17,7 +17,7 @@ import type { RuntimeMetricsSnapshot } from '../cowork/runtime/metrics-collector
 import type { CoworkPlugin } from '../cowork/types';
 
 const ROLE_TO_AGENT: Record<string, string> = {
-  CTO_ORCHESTRATOR: 'architect',
+  CTO_ORCHESTRATOR: 'cto',
   PRODUCT_MANAGER: 'pm',
   STAFF_BACKEND_ENGINEER: 'implementer',
   STAFF_FRONTEND_ENGINEER: 'implementer',

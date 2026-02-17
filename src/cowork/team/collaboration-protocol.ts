@@ -181,7 +181,8 @@ export class CollaborationProtocol {
     fromAgentId: string,
     finding: Finding,
     scope: 'team' | 'specific' | 'broadcast' = 'team',
-    targetAgentIds?: string[]
+    targetAgentIds?: string[],
+    workspaceId?: string
   ): void {
     const timestamp = Date.now();
 
@@ -197,7 +198,8 @@ export class CollaborationProtocol {
         timestamp
       },
       fromAgentId,
-      'finding'
+      'finding',
+      { workspaceId }
     );
 
     // Emit event
@@ -398,7 +400,8 @@ export class CollaborationProtocol {
   public broadcast(
     fromAgentId: string,
     message: string,
-    metadata?: Record<string, unknown>
+    metadata?: Record<string, unknown>,
+    workspaceId?: string
   ): void {
     const timestamp = Date.now();
 
@@ -414,7 +417,8 @@ export class CollaborationProtocol {
         ...metadata
       },
       fromAgentId,
-      'broadcast'
+      'broadcast',
+      { workspaceId }
     );
 
     // Emit event

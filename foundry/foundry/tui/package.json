@@ -1,7 +1,7 @@
 {
-  "name": "foundry-tui-v2",
+  "name": "@foundry/foundry-tui",
   "version": "1.0.0",
-  "description": "Foundry Interactive TUI v2 - Chat-Based CTO Orchestration System",
+  "description": "Foundry Interactive TUI - Chat-Based CTO Orchestration System",
   "main": "dist/index.js",
   "type": "module",
   "engines": {

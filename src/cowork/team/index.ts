@@ -47,3 +47,10 @@ export {
   EscalationResponse,
   Finding
 } from './collaboration-protocol';
+
+// Collaboration request worker
+export {
+  CollaborationRequestWorker,
+  createCollaborationRequestWorker,
+  type CollaborationRequestWorkerOptions
+} from './collaboration-request-worker';
