@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { render } from 'ink';
 import { App } from './tui/App';
+import { startFoundryTui } from 'src/tui-foundry';
 
 /**
  * OpenCode TUI Application Entry Point
@@ -8,6 +9,12 @@ import { App } from './tui/App';
  * Replaces the previous readline-based implementation with a React Ink TUI.
  */
 export async function startTui() {
+  const defaultAgent = process.env.DEFAULT_AGENT || process.env.default_agent;
+  if (defaultAgent === 'foundry') {
+    await startFoundryTui();
+    return;
+  }
+
   // Clear the console for a clean TUI start
   process.stdout.write('\x1b[2J\x1b[0f');
 
