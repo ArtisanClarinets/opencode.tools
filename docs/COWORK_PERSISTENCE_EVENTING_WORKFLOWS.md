@@ -32,6 +32,17 @@ COWORK_TENANT_NAME="Acme Engineering"
 COWORK_TENANT_OWNER_ID=owner-enterprise
 ```
 
+
+## Persistence Required Mode
+
+Cowork supports strict fail-fast startup for enterprise environments:
+
+```bash
+COWORK_PERSISTENCE_REQUIRED=true
+```
+
+When enabled, runtime bootstrap fails if Postgres persistence cannot be initialized. This prevents accidental memory-only execution in production.
+
 ## Event Bus Model
 
 Event publishing is now Postgres-backed when persistence is configured:

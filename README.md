@@ -78,6 +78,7 @@ COWORK_PERSISTENCE_IDLE_TIMEOUT_MS=10000
 COWORK_PERSISTENCE_CONNECTION_TIMEOUT_MS=30000
 COWORK_PERSISTENCE_SSL=false
 COWORK_PERSISTENCE_AUTO_MIGRATE=true
+COWORK_PERSISTENCE_REQUIRED=false
 COWORK_TENANT_ID=default
 COWORK_TENANT_NAME="Default Tenant"
 COWORK_TENANT_OWNER_ID=default-owner
@@ -100,6 +101,8 @@ OPENAI_MODEL=gpt-4o-mini
 ```
 
 See `docs/FOUNDRY_COWORK_INTEGRATION_GUIDE.md` for API-level examples.
+
+If you need a fail-fast production posture, set `COWORK_PERSISTENCE_REQUIRED=true`. When enabled, Cowork/Foundry orchestration will fail startup if Postgres persistence cannot be initialized instead of silently continuing in memory-only mode.
 
 ## Quick Start
 

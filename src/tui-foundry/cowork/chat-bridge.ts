@@ -116,7 +116,7 @@ export class ChatBridge {
     this.eventBus = EventBus.getInstance();
     this.collaborationProtocol = CollaborationProtocol.getInstance();
     this.teamManager = TeamManager.getInstance();
-    this.orchestrator = new CoworkOrchestrator();
+    this.orchestrator = CoworkOrchestrator.getInstance();
     this.workspace = CollaborativeWorkspace.getInstance();
 
     this.setupEventListeners();

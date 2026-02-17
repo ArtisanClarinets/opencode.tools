@@ -94,7 +94,7 @@ export class FoundryCollaborationBridge {
 
   constructor(foundryOrchestrator?: FoundryOrchestrator) {
     this.foundryOrchestrator = foundryOrchestrator || new FoundryOrchestrator();
-    this.coworkOrchestrator = new CoworkOrchestrator();
+    this.coworkOrchestrator = CoworkOrchestrator.getInstance();
     this.teamAdapter = new FoundryTeamAdapter();
     this.parallelStateMonitor = ParallelStateMonitor.getInstance();
     this.evidenceCollector = EvidenceCollector.getInstance();

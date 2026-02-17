@@ -12,12 +12,13 @@ import '../runtime/register-path-aliases';
 import * as React from 'react';
 import { render } from 'ink';
 import { EventBus } from '../cowork/orchestrator/event-bus';
-import { CoworkOrchestrator } from '../cowork/orchestrator/cowork-orchestrator';
 import { FoundryCollaborationBridge } from '../foundry/integration/collaboration-bridge';
 import { createWarmedUpBridge } from '../foundry/cowork-bridge';
 import { logger } from '../runtime/logger';
 import { App } from './App';
 import { StoreProvider } from './store/store';
+import { TuiRuntime } from './runtime/tui-runtime';
+import { RuntimeProvider } from './runtime/context';
 
 /**
  * CLI Arguments interface
@@ -40,7 +41,6 @@ export interface FoundryTUIArguments {
  */
 export interface FoundryTUIContext {
   eventBus: EventBus;
-  coworkOrchestrator: CoworkOrchestrator;
   collaborationBridge: FoundryCollaborationBridge;
   warmedUpBridge: ReturnType<typeof createWarmedUpBridge>;
   isDemoMode: boolean;
@@ -122,10 +122,6 @@ async function initializeSubsystems(args: FoundryTUIArguments): Promise<FoundryT
   const eventBus = EventBus.getInstance();
   logger.info('[FoundryTUI] EventBus initialized');
 
-  // Initialize CoworkOrchestrator
-  const coworkOrchestrator = new CoworkOrchestrator();
-  logger.info('[FoundryTUI] CoworkOrchestrator initialized');
-
   // Initialize warmed-up bridge
   const warmedUpBridge = createWarmedUpBridge();
   logger.info('[FoundryTUI] FoundryCoworkBridge warmed up');
@@ -150,7 +146,6 @@ async function initializeSubsystems(args: FoundryTUIArguments): Promise<FoundryT
 
   return {
     eventBus,
-    coworkOrchestrator,
     collaborationBridge,
     warmedUpBridge,
     isDemoMode: args.demo ?? false,
@@ -169,6 +164,7 @@ function setupShutdownHandlers(context: FoundryTUIContext, cleanup: () => void):
     try {
       // Stop collaboration bridge
       context.collaborationBridge.stop();
+      TuiRuntime.getInstance().shutdown();
 
       // Cleanup
       cleanup();
@@ -255,7 +251,7 @@ export async function runFoundryTUI(args?: FoundryTUIArguments): Promise<void> {
     // Render the React Ink application
     logger.info('[FoundryTUI] Rendering TUI...');
     const { waitUntilExit, cleanup } = render(
-      React.createElement(StoreProvider, { children: React.createElement(App, {}) }),
+      React.createElement(RuntimeProvider, { children: React.createElement(StoreProvider, { children: React.createElement(App, {}) }) }),
       { patchConsole: false }
     );
 

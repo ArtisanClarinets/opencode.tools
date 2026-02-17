@@ -25,6 +25,7 @@ describe('cowork/config/loader', () => {
       COWORK_PERSISTENCE_CONNECTION_STRING: 'postgres://db/acme',
       COWORK_PERSISTENCE_MAX_CONNECTIONS: '42',
       COWORK_PERSISTENCE_SSL: 'true',
+      COWORK_PERSISTENCE_REQUIRED: 'true',
       COWORK_COLLABORATION_MAX_EDITORS: '12',
       COWORK_WORKFLOW_MAX_STEPS: '250',
       COWORK_SECURITY_AUDIT_RETENTION_DAYS: '3650',
@@ -37,6 +38,8 @@ describe('cowork/config/loader', () => {
     expect(config.persistence?.postgres?.connectionString).toBe('postgres://db/acme');
     expect(config.persistence?.postgres?.maxConnections).toBe(42);
     expect(config.persistence?.postgres?.ssl).toBe(true);
+
+    expect(config.persistence?.required).toBe(true);
     expect(config.collaboration?.maxConcurrentEditors).toBe(12);
     expect(config.workflow?.maxSteps).toBe(250);
     expect(config.security?.auditRetentionDays).toBe(3650);
@@ -53,6 +56,7 @@ describe('cowork/config/loader', () => {
     expect(config.tenant.id).toBe('default');
     expect(config.persistence.postgres.connectionString).toBe('postgres://localhost:5432/opencode');
     expect(config.persistence.postgres.maxConnections).toBe(20);
+    expect(config.persistence.required).toBe(false);
     expect(config.collaboration.enabled).toBe(true);
     expect(config.workflow.maxSteps).toBe(100);
     expect(config.security.enforceRbac).toBe(true);

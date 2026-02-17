@@ -7,15 +7,17 @@
  */
 
 import { EventBus, EventEnvelope } from '../../cowork/orchestrator/event-bus';
-import { CoworkOrchestrator, OrchestratorContext } from '../../cowork/orchestrator/cowork-orchestrator';
+import { CoworkOrchestrator } from '../../cowork/orchestrator/cowork-orchestrator';
 import { CollaborationProtocol, CollaborationRequest, CollaborationResponse } from '../../cowork/team/collaboration-protocol';
 import { TeamManager } from '../../cowork/team/team-manager';
 import { TeamMember, DevelopmentTeam, TeamHealth } from '../../cowork/team/team-types';
-import { CollaborativeWorkspace, ProjectWorkspace } from '../../cowork/collaboration/collaborative-workspace';
+import { CollaborativeWorkspace, ProjectWorkspace, Conflict } from '../../cowork/collaboration/collaborative-workspace';
 import { ArtifactVersion } from '../../cowork/collaboration/artifact-versioning';
 import { Blackboard } from '../../cowork/orchestrator/blackboard';
 import { AgentResult } from '../../cowork/orchestrator/result-merger';
 import { logger } from '../../runtime/logger';
+import type { WorkspaceSnapshotRecord } from '../../cowork/persistence';
+import { createWarmedUpBridge } from '../../foundry/cowork-bridge';
 import type { FoundryDispatch, FoundryAction } from '../store/actions';
 import type { Agent, TeamMember as TUITeamMember, Artifact, CollaborationEntry } from '../types';
 
@@ -115,7 +117,7 @@ export class CoworkAdapter {
 
     // Initialize Cowork components
     this.eventBus = EventBus.getInstance();
-    this.orchestrator = new CoworkOrchestrator();
+    this.orchestrator = createWarmedUpBridge().getOrchestrator();
     this.collaborationProtocol = CollaborationProtocol.getInstance();
     this.teamManager = TeamManager.getInstance();
     this.workspace = CollaborativeWorkspace.getInstance();
@@ -866,6 +868,16 @@ export class CoworkAdapter {
     return this.teamManager.getTeamHealth(teamId);
   }
 
+
+  /**
+   * Create workspace for a project
+   */
+  public createWorkspace(projectId: string, name: string, createdBy: string, members: string[] = []): ProjectWorkspace {
+    return this.workspace.createWorkspace(projectId, name, createdBy, {
+      initialMembers: members.length > 0 ? members : [createdBy],
+    });
+  }
+
   /**
    * Get workspace
    */
@@ -905,6 +917,71 @@ export class CoworkAdapter {
     author: string
   ): Promise<ArtifactVersion<T> | null> {
     return this.workspace.updateArtifact(workspaceId, artifactKey, data, source, author);
+  }
+
+
+  /**
+   * List all workspaces
+   */
+  public listWorkspaces(): ProjectWorkspace[] {
+    return this.workspace.getAllWorkspaces();
+  }
+
+  /**
+   * Set active workspace for adapter operations
+   */
+  public setActiveWorkspace(workspaceId: string): void {
+    this.options.defaultWorkspaceId = workspaceId;
+  }
+
+  /**
+   * Create a workspace checkpoint
+   */
+  public async createCheckpoint(
+    workspaceId: string,
+    createdBy: string,
+    metadata: Record<string, unknown> = {},
+  ): Promise<WorkspaceSnapshotRecord | null> {
+    return this.workspace.createCheckpoint(workspaceId, createdBy, 'checkpoint', metadata);
+  }
+
+  /**
+   * List workspace checkpoints
+   */
+  public async listCheckpoints(workspaceId: string): Promise<WorkspaceSnapshotRecord[]> {
+    return this.workspace.listCheckpoints(workspaceId);
+  }
+
+  /**
+   * Get workspace conflicts
+   */
+  public getWorkspaceConflicts(workspaceId: string): Conflict[] {
+    return this.workspace.getConflictsForWorkspace(workspaceId);
+  }
+
+  /**
+   * Resolve workspace conflict
+   */
+  public resolveConflict(
+    conflictId: string,
+    resolution: {
+      strategy: 'last-write-wins' | 'merge' | 'reject' | 'manual';
+      resolvedBy: string;
+      reason?: string;
+      mergedData?: unknown;
+      winningVersion?: number;
+    },
+  ): boolean {
+    return this.workspace.resolveConflict(
+      conflictId,
+      resolution.strategy,
+      resolution.resolvedBy,
+      {
+        reason: resolution.reason,
+        mergedData: resolution.mergedData,
+        winningVersion: resolution.winningVersion,
+      },
+    ) !== null;
   }
 
   /**

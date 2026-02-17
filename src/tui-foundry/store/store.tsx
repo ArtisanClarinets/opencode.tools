@@ -20,6 +20,7 @@ import {
   PHASE_LABELS,
 } from '../types';
 import { useEventBus } from '../hooks/useEventBus';
+import { TuiRuntime } from '../runtime/tui-runtime';
 
 // =============================================================================
 // Initial State
@@ -674,6 +675,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }): JSX.
 
   // Connect to EventBus
   useEventBus(dispatch);
+
+  React.useEffect(() => {
+    void TuiRuntime.getInstance().initialize(dispatch);
+  }, [dispatch]);
 
   const value = React.useMemo(
     () => ({ state, dispatch }),

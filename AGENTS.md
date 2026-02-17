@@ -99,6 +99,7 @@ opencode-tools verify
 - Maintain command/agent registry compatibility.
 - Validate plugin loader changes against bundled and system plugin discovery.
 - Keep permission gating deny-safe by default for new tool paths.
+- For production/staging rollouts, prefer `COWORK_PERSISTENCE_REQUIRED=true` so Cowork startup fails fast if Postgres persistence is unavailable.
 
 ## 6) Testing Expectations by Change Type
 
