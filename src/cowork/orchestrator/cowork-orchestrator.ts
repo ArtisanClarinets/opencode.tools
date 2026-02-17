@@ -563,10 +563,27 @@ export class CoworkOrchestrator {
         startDispatcher: false,
       });
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const persistenceRequired = this.isPersistenceRequired();
+
+      if (persistenceRequired) {
+        throw new Error(`[CoworkOrchestrator] Persistent Cowork storage is required but unavailable: ${errorMessage}`);
+      }
+
       logger.warn('[CoworkOrchestrator] Running without persistent Cowork storage', {
-        error: error instanceof Error ? error.message : String(error),
+        error: errorMessage,
       });
     }
+  }
+
+
+  private isPersistenceRequired(): boolean {
+    const loadedConfig = CoworkConfigManager.getInstance().getCurrentConfig();
+    if (loadedConfig) {
+      return loadedConfig.persistence.required;
+    }
+
+    return process.env.COWORK_PERSISTENCE_REQUIRED === 'true';
   }
 
   private shouldBootstrapPersistence(): boolean {

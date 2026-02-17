@@ -18,6 +18,7 @@ export const CoworkConfigSchema = z.object({
   persistence: z
     .object({
       provider: z.literal('postgres').default('postgres'),
+      required: z.boolean().default(false),
       postgres: z
         .object({
           connectionString: z.string().min(1).default('postgres://localhost:5432/opencode'),
@@ -39,6 +40,7 @@ export const CoworkConfigSchema = z.object({
     })
     .default({
       provider: 'postgres',
+      required: false,
       postgres: {
         connectionString: 'postgres://localhost:5432/opencode',
         maxConnections: 20,

@@ -12,12 +12,22 @@ jest.mock('uuid', () => ({
   v4: jest.fn(() => 'test-uuid-123')
 }));
 
+const mockInitializeCoworkPersistence = jest.fn();
+jest.mock('../../../../src/cowork/persistence', () => {
+  const actual = jest.requireActual('../../../../src/cowork/persistence');
+  return {
+    ...actual,
+    initializeCoworkPersistence: (...args: unknown[]) => mockInitializeCoworkPersistence(...args),
+  };
+});
+
 describe('CoworkOrchestrator', () => {
   let orchestrator: CoworkOrchestrator;
   let commandRegistry: CommandRegistry;
   let agentRegistry: AgentRegistry;
 
   beforeEach(() => {
+    mockInitializeCoworkPersistence.mockReset();
     orchestrator = new CoworkOrchestrator();
     commandRegistry = CommandRegistry.getInstance();
     agentRegistry = AgentRegistry.getInstance();
@@ -155,6 +165,33 @@ describe('CoworkOrchestrator', () => {
       await expect(
         orchestrator.sendAgentMessage('unknown-a', 'unknown-b', 'handoff', { done: true }),
       ).rejects.toThrow('not registered in the agent registry');
+    });
+  });
+
+
+  describe('persistence bootstrapping', () => {
+    const originalEnv = process.env;
+
+    beforeEach(() => {
+      process.env = {
+        ...originalEnv,
+      };
+    });
+
+    afterEach(() => {
+      process.env = originalEnv;
+    });
+
+    it('fails fast when persistence is required but unavailable', async () => {
+      process.env.COWORK_PERSISTENCE_REQUIRED = 'true';
+      process.env.COWORK_PERSISTENCE_CONNECTION_STRING = 'postgres://required-but-unavailable';
+      mockInitializeCoworkPersistence.mockRejectedValueOnce(new Error('db unavailable'));
+
+      const requiredOrchestrator = new CoworkOrchestrator();
+
+      await expect(requiredOrchestrator.awaitPersistenceBootstrap()).rejects.toThrow(
+        'Persistent Cowork storage is required but unavailable',
+      );
     });
   });
 

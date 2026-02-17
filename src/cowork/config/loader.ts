@@ -246,6 +246,14 @@ export function buildCoworkConfigFromEnvironment(
     postgres: postgresConfig,
   };
 
+
+  maybeAssignBoolean(
+    config.persistence,
+    'required',
+    environment.COWORK_PERSISTENCE_REQUIRED,
+    'COWORK_PERSISTENCE_REQUIRED',
+  );
+
   const collaboration = {
     ...(config.collaboration ?? {}),
   };
