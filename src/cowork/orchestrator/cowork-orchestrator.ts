@@ -75,6 +75,7 @@ export interface TranscriptEntry {
  * Multi-agent coordination with deterministic result merging
  */
 export class CoworkOrchestrator {
+  private static instance: CoworkOrchestrator | null = null;
   private commandRegistry: CommandRegistry;
   private agentRegistry: AgentRegistry;
   private hookManager: HookManager;
@@ -120,6 +121,18 @@ export class CoworkOrchestrator {
     if (this.shouldBootstrapPersistence()) {
       this.persistenceBootstrapPromise = this.bootstrapCoworkPersistence();
     }
+  }
+
+  public static getInstance(options?: OrchestratorOptions): CoworkOrchestrator {
+    if (!CoworkOrchestrator.instance) {
+      CoworkOrchestrator.instance = new CoworkOrchestrator(options);
+    }
+
+    return CoworkOrchestrator.instance;
+  }
+
+  public static resetInstanceForTests(): void {
+    CoworkOrchestrator.instance = null;
   }
 
   public async awaitPersistenceBootstrap(): Promise<void> {
