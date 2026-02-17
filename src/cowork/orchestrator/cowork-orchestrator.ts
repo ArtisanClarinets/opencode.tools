@@ -64,6 +64,7 @@ export interface TranscriptEntry {
  * Multi-agent coordination with deterministic result merging
  */
 export class CoworkOrchestrator {
+  private static instance: CoworkOrchestrator | null = null;
   private commandRegistry: CommandRegistry;
   private agentRegistry: AgentRegistry;
   private hookManager: HookManager;
@@ -92,6 +93,24 @@ export class CoworkOrchestrator {
       maxConcurrent: options?.maxConcurrent || 5,
       defaultTimeout: options?.defaultTimeout || 60000
     };
+  }
+
+  /**
+   * Get shared orchestrator instance for runtime surfaces (CLI/TUI/foundry).
+   */
+  public static getInstance(options?: OrchestratorOptions): CoworkOrchestrator {
+    if (!CoworkOrchestrator.instance) {
+      CoworkOrchestrator.instance = new CoworkOrchestrator(options);
+    }
+
+    return CoworkOrchestrator.instance;
+  }
+
+  /**
+   * Reset singleton instance (test-only helper).
+   */
+  public static resetInstanceForTests(): void {
+    CoworkOrchestrator.instance = null;
   }
 
   /**
