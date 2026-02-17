@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChatPanel } from '../components/chat';
 
-export function ChatScreen(): React.ReactElement {
+export function ConversationScreen(): React.ReactElement {
   return React.createElement(ChatPanel);
 }
