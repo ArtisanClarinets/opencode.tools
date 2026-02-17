@@ -7,7 +7,7 @@ import { DashboardScreen } from './screens/DashboardScreen';
 import { ProjectScreen } from './screens/ProjectScreen';
 import { AgentHubScreen } from './screens/AgentHubScreen';
 import { ExecutionScreen } from './screens/ExecutionScreen';
-import { ChatScreen } from './screens/ChatScreen';
+import { ConversationScreen } from './screens/ConversationScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { WorkspacesScreen } from './screens/WorkspacesScreen';
 import { WorkspaceDetailScreen } from './screens/WorkspaceDetailScreen';
@@ -43,7 +43,7 @@ export function App(): React.ReactElement {
     project: React.createElement(ProjectScreen),
     agentHub: React.createElement(AgentHubScreen),
     execution: React.createElement(ExecutionScreen),
-    chat: React.createElement(ChatScreen),
+    chat: React.createElement(ConversationScreen),
     settings: React.createElement(SettingsScreen),
     workspaces: React.createElement(WorkspacesScreen),
     workspace: React.createElement(WorkspaceDetailScreen),

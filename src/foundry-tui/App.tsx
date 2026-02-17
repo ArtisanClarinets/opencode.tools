@@ -6,6 +6,7 @@ import { ProjectScreen } from './screens/ProjectScreen';
 import { AgentHubScreen } from './screens/AgentHubScreen';
 import { ExecutionScreen } from './screens/ExecutionScreen';
 import { ConversationScreen } from './screens/ConversationScreen';
+import { SettingsScreen } from './screens/SettingsScreen';
 import { FoundryScreen, SCREEN_ORDER } from './types';
 import { FOUNDRY_COLORS, FOUNDRY_THEME } from './theme';
 
@@ -15,6 +16,7 @@ const SCREEN_LABELS: Record<FoundryScreen, string> = {
   agentHub: 'Agent Hub',
   execution: 'Execution',
   conversation: 'Conversations',
+  settings: 'Settings',
 };
 
 function FoundryAppMain(): JSX.Element {
@@ -35,7 +37,7 @@ function FoundryAppMain(): JSX.Element {
       return;
     }
 
-    if (input >= '1' && input <= '5') {
+    if (input >= '1' && input <= '6') {
       const target = SCREEN_ORDER[Number(input) - 1];
       if (target) {
         dispatch({ type: 'SET_SCREEN', screen: target });
@@ -80,10 +82,11 @@ function FoundryAppMain(): JSX.Element {
         {state.screen === 'agentHub' ? <AgentHubScreen /> : null}
         {state.screen === 'execution' ? <ExecutionScreen /> : null}
         {state.screen === 'conversation' ? <ConversationScreen /> : null}
+        {state.screen === 'settings' ? <SettingsScreen /> : null}
       </Box>
 
       <Box marginTop={1}>
-        <Text color={FOUNDRY_COLORS.muted}>Shortcuts: 1-5 screens | Tab/Arrows cycle | Ctrl+S submit intake | Ctrl+E export placeholder</Text>
+        <Text color={FOUNDRY_COLORS.muted}>Shortcuts: 1-6 screens | Tab/Arrows cycle | Ctrl+S submit intake | Ctrl+E export placeholder</Text>
       </Box>
     </Box>
   );

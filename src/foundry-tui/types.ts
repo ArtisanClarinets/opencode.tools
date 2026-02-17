@@ -1,4 +1,4 @@
-export type FoundryScreen = 'dashboard' | 'project' | 'agentHub' | 'execution' | 'conversation';
+export type FoundryScreen = 'dashboard' | 'project' | 'agentHub' | 'execution' | 'conversation' | 'settings';
 
 export type FoundryPhase = 'intake' | 'planning' | 'delegation' | 'execution' | 'quality' | 'release';
 
@@ -110,4 +110,5 @@ export const SCREEN_ORDER: readonly FoundryScreen[] = [
   'agentHub',
   'execution',
   'conversation',
+  'settings',
 ];
