@@ -9,6 +9,7 @@ import { useStore } from '../../store/store';
 import { COLORS, TEXT_STYLES, getRoleColor } from '../../theme';
 import type { Message } from '../../types';
 import { Panel, Badge, Timestamp, Spinner } from '../../components/common';
+import { TuiRuntime } from '../../runtime/tui-runtime';
 
 // =============================================================================
 // MessageList Component
@@ -190,7 +191,17 @@ export function ChatPanel(): React.ReactElement {
   const { messages, isTyping, typingAgentId, showMentions, mentionQuery } = state.chat;
 
   const handleSendMessage = (content: string) => {
-    dispatch({ type: 'CHAT_SEND_MESSAGE', content });
+    // Clear input in store
+    dispatch({ type: 'CHAT_SET_INPUT', value: '' });
+
+    // Send via bridge to trigger agent interactions
+    const workspaceId = state.activeProjectId;
+    const threadId = state.chat.activeThreadId;
+
+    void TuiRuntime.getInstance().bridge.chat.sendUserMessage(content, {
+      workspaceId,
+      threadId,
+    });
   };
 
   const activeAgent = typingAgentId 

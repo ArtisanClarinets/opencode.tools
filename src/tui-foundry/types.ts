@@ -437,6 +437,7 @@ export const FoundryStateSchema = z.object({
   
   // Settings
   llmConfig: LLMConfigSchema,
+  providers: z.record(z.string(), LLMConfigSchema),
   settings: z.object({
     showNotifications: z.boolean(),
     autoScroll: z.boolean(),
@@ -516,6 +517,7 @@ export type FoundryAction =
   
   // Settings
   | { type: 'UPDATE_LLM_CONFIG'; config: Partial<LLMConfig> }
+  | { type: 'UPDATE_PROVIDER_CONFIG'; provider: string; config: Partial<LLMConfig> }
   | { type: 'UPDATE_SETTINGS'; settings: Partial<FoundryState['settings']> }
   
   // UI
