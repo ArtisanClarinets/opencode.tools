@@ -339,7 +339,7 @@ export class ResearchAgent {
     try {
       // Use configured provider (default openai)
       // Note: In real app, provider should be injected via constructor
-      const llm = createProvider(this.provider as any);
+      const llm = createProvider(this.provider as ProviderType);
 
       const context = companyData.map(d => d.content).join('\n\n').substring(0, 4000);
 

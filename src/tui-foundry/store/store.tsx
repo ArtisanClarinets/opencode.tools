@@ -632,7 +632,7 @@ function reducer(state: FoundryState, action: FoundryAction): FoundryState {
           [action.provider]: {
             ...(state.providers[action.provider] || DEFAULT_LLM_CONFIG),
             ...action.config,
-            provider: action.provider as any // Ensure provider type matches
+            provider: action.provider as LLMProvider // Ensure provider type matches
           }
         }
       };
