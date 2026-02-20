@@ -6,6 +6,8 @@
 import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { useStore } from '../../store/store';
+import commandRouter from '../../commands/command-router';
+import { getCoworkIntegration } from '../../cowork/integration';
 import { COLORS, TEXT_STYLES, getRoleColor } from '../../theme';
 import type { Message } from '../../types';
 import { Panel, Badge, Timestamp, Spinner } from '../../components/common';
@@ -190,6 +192,22 @@ export function ChatPanel(): React.ReactElement {
   const { messages, isTyping, typingAgentId, showMentions, mentionQuery } = state.chat;
 
   const handleSendMessage = (content: string) => {
+    // If input starts with '/', route to command router
+    if (content.trim().startsWith('/')) {
+      void (async () => {
+        const runtime = getCoworkIntegration();
+        const context = { state, dispatch, runtime: { coworkController: runtime?.adapter ? runtime : undefined } };
+        const result = await commandRouter.handle(content, context);
+        // Emit system message with result
+        dispatch({ type: 'CHAT_RECEIVE_MESSAGE', message: { id: `cmd-${Date.now()}`, role: 'system', content: result, timestamp: Date.now() } });
+      })();
+      dispatch({ type: 'CHAT_SEND_MESSAGE', content });
+      return;
+    }
+
+    // Normal chat message, send via ChatBridge through integration
+    const integration = getCoworkIntegration();
+    void integration.chatBridge.sendUserMessage(content, { threadId: state.chat.activeThreadId, autoSpawnAgents: true });
     dispatch({ type: 'CHAT_SEND_MESSAGE', content });
   };
 

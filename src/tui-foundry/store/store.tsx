@@ -20,6 +20,7 @@ import {
   PHASE_LABELS,
 } from '../types';
 import { useEventBus } from '../hooks/useEventBus';
+import { setupCoworkIntegration } from '../cowork/integration';
 import { TuiRuntime } from '../runtime/tui-runtime';
 
 // =============================================================================
@@ -673,11 +674,24 @@ const StoreContext = React.createContext<StoreContextValue | null>(null);
 export function StoreProvider({ children }: { children: React.ReactNode }): JSX.Element {
   const [state, dispatch] = React.useReducer(reducer, initialState);
 
-  // Connect to EventBus
-  useEventBus(dispatch);
-
+  // Initialize runtime and Cowork integration once
   React.useEffect(() => {
-    void TuiRuntime.getInstance().initialize(dispatch);
+    void (async () => {
+      try {
+        // Initialize TUI runtime
+        await TuiRuntime.getInstance().initialize((_action) => {
+          // noop - dispatch will be wired by the provider
+        });
+
+        // Setup Cowork integration (single pipeline: adapter + chatBridge)
+        // The integration will initialize and wire the chat bridge to call dispatch.
+        await setupCoworkIntegration(dispatch, { debug: false, adapter: {}, chatBridge: {} });
+      } catch (err) {
+        // Fail fast but don't crash provider
+        // tslint:disable-next-line:no-console
+        console.error('Failed to initialize runtime/integration', err);
+      }
+    })();
   }, [dispatch]);
 
   const value = React.useMemo(

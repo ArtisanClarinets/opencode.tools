@@ -300,6 +300,46 @@ export class CoworkAdapter {
 
     // Feed events (catch-all)
     this.subscribe('*', this.handleFeedEvent.bind(this));
+
+    // Subscribe to low-level agent stream events emitted by Cowork
+    // agent:stream carries partial streaming updates (thought/tool/result)
+    this.subscribe('agent:stream', this.handleAgentStream.bind(this));
+  }
+
+  private handleAgentStream(payload: unknown, envelope?: EventEnvelope): void {
+    const data = payload as Record<string, unknown> | null;
+    if (!data) return;
+
+    const agentId = String(data.agentId || data.agent || 'unknown');
+    const streamType = String(data.type || data.streamType || 'output');
+    const content = data.content || data.message || data.output || '';
+
+    // Normalize into execution log entry
+    const log = {
+      id: String(data.id || `stream-${Date.now()}-${Math.random().toString(16).slice(2,8)}`),
+      level: (String(data.level || 'info') as 'debug' | 'info' | 'warn' | 'error' | 'fatal'),
+      message: typeof content === 'string' ? content : JSON.stringify(content),
+      source: `agent:${agentId}`,
+      timestamp: Date.now(),
+      metadata: (data.metadata && typeof data.metadata === 'object' ? data.metadata as Record<string, unknown> : {}),
+    };
+
+    // Push into execution stream identified by agentId
+    this.dispatchAction({ type: 'ADD_EXECUTION_LOG', streamId: `agent-${agentId}`, log });
+
+    // Also add a feed entry for observability
+    this.dispatchAction({
+      type: 'ADD_FEED_ENTRY',
+      entry: {
+        id: `agent-stream-${log.id}`,
+        type: 'agent:progress',
+        event: 'agent:stream',
+        actor: agentId,
+        message: log.message,
+        metadata: { streamType },
+        timestamp: log.timestamp,
+      },
+    });
   }
 
   private subscribe(event: string, handler: (payload: unknown, envelope?: EventEnvelope) => void): void {

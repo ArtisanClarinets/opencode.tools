@@ -153,6 +153,8 @@ export class ChatBridge {
   public initialize(dispatch: FoundryDispatch): void {
     this.dispatch = dispatch;
     this.log('info', 'ChatBridge initialized');
+    // Mirror to store on initialization to avoid duplicate EventBus->store pipelines
+    // ChatBridge will be the primary route for chat messages into the store.
   }
 
   /**
@@ -547,33 +549,60 @@ export class ChatBridge {
   // ===========================================================================
 
   private setupEventListeners(): void {
-    // Listen for agent messages
+    // Listen for agent messages emitted by Cowork orchestrator
     const unsubAgent = this.eventBus.subscribe('chat:message:agent', (payload) => {
-      const data = payload as Record<string, unknown>;
-      if (data.content && data.agentId) {
-        void this.sendAgentMessage(
-          String(data.agentId),
-          String(data.content),
-          {
-            threadId: data.threadId as string | undefined,
-            metadata: data.metadata as Record<string, unknown> | undefined,
-          }
-        );
-      }
+      const data = payload as Record<string, unknown> | null;
+      if (!data) return;
+
+      const agentId = String(data.agentId || data.agent || 'unknown');
+      const content = String(data.content || data.message || '');
+      const threadId = data.threadId as string | undefined;
+
+      void this.sendAgentMessage(agentId, content, { threadId, metadata: data.metadata as Record<string, unknown> | undefined });
     });
     this.unsubscribers.push(unsubAgent);
 
     // Listen for collaboration responses
     const unsubCollab = this.eventBus.subscribe('collaboration:response', (payload) => {
-      const data = payload as Record<string, unknown>;
+      const data = payload as Record<string, unknown> | null;
+      if (!data) return;
       const requestId = String(data.requestId || '');
       const callback = this.pendingResponses.get(requestId);
       if (callback) {
-        // Resolve the pending promise
+        callback({ message: { id: requestId, role: 'system', content: String(data.message || ''), timestamp: Date.now() } });
         this.pendingResponses.delete(requestId);
       }
     });
     this.unsubscribers.push(unsubCollab);
+
+    // Subscribe to agent stream events and forward to telemetry/threads
+    const unsubStream = this.eventBus.subscribe('agent:stream', (payload, envelope) => {
+      const data = payload as Record<string, unknown> | null;
+      if (!data) return;
+
+      const agentId = String(data.agentId || data.agent || 'unknown');
+      const type = String(data.type || data.streamType || 'output');
+      const content = data.content || data.message || data.output || '';
+
+      // Add as system message to telemetry thread and optionally to agent thread
+      const telemetryMessage: ChatMessage = {
+        id: this.generateId(),
+        role: 'system',
+        content: `[${agentId}][${type}] ${typeof content === 'string' ? content : JSON.stringify(content)}`,
+        timestamp: Date.now(),
+        agentId,
+        metadata: { stream: true, type, envelope: envelope?.event },
+      };
+
+      // dispatch as system message to store
+      this.dispatchToStore(telemetryMessage);
+
+      // Mirror condensed entry into agent thread
+      const agentThreadId = `agent:${agentId}`;
+      const collapsedMsg: ChatMessage = { ...telemetryMessage, threadId: agentThreadId };
+      this.dispatchToStore(collapsedMsg);
+    });
+    this.unsubscribers.push(unsubStream);
   }
 
   private initializeAgentRegistry(): void {

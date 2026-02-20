@@ -5,7 +5,7 @@
 import React from 'react';
 import { render } from 'ink-testing-library';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DelegationPanel, type DelegationRequest } from '../../../../src/tui-foundry/components/agents/DelegationPanel';
+import { DelegationPanel, type DelegationRequest } from '../../../../../src/tui-foundry/components/agents/DelegationPanel';
 
 describe('DelegationPanel', () => {
   const mockOnDelegate = vi.fn();

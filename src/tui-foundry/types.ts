@@ -345,6 +345,14 @@ export const ExecutionStreamSchema = z.object({
 });
 export type ExecutionStream = z.infer<typeof ExecutionStreamSchema>;
 
+// Telemetry entry shape for UI convenience
+export interface TelemetryEntry {
+  id: string;
+  message: string;
+  source?: string;
+  timestamp: number;
+}
+
 // =============================================================================
 // LLM Provider Types
 // =============================================================================
