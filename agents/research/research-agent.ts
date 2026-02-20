@@ -156,6 +156,14 @@ export class ResearchAgent {
 
     logger.info('Research Agent completed', { runId, sourcesCount: sources.length });
 
+    // Publish findings to chat
+    EventBus.getInstance().publish('chat:message:agent', {
+      agentId: 'research-agent',
+      content: ,
+      role: 'agent',
+      timestamp: Date.now()
+    });
+
     return {
       dossier,
       sources,
