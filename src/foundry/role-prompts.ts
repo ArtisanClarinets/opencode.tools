@@ -11,6 +11,7 @@ export type FoundryRoleId =
   | 'SRE_DEVOPS'
   | 'UX_DESIGNER'
   | 'DATABASE_ARCHITECT'
+  | 'PROMPT_ENGINEER'
   | string;
 
 export interface RolePromptTemplate {
@@ -44,6 +45,11 @@ const DEFAULT_CONSTRAINTS: string[] = [
   'Deliverables must be production-ready and project-specific; avoid generic placeholder content.',
   'Only include source code, documentation, and tests in final deliverables; exclude generated or binary artifacts.',
   'When using templates as scaffolding, fully customize content with domain-specific decisions and acceptance criteria.',
+  // Security and governance constraints
+  'NO TODO comments in production code - all code must be complete and functional.',
+  'NO truncation of code or output - provide complete implementations.',
+  'SECURITY FIRST: all code must follow secure coding practices.',
+  'Agents ONLY communicate via CTO - no direct agent-to-agent communication except through CTO.',
 ];
 
 const ROLE_PROMPT_TEMPLATES: Record<string, RolePromptTemplate> = {
@@ -184,6 +190,30 @@ const ROLE_PROMPT_TEMPLATES: Record<string, RolePromptTemplate> = {
     collaborationPoints: ['Backend Engineer', 'Security Lead', 'SRE/DevOps'],
     outputExpectations: ['Data model and migration notes', 'Index/query recommendations', 'Operational data risk notes'],
     qualityCriteria: ['Schema changes are safe', 'Performance assumptions are stated', 'Data controls are enforceable'],
+  },
+  PROMPT_ENGINEER: {
+    roleId: 'PROMPT_ENGINEER',
+    roleName: 'Prompt Engineer',
+    roleDescription: 'Generates production-ready, repo-aware prompts for autonomous agent execution. Ensures no TODOs, no truncation, and complete implementations.',
+    responsibilities: [
+      'Generate granular, context-aware prompts for specific coding tasks.',
+      'Ensure prompts contain all necessary context, file paths, and acceptance criteria.',
+      'Review outputs for completeness, security, and production readiness.',
+      'Enforce no-TODO, no-truncation, security-first policies.',
+    ],
+    collaborationPoints: ['CTO Orchestrator'],  // Only communicates with CTO
+    outputExpectations: [
+      'Complete, runnable code without placeholders.',
+      'Full context prompts with file paths and line numbers.',
+      'Security-reviewed implementation notes.',
+      'Test coverage specifications.',
+    ],
+    qualityCriteria: [
+      'No TODO comments in output',
+      'No truncated code blocks',
+      'Security-first implementation',
+      'Complete context for autonomous execution',
+    ],
   },
 };
 

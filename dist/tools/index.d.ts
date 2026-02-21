@@ -13,4 +13,6 @@ export { generateProposal, peerReview as proposalPeerReview, packageExport } fro
 export { generateRunbook, generateNginxConfig, runSmoketest, packageHandoff } from './delivery';
 export { verify as ciVerify } from './ci';
 export { generateDocument, generateDOCX, generateXLSX, generatePPTX, generateCSV, generateMarkdown, generateQuickDocument } from './documents';
+export { foundryOrchestrate, foundryStatus, foundryHealth, foundryCreateRequest } from './foundry';
+export { coworkList, coworkRun, coworkSpawn, coworkHealth, coworkPlugins, coworkAgents } from './cowork';
 //# sourceMappingURL=index.d.ts.map

@@ -57,14 +57,23 @@ export function createFoundryStateMachineDefinition(): StateMachineDefinition {
       }),
 
       phase_4_hardening: createState('Quality hardening and validation', {
-        APPROVE_PHASE: { target: 'phase_5_release_readiness' },
+        START_PROMPT_ENGINEERING: { target: 'phase_4a_prompt_engineering' },
+        RUN_GATES: { target: 'gate_evaluation' },
+        PAUSE: { target: 'paused' },
+        ABORT: { target: 'aborted' },
+      }),
+
+      // New: Prompt Engineering phase for clean, production-ready code
+      phase_4a_prompt_engineering: createState('Prompt engineering and code cleanup', {
+        COMPLETE_PROMPT_ENGINEERING: { target: 'phase_5_release_readiness' },
+        REQUEST_CHANGES: { target: 'feature_implementation' },
         RUN_GATES: { target: 'gate_evaluation' },
         PAUSE: { target: 'paused' },
         ABORT: { target: 'aborted' },
       }),
 
       phase_5_release_readiness: createState('Release readiness checks', {
-        REQUEST_RELEASE: { target: 'release_review' },
+        REQUEST_RELEASE: { target: 'cto_review' },
         RUN_GATES: { target: 'gate_evaluation' },
         PAUSE: { target: 'paused' },
         ABORT: { target: 'aborted' },
@@ -114,8 +123,29 @@ export function createFoundryStateMachineDefinition(): StateMachineDefinition {
         ABORT: { target: 'aborted' },
       }),
 
+      // New: CTO Review - the final approval authority
+      cto_review: createState('CTO final review and approval', {
+        CTO_APPROVE: { target: 'released' },
+        CTO_REJECT: { target: 'cto_rejection_loop' },
+        REQUEST_CHANGES: { target: 'remediation' },
+        ABORT: { target: 'aborted' },
+      }),
+
+      // New: CTO rejection loop - back to implementation with feedback
+      cto_rejection_loop: createState('CTO requested changes - back to implementation', {
+        RESUME_IMPLEMENTATION: { target: 'feature_implementation' },
+        ESCALATE: { target: 'escalation' },
+        ABORT: { target: 'aborted' },
+      }),
+
+      // New: Escalation for blocked situations
+      escalation: createState('Escalation and resolution', {
+        RESOLVE: { target: 'feature_implementation' },
+        ABORT: { target: 'aborted' },
+      }),
+
       release_review: createState('Final release review', {
-        APPROVE_RELEASE: { target: 'released' },
+        APPROVE_RELEASE: { target: 'cto_review' },
         REJECT_RELEASE: { target: 'remediation' },
         ABORT: { target: 'aborted' },
       }),

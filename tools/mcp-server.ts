@@ -3,7 +3,7 @@
  * OpenCode Tools MCP Server - Complete Tool Access
  * 
  * This MCP server exposes ALL tools available in the opencode-tools package
- * without security restrictions (local use only).
+ * including Foundry orchestration and Cowork multi-agent runtime.
  * 
  * Tool names use underscores instead of dots to comply with MCP naming requirements.
  */
@@ -30,6 +30,10 @@ import { generateProposal, peerReview as proposalPeerReview, packageExport } fro
 import { generateRunbook, generateNginxConfig, runSmoketest, packageHandoff } from "./delivery.js";
 import { verify as ciVerify } from "./ci.js";
 import { generateDOCX, generateXLSX, generatePPTX, generateCSV, generateMarkdown } from "./documents.js";
+
+// Import Foundry and Cowork tools
+import { foundryOrchestrate, foundryStatus, foundryHealth, foundryCreateRequest } from "./foundry.js";
+import { coworkList, coworkRun, coworkSpawn, coworkHealth, coworkPlugins, coworkAgents } from "./cowork.js";
 
 // Import tool response helpers
 import { createToolResponseEnvelope, normalizeToolResponseEnvelope } from "../src/runtime/tool-response";
@@ -552,6 +556,107 @@ const allTools = [
       required: ["projectPath"],
     },
   },
+  // ============================================================
+  // Foundry Orchestration Tools
+  // ============================================================
+  {
+    name: "foundry_orchestrate",
+    description: "Execute a Foundry orchestration workflow for autonomous development with CTO-driven satisfaction loop",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projectName: { type: "string", description: "Project name" },
+        description: { type: "string", description: "Project description/intent" },
+        repoRoot: { type: "string", description: "Repository root path" },
+        maxIterations: { type: "number", description: "Maximum iterations (default: 2)" },
+        runQualityGates: { type: "boolean", description: "Run quality gates (default: true)" },
+        enforceDeliverableScope: { type: "boolean", description: "Enforce deliverable scope (default: true)" },
+        industry: { type: "string", description: "Industry sector" },
+        company: { type: "string", description: "Company name" },
+      },
+      required: ["projectName", "repoRoot"],
+    },
+  },
+  {
+    name: "foundry_status",
+    description: "Get Foundry status and bridge health",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projectId: { type: "string", description: "Optional project ID" },
+      },
+    },
+  },
+  {
+    name: "foundry_health",
+    description: "Check Foundry system health and component status",
+    inputSchema: {
+      type: "object",
+      properties: {},
+    },
+  },
+  // ============================================================
+  // Cowork Multi-Agent Runtime Tools
+  // ============================================================
+  {
+    name: "cowork_list",
+    description: "List Cowork resources (commands, agents, plugins)",
+    inputSchema: {
+      type: "object",
+      properties: {
+        type: { type: "string", enum: ["commands", "agents", "plugins", "all"], description: "Type of resources to list (default: all)" },
+      },
+    },
+  },
+  {
+    name: "cowork_run",
+    description: "Run a Cowork command",
+    inputSchema: {
+      type: "object",
+      properties: {
+        commandId: { type: "string", description: "Command ID to execute" },
+        args: { type: "array", items: { type: "string" }, description: "Command arguments" },
+      },
+      required: ["commandId"],
+    },
+  },
+  {
+    name: "cowork_spawn",
+    description: "Spawn a Cowork agent for task execution",
+    inputSchema: {
+      type: "object",
+      properties: {
+        agentId: { type: "string", description: "Agent ID to spawn" },
+        task: { type: "string", description: "Task prompt for the agent" },
+        context: { type: "object", description: "Additional context for the agent" },
+      },
+      required: ["agentId", "task"],
+    },
+  },
+  {
+    name: "cowork_health",
+    description: "Check Cowork system health and component status",
+    inputSchema: {
+      type: "object",
+      properties: {},
+    },
+  },
+  {
+    name: "cowork_plugins",
+    description: "Discover available Cowork plugins",
+    inputSchema: {
+      type: "object",
+      properties: {},
+    },
+  },
+  {
+    name: "cowork_agents",
+    description: "Get detailed list of all Cowork agents",
+    inputSchema: {
+      type: "object",
+      properties: {},
+    },
+  },
 ];
 
 /**
@@ -749,6 +854,59 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         break;
       case "ci_verify":
         result = await ciVerify(args?.projectPath as string);
+        break;
+      // ============================================================
+      // Foundry Handlers
+      // ============================================================
+      case "foundry_orchestrate":
+        result = await foundryOrchestrate({
+          projectName: args?.projectName as string,
+          description: args?.description as string,
+          repoRoot: args?.repoRoot as string,
+          maxIterations: args?.maxIterations as number,
+          runQualityGates: args?.runQualityGates as boolean,
+          enforceDeliverableScope: args?.enforceDeliverableScope as boolean,
+          industry: args?.industry as string,
+          company: args?.company as string,
+        });
+        break;
+      case "foundry_status":
+        result = await foundryStatus({
+          projectId: args?.projectId as string,
+        });
+        break;
+      case "foundry_health":
+        result = await foundryHealth({});
+        break;
+      // ============================================================
+      // Cowork Handlers
+      // ============================================================
+      case "cowork_list":
+        result = await coworkList({
+          type: args?.type as "commands" | "agents" | "plugins" | "all",
+        });
+        break;
+      case "cowork_run":
+        result = await coworkRun({
+          commandId: args?.commandId as string,
+          args: args?.args as string[],
+        });
+        break;
+      case "cowork_spawn":
+        result = await coworkSpawn({
+          agentId: args?.agentId as string,
+          task: args?.task as string,
+          context: args?.context as Record<string, unknown>,
+        });
+        break;
+      case "cowork_health":
+        result = await coworkHealth({});
+        break;
+      case "cowork_plugins":
+        result = await coworkPlugins();
+        break;
+      case "cowork_agents":
+        result = await coworkAgents();
         break;
       default:
         throw new Error(`Tool not found: ${name}`);

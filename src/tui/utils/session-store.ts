@@ -1,9 +1,21 @@
+/**
+ * Session Store
+ *
+ * Persistent storage for TUI sessions.
+ * Uses XDG data directory to avoid conflicts with OpenCode tool definitions.
+ * 
+ * Storage location: ~/.local/share/opencode/opencode-tools/sessions/
+ * Index file: ~/.local/share/opencode/opencode-tools/session-index.json
+ */
+
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { Session } from '../types';
 
-const DATA_DIR = path.join(os.homedir(), '.config', 'opencode', 'tools');
+// XDG data directory for session storage (NOT ~/.config/opencode/tools/)
+const XDG_DATA_HOME = process.env.XDG_DATA_HOME || path.join(os.homedir(), '.local', 'share');
+const DATA_DIR = path.join(XDG_DATA_HOME, 'opencode', 'opencode-tools');
 const SESSIONS_DIR = path.join(DATA_DIR, 'sessions');
 const INDEX_FILE = path.join(DATA_DIR, 'session-index.json');
 

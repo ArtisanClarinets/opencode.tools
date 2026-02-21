@@ -27,6 +27,7 @@ const ROLE_TO_AGENT: Record<string, string> = {
   SRE_DEVOPS: 'performance',
   UX_DESIGNER: 'implementer',
   DATABASE_ARCHITECT: 'architect',
+  PROMPT_ENGINEER: 'prompt-engineer',
 };
 
 /**

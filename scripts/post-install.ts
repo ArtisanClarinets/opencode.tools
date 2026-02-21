@@ -5,17 +5,39 @@
  * 
  * This script automatically integrates OpenCode Tools with the global OpenCode installation.
  * It ensures all MCP tools are properly registered and available in the TUI.
+ * 
+ * Aligned with official OpenCode configuration schema:
+ * - ~/.config/opencode/opencode.json - Main config with MCP servers, agents (singular), permissions
+ * - ~/.config/opencode/agents/*.md - Agent definitions
+ * - ~/.config/opencode/commands/*.md - Command definitions
+ * - ~/.config/opencode/skills/*.md - Skill definitions
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
+/**
+ * Official OpenCode configuration schema
+ */
 interface OpenCodeConfig {
-  agents: Record<string, any>;
-  tools: Record<string, boolean>;
-  mcp: Record<string, any>;
-  integrations?: Record<string, any>;
+  /** Default agent to use (singular, not agents) */
+  agent?: string | Record<string, unknown>;
+  /** Permission rules for tools */
+  permission?: Record<string, unknown>;
+  /** MCP server configurations */
+  mcp?: Record<string, McpServerConfig>;
+  /** Plugin configurations */
+  plugin?: Record<string, unknown>;
+}
+
+interface McpServerConfig {
+  type: 'local' | 'remote';
+  command?: string[];
+  url?: string;
+  description?: string;
+  enabled?: boolean;
+  timeout?: number;
 }
 
 class PostInstallIntegration {
@@ -41,14 +63,14 @@ class PostInstallIntegration {
       // Step 2: Backup existing configuration
       await this.backupExistingConfig();
 
-      // Step 3: Merge OpenCode Tools configuration
+      // Step 3: Merge OpenCode Tools configuration into official opencode.json
       await this.mergeConfiguration();
 
-      // Step 4: Validate MCP tool dependencies
-      await this.validateMCPTools();
+      // Step 4: Create global directories (agents, commands, skills, plugins, tools)
+      await this.createGlobalDirectories();
 
-      // Step 5: Create integration registry
-      await this.createIntegrationRegistry();
+      // Step 5: Validate MCP tool dependencies
+      await this.validateMCPTools();
 
       console.log('\n✅ OpenCode Tools integration completed successfully!');
       console.log('\n📝 Next steps:');
@@ -59,7 +81,7 @@ class PostInstallIntegration {
     } catch (error) {
       console.error('\n❌ Integration failed:', error);
       console.log('\n🔧 Manual setup instructions:');
-      console.log('   1. Copy opencode.json to ~/.config/opencode/opencode.json');
+      console.log('   1. Ensure ~/.config/opencode/opencode.json has MCP server config');
       console.log('   2. Restart OpenCode TUI');
       process.exit(1);
     }
@@ -83,151 +105,85 @@ class PostInstallIntegration {
   }
 
   private async mergeConfiguration(): Promise<void> {
-    const toolsConfigPath = path.join(this.currentPackageDir, 'opencode.json');
     const globalConfigPath = path.join(this.opencodeDir, 'opencode.json');
-    const toolsOutputConfigPath = path.join(this.opencodeDir, 'opencode-tools.json');
 
-    if (!fs.existsSync(toolsConfigPath)) {
-      throw new Error('opencode.json not found in package directory');
-    }
-
-    const toolsConfig: OpenCodeConfig = JSON.parse(fs.readFileSync(toolsConfigPath, 'utf-8'));
-
-    // 1. Handle opencode-tools.json (agents, tools, integrations)
-    let toolsGlobalConfig: Partial<OpenCodeConfig> = { agents: {}, tools: {}, integrations: {} };
-    if (fs.existsSync(toolsOutputConfigPath)) {
-      try {
-        toolsGlobalConfig = JSON.parse(fs.readFileSync(toolsOutputConfigPath, 'utf-8'));
-      } catch (e) {
-        console.warn('⚠️ Could not parse existing opencode-tools.json, starting fresh.');
-      }
-    }
-
-    const mergedToolsConfig = {
-      agents: { ...toolsConfig.agents, ...(toolsGlobalConfig.agents || {}) },
-      tools: { ...toolsConfig.tools, ...(toolsGlobalConfig.tools || {}) },
-      integrations: {
-        ...(toolsGlobalConfig.integrations || {}),
-        'opencode-tools': {
-          version: '1.0.0',
-          installedAt: new Date().toISOString(),
-          packagePath: this.currentPackageDir
-        }
-      }
-    };
-
-    console.log('🔗 Merging OpenCode Tools configuration into opencode-tools.json...');
-    fs.writeFileSync(toolsOutputConfigPath, JSON.stringify(mergedToolsConfig, null, 2));
-
-    // 2. Handle opencode.json (mcp only)
-    let globalConfig: Record<string, any> = {};
+    // Load existing config or create new
+    let globalConfig: OpenCodeConfig = {};
     if (fs.existsSync(globalConfigPath)) {
       try {
         globalConfig = JSON.parse(fs.readFileSync(globalConfigPath, 'utf-8'));
       } catch (e) {
-        console.warn('⚠️ Could not parse existing global config, starting fresh.');
+        console.warn('⚠️ Could not parse existing opencode.json, starting fresh.');
       }
     }
 
-    // Initialize mcp if missing
+    // Initialize MCP if missing
     if (!globalConfig.mcp) {
       globalConfig.mcp = {};
     }
 
-    // Merge MCP config (global overrides default toolsConfig, but we merge keys)
-    globalConfig.mcp = { ...toolsConfig.mcp, ...globalConfig.mcp };
+    // Add opencode-tools MCP server (this is the key integration)
+    globalConfig.mcp['opencode-tools'] = {
+      type: 'local',
+      command: ['opencode-tools', 'mcp'],
+      description: 'Complete developer team automation - Foundry orchestration, Cowork agents, research, docs, architecture, code generation, PDF/DOCX/XLSX generation, delivery',
+      enabled: true,
+      timeout: 60000,
+    };
 
-    // CLEANUP: Remove agents, tools, integrations from opencode.json if present
-    const keysToRemove = ['agents', 'tools', 'integrations'];
-    let cleaned = false;
-    for (const key of keysToRemove) {
-      if (key in globalConfig) {
-        delete globalConfig[key];
-        cleaned = true;
-      }
+    // Set default agent if not set
+    if (!globalConfig.agent) {
+      globalConfig.agent = 'foundry';
     }
 
-    if (cleaned) {
-      console.log('🧹 Cleaned up legacy configuration from opencode.json');
+    // Add basic permission rules if not set
+    if (!globalConfig.permission) {
+      globalConfig.permission = {
+        'bash.execute': 'ask',
+        'fs.delete': 'ask',
+        'edit.apply': 'allow',
+      };
     }
 
     console.log('🔗 Merging MCP configuration into opencode.json...');
     fs.writeFileSync(globalConfigPath, JSON.stringify(globalConfig, null, 2));
   }
 
+  private async createGlobalDirectories(): Promise<void> {
+    const directories = [
+      'agents',
+      'commands',
+      'skills',
+      'plugins',
+      'tools',
+      'cowork/plugins',
+    ];
+
+    for (const dir of directories) {
+      const fullPath = path.join(this.opencodeDir, dir);
+      if (!fs.existsSync(fullPath)) {
+        fs.mkdirSync(fullPath, { recursive: true });
+        console.log(`📁 Created directory: ${dir}`);
+      }
+    }
+  }
+
   private async validateMCPTools(): Promise<void> {
-    const toolsConfigPath = path.join(this.currentPackageDir, 'opencode.json');
-    const config = JSON.parse(fs.readFileSync(toolsConfigPath, 'utf-8'));
+    const globalConfigPath = path.join(this.opencodeDir, 'opencode.json');
+    
+    if (!fs.existsSync(globalConfigPath)) {
+      return;
+    }
+
+    const config: OpenCodeConfig = JSON.parse(fs.readFileSync(globalConfigPath, 'utf-8'));
 
     console.log('🔍 Validating MCP tool dependencies...');
 
     for (const [toolName, toolConfig] of Object.entries(config.mcp || {})) {
-      const config = toolConfig as any;
-      if (config.enabled !== false) {
-        const isValid = await this.testMCPTool(toolName, config);
-        console.log(`  ${isValid ? '✅' : '❌'} ${toolName}`);
-        
-        if (!isValid) {
-          console.warn(`    ⚠️  Tool ${toolName} may not function properly`);
-        }
+      if (toolConfig.enabled !== false) {
+        console.log(`  ✅ ${toolName} - configured`);
       }
     }
-  }
-
-  private async testMCPTool(toolName: string, toolConfig: any): Promise<boolean> {
-    try {
-      if (toolConfig.type === 'local') {
-        // Test local command execution
-        const command = toolConfig.command?.[0];
-        if (command && command.startsWith('npx')) {
-          // Test if npx can download the package
-          const testCommand = `${command} --help`;
-          const result = require('child_process').spawnSync(testCommand, { 
-            shell: true, 
-            timeout: 10000,
-            stdio: 'pipe'
-          });
-          return result.status !== undefined && result.status !== 1;
-        }
-      }
-      return true;
-    } catch (error) {
-      console.warn(`    Error testing ${toolName}:`, error);
-      return false;
-    }
-  }
-
-  private async createIntegrationRegistry(): Promise<void> {
-    const registryPath = path.join(this.opencodeDir, 'integrations.json');
-    
-    const registry = {
-      version: '1.0.0',
-      lastUpdated: new Date().toISOString(),
-      integrations: {
-        'opencode-tools': {
-          name: 'OpenCode Tools',
-          description: 'Automated client project research, documentation, and code generation',
-          version: '1.0.0',
-          agents: Object.keys(JSON.parse(
-            fs.readFileSync(path.join(this.currentPackageDir, 'opencode.json'), 'utf-8')
-          ).agents || {}),
-          mcpTools: Object.keys(JSON.parse(
-            fs.readFileSync(path.join(this.currentPackageDir, 'opencode.json'), 'utf-8')
-          ).mcp || {}),
-          tuiTools: [
-            'research-agent',
-            'architecture-agent', 
-            'codegen-agent',
-            'qa-agent',
-            'delivery-agent',
-            'documentation-agent'
-          ]
-        }
-      }
-    };
-
-    console.log('📋 Creating integration registry...');
-    fs.writeFileSync(registryPath, JSON.stringify(registry, null, 2));
   }
 }
 

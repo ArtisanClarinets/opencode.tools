@@ -12,6 +12,7 @@ import './runtime/register-path-aliases';
 import { Command } from 'commander';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as os from 'os';
 import { ResearchAgent } from '../agents/research/research-agent';
 import { DocumentationAgent } from '../agents/docs';
 import { ArchitectureAgent } from '../agents/architecture';
@@ -453,23 +454,58 @@ program
   .option('-f, --force', 'Force re-integration')
   .action(async (options) => {
     try {
-      console.log('[INFO] Running manual OpenCode integration...');
+      console.log('[INFO] Running OpenCode integration...');
       
       // Get the project root directory
       const projectRoot = path.resolve(__dirname, '..', '..');
       
-      // Import and run the native integrate script
+      // Run the native integrate script directly
       const nativeIntegratePath = path.join(projectRoot, 'scripts', 'native-integrate.js');
       
-      try {
+      if (fs.existsSync(nativeIntegratePath)) {
         // Use require here because the script is a JS file intended to run in Node directly
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const { integrateWithOpenCode } = require(nativeIntegratePath);
         integrateWithOpenCode(projectRoot);
         console.log('[SUCCESS] Integration complete!');
-      } catch (loadErr) {
-        console.log('[INFO] Native integration script not found.');
-        console.log('[INFO] Integration is a placeholder - manual integration required.');
+      } else {
+        // If the compiled script doesn't exist, run the integration logic inline
+        console.log('[INFO] Running inline integration...');
+        
+        const opencodeDir = path.join(os.homedir(), '.config', 'opencode');
+        if (!fs.existsSync(opencodeDir)) {
+          fs.mkdirSync(opencodeDir, { recursive: true });
+        }
+        
+        const configPath = path.join(opencodeDir, 'opencode.json');
+        let config: Record<string, unknown> = {};
+        
+        if (fs.existsSync(configPath)) {
+          try {
+            config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+          } catch {
+            // Ignore parse errors
+          }
+        }
+        
+        if (!config.mcp || typeof config.mcp !== 'object') {
+          config.mcp = {};
+        }
+        
+        (config.mcp as Record<string, unknown>)['opencode-tools'] = {
+          type: 'local',
+          command: ['opencode-tools', 'mcp'],
+          description: 'Complete developer team automation',
+          enabled: true,
+          timeout: 60000,
+        };
+        
+        if (!config.agent) {
+          config.agent = 'foundry';
+        }
+        
+        fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+        console.log(`[SUCCESS] Integration complete! Config written to ${configPath}`);
       }
     } catch (error) {
       logger.error('Integration failed:', error);

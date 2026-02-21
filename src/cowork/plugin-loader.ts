@@ -274,51 +274,159 @@ function getSystemPluginDirectories(): string[] {
 }
 
 /**
+ * Parse JSONC (JSON with Comments) content.
+ * Strips single-line (//) and multi-line (/* * /) comments.
+ */
+function parseJsonc<T>(content: string): T | null {
+  try {
+    // Remove single-line comments
+    let cleaned = content.replace(/\/\/.*$/gm, '');
+    // Remove multi-line comments
+    cleaned = cleaned.replace(/\/\*[\s\S]*?\*\//g, '');
+    return JSON.parse(cleaned) as T;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Read a JSON or JSONC file.
+ */
+function readJsonOrJsoncFile<T>(filePath: string): T | null {
+  try {
+    const content = fs.readFileSync(filePath, 'utf-8');
+    // Try standard JSON first
+    try {
+      return JSON.parse(content) as T;
+    } catch {
+      // Fall back to JSONC parsing
+      return parseJsonc<T>(content);
+    }
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Load native agents from OpenCode configuration.
+ *
+ * Supports both official OpenCode schema (`agent` singular) and legacy (`agents` plural).
+ * Configuration files are loaded in order of precedence:
+ * 1. ~/.config/opencode/opencode.json (official)
+ * 2. ~/.config/opencode/opencode.jsonc (official with comments)
+ * 3. ~/.config/opencode/opencode-tools.json (legacy)
+ *
+ * Also supports loading from global agents directory:
+ * ~/.config/opencode/agents/*.md
  */
 export function loadNativeAgents(): AgentDefinition[] {
   const configDir = path.join(os.homedir(), '.config', 'opencode');
-  const toolsConfigPath = path.join(configDir, 'opencode-tools.json');
-  const legacyConfigPath = path.join(configDir, 'opencode.json');
+  const officialConfigPath = path.join(configDir, 'opencode.json');
+  const officialConfigPathJsonc = path.join(configDir, 'opencode.jsonc');
+  const legacyConfigPath = path.join(configDir, 'opencode-tools.json');
 
-  let config = readJsonFile<{ agents: Record<string, unknown> }>(toolsConfigPath);
-  if (!config || !config.agents) {
-    config = readJsonFile<{ agents: Record<string, unknown> }>(legacyConfigPath);
+  // Type for config that supports both `agent` (official) and `agents` (legacy)
+  type ConfigWithAgents = {
+    agent?: Record<string, unknown>;
+    agents?: Record<string, unknown>;
+  };
+
+  let config: ConfigWithAgents | null = null;
+  let agentSource = '';
+
+  // Try official config first (JSON and JSONC)
+  config = readJsonOrJsoncFile<ConfigWithAgents>(officialConfigPath);
+  if (config) {
+    agentSource = officialConfigPath;
   }
 
-  if (!config || !config.agents) {
-    return [];
+  if (!config) {
+    config = readJsonOrJsoncFile<ConfigWithAgents>(officialConfigPathJsonc);
+    if (config) {
+      agentSource = officialConfigPathJsonc;
+    }
   }
+
+  // Fall back to legacy config
+  if (!config) {
+    config = readJsonOrJsoncFile<ConfigWithAgents>(legacyConfigPath);
+    if (config) {
+      agentSource = legacyConfigPath;
+    }
+  }
+
+  // Support both `agent` (official OpenCode schema) and `agents` (legacy)
+  const agentsConfig = config?.agent ?? config?.agents;
 
   const agents: AgentDefinition[] = [];
-  for (const [id, rawConfig] of Object.entries(config.agents)) {
-    if (!rawConfig || typeof rawConfig !== 'object') {
-      continue;
-    }
 
-    const agentConfig = rawConfig as Record<string, unknown>;
-    const tools: string[] = [];
+  // Load from config file
+  if (agentsConfig && typeof agentsConfig === 'object') {
+    for (const [id, rawConfig] of Object.entries(agentsConfig)) {
+      if (!rawConfig || typeof rawConfig !== 'object') {
+        continue;
+      }
 
-    const toolMap = agentConfig.tools;
-    if (toolMap && typeof toolMap === 'object') {
-      for (const [toolName, enabled] of Object.entries(toolMap as Record<string, unknown>)) {
-        if (enabled === true) {
-          tools.push(toolName);
+      const agentConfig = rawConfig as Record<string, unknown>;
+      const tools: string[] = [];
+
+      const toolMap = agentConfig.tools;
+      if (toolMap && typeof toolMap === 'object') {
+        for (const [toolName, enabled] of Object.entries(toolMap as Record<string, unknown>)) {
+          if (enabled === true) {
+            tools.push(toolName);
+          }
         }
       }
+
+      const formattedName = id.charAt(0).toUpperCase() + id.slice(1).replace(/_/g, ' ') + ' Agent';
+
+      agents.push({
+        id,
+        name: formattedName,
+        description: typeof agentConfig.description === 'string' ? agentConfig.description : '',
+        body: typeof agentConfig.prompt === 'string' ? agentConfig.prompt : '',
+        tools,
+        model: typeof agentConfig.model === 'string' ? agentConfig.model : undefined,
+        color: 'blue',
+      });
     }
+  }
 
-    const formattedName = id.charAt(0).toUpperCase() + id.slice(1).replace(/_/g, ' ') + ' Agent';
+  // Also load from global agents directory (~/.config/opencode/agents/*.md)
+  const globalAgentsDir = path.join(configDir, 'agents');
+  if (directoryExists(globalAgentsDir)) {
+    for (const name of listDirNames(globalAgentsDir)) {
+      if (!name.endsWith('.md')) {
+        continue;
+      }
 
-    agents.push({
-      id,
-      name: formattedName,
-      description: typeof agentConfig.description === 'string' ? agentConfig.description : '',
-      body: typeof agentConfig.prompt === 'string' ? agentConfig.prompt : '',
-      tools,
-      model: typeof agentConfig.model === 'string' ? agentConfig.model : undefined,
-      color: 'blue',
-    });
+      const fullPath = path.join(globalAgentsDir, name);
+      try {
+        const content = fs.readFileSync(fullPath, 'utf-8');
+        const id = path.basename(name, '.md');
+        const parsed = parseAgentMarkdown(content, id);
+
+        // Don't override if already loaded from config
+        if (!agents.find(a => a.id === id)) {
+          agents.push({
+            id: parsed.id,
+            name: parsed.name,
+            description: parsed.description,
+            body: parsed.body,
+            tools: parsed.tools,
+            model: parsed.model,
+            color: 'blue',
+          });
+        }
+      } catch (error) {
+        logger.warn(`Failed to parse global agent markdown: ${fullPath}`, error);
+      }
+    }
+  }
+
+  if (agents.length > 0) {
+    logger.info(`Loaded ${agents.length} native agent(s) from ${agentSource || 'global agents directory'}`);
   }
 
   return agents;

@@ -63,3 +63,21 @@ export {
   generateMarkdown,
   generateQuickDocument 
 } from './documents';
+
+// Foundry orchestration tools
+export { 
+  foundryOrchestrate,
+  foundryStatus,
+  foundryHealth,
+  foundryCreateRequest
+} from './foundry';
+
+// Cowork multi-agent runtime tools
+export { 
+  coworkList,
+  coworkRun,
+  coworkSpawn,
+  coworkHealth,
+  coworkPlugins,
+  coworkAgents
+} from './cowork';

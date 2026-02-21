@@ -9,6 +9,7 @@ import { logger } from '../../runtime/logger';
 import { EventBus } from '../orchestrator/event-bus';
 import { CollaborativeWorkspace } from '../collaboration/collaborative-workspace';
 import { EvidenceSigner, Evidence, SignedEvidence } from './signer';
+import { createKeyStore, type KeyStore } from './key-store';
 
 export interface EvidenceContext {
   projectId: string;
@@ -63,6 +64,7 @@ export interface IntegrityReport {
 export class EvidenceCollector {
   private static instance: EvidenceCollector;
   private signer: EvidenceSigner;
+  private keyStore: KeyStore;
   private collectedEvidence: Map<string, SignedEvidence> = new Map();
   private eventBus: EventBus;
   private workspace: CollaborativeWorkspace;
@@ -71,8 +73,29 @@ export class EvidenceCollector {
 
   private constructor() {
     this.signer = EvidenceSigner.getInstance();
+    this.keyStore = createKeyStore();
     this.eventBus = EventBus.getInstance();
     this.workspace = CollaborativeWorkspace.getInstance();
+    
+    // Initialize key store and sync with signer
+    this.initializeKeys();
+  }
+  
+  /**
+   * Initialize key store and sync with EvidenceSigner
+   */
+  private initializeKeys(): void {
+    try {
+      const storedKey = this.keyStore.initialize();
+      
+      // Import the stored key into the signer
+      if (storedKey && storedKey.privateKey && storedKey.publicKey) {
+        this.signer.importKeyPair(storedKey.privateKey, storedKey.publicKey, storedKey.keyId);
+        logger.info(`[EvidenceCollector] Initialized with key: ${storedKey.keyId}`);
+      }
+    } catch (error) {
+      logger.error('[EvidenceCollector] Failed to initialize key store:', error);
+    }
   }
 
   public static getInstance(): EvidenceCollector {
@@ -489,12 +512,18 @@ export class EvidenceCollector {
   }
 
   /**
-   * Sign the manifest
+   * Sign the manifest using the key store
    */
   private signManifest(manifestHash: string): string {
-    // In a real implementation, this would use the signer's private key
-    // For now, we return a placeholder
-    return `signed-${manifestHash}`;
+    const signResult = this.keyStore.signPayload(manifestHash);
+    
+    if (!signResult) {
+      logger.error('[EvidenceCollector] Failed to sign manifest - using fallback');
+      // Fallback to placeholder only if key store fails
+      return `signed-fallback-${manifestHash}`;
+    }
+    
+    return `${signResult.keyId}:${signResult.signature}`;
   }
 
   /**

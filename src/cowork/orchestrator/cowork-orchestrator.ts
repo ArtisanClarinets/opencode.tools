@@ -2,6 +2,14 @@
  * Cowork Orchestrator
  * 
  * Multi-agent coordination with deterministic result merging.
+ * 
+ * SECURITY POLICY: By default, agents can only communicate with the CTO.
+ * - Agents can send messages TO the CTO
+ * - CTO can send messages TO any agent
+ * - Direct agent-to-agent communication is denied by default
+ * 
+ * This enforces a hub-and-spoke communication model for security and auditability.
+ * Override with directMessagePolicy in options if needed for specific use cases.
  */
 
 import { v4 as uuidv4 } from 'uuid';
@@ -101,9 +109,18 @@ export class CoworkOrchestrator {
     this.permissionGate = new ToolPermissionGate();
     this.eventBus = EventBus.getInstance();
     this.agentSpawner = new AgentSpawner(this.eventBus);
+    
+    // Default to CTO-only hub-and-spoke communication policy
+    // This enforces that:
+    // 1. CTO can send to any agent (cto -> *)
+    // 2. Any agent can send to CTO (* -> cto)
+    // 3. All other agent-to-agent communication is denied
     const directMessagePolicy = options?.directMessagePolicy ?? {
       defaultAllow: false,
-      allowedRoutes: [{ from: '*', to: '*' }],
+      allowedRoutes: [
+        { from: 'cto', to: '*' },      // CTO can message anyone
+        { from: '*', to: 'cto' },      // Anyone can message CTO
+      ],
     };
     this.coordinator = new AgentCoordinator(this.eventBus, Blackboard.getInstance(), {
       directMessagePolicy,
