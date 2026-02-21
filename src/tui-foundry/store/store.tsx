@@ -21,6 +21,7 @@ import {
 } from '../types';
 import { useEventBus } from '../hooks/useEventBus';
 import { TuiRuntime } from '../runtime/tui-runtime';
+import { configManager } from '../../tui/llm/config';
 
 // =============================================================================
 // Initial State
@@ -154,6 +155,7 @@ export const initialState: FoundryState = {
   executionStreams: [],
   executionErrors: [],
   llmConfig: DEFAULT_LLM_CONFIG,
+  providers: {},
   settings: DEFAULT_SETTINGS,
   isHelpVisible: false,
   isLoading: false,
@@ -622,6 +624,19 @@ function reducer(state: FoundryState, action: FoundryAction): FoundryState {
       };
 
     // Settings
+    case 'UPDATE_PROVIDER_CONFIG':
+      return {
+        ...state,
+        providers: {
+          ...state.providers,
+          [action.provider]: {
+            ...(state.providers[action.provider] || DEFAULT_LLM_CONFIG),
+            ...action.config,
+            provider: action.provider as LLMProvider // Ensure provider type matches
+          }
+        }
+      };
+
     case 'UPDATE_LLM_CONFIG':
       return {
         ...state,
@@ -679,6 +694,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }): JSX.
   React.useEffect(() => {
     void TuiRuntime.getInstance().initialize(dispatch);
   }, [dispatch]);
+
+  // Sync LLM config to global manager
+  React.useEffect(() => {
+    if (state.llmConfig && state.llmConfig.provider) {
+      configManager.setProviderConfig(state.llmConfig.provider, state.llmConfig);
+    }
+  }, [state.llmConfig]);
 
   const value = React.useMemo(
     () => ({ state, dispatch }),
