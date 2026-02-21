@@ -6,11 +6,10 @@
 import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { useStore } from '../../store/store';
-import commandRouter from '../../commands/command-router';
-import { getCoworkIntegration } from '../../cowork/integration';
 import { COLORS, TEXT_STYLES, getRoleColor } from '../../theme';
 import type { Message } from '../../types';
 import { Panel, Badge, Timestamp, Spinner } from '../../components/common';
+import { TuiRuntime } from '../../runtime/tui-runtime';
 
 // =============================================================================
 // MessageList Component
@@ -132,40 +131,6 @@ export function MessageInput({ onSubmit, placeholder = 'Type a message...' }: Me
       setInput((prev) => prev.slice(0, -1));
       dispatch({ type: 'CHAT_SET_INPUT', value: input.slice(0, -1) });
     }
-  });
-
-  return React.createElement(Box, {
-    borderStyle: 'single',
-    borderColor: state.navigation.focusedPanel === 'input' ? COLORS.highlight : COLORS.border,
-    paddingX: 1,
-    marginTop: 1,
-  },
-    React.createElement(Text, { color: COLORS.muted }, '> '),
-    React.createElement(Text, null, input),
-    React.createElement(Text, { color: COLORS.muted }, '_'),
-    input.length === 0 && React.createElement(Text, { color: COLORS.muted }, ` ${placeholder}`)
-  );
-}
-
-// =============================================================================
-// MentionSuggestions Component
-// =============================================================================
-
-interface MentionSuggestionsProps {
-  query: string;
-  onSelect: (agentName: string) => void;
-}
-
-export function MentionSuggestions({ query, onSelect }: MentionSuggestionsProps): React.ReactElement {
-  const { state } = useStore();
-  
-  const suggestions = state.team
-    .filter(m => m.name.toLowerCase().includes(query.toLowerCase()))
-    .slice(0, 5);
-
-  if (suggestions.length === 0) {
-    return React.createElement(Box);
-  }
 
   return React.createElement(Box, {
     borderStyle: 'single',
@@ -192,23 +157,17 @@ export function ChatPanel(): React.ReactElement {
   const { messages, isTyping, typingAgentId, showMentions, mentionQuery } = state.chat;
 
   const handleSendMessage = (content: string) => {
-    // If input starts with '/', route to command router
-    if (content.trim().startsWith('/')) {
-      void (async () => {
-        const runtime = getCoworkIntegration();
-        const context = { state, dispatch, runtime: { coworkController: runtime?.adapter ? runtime : undefined } };
-        const result = await commandRouter.handle(content, context);
-        // Emit system message with result
-        dispatch({ type: 'CHAT_RECEIVE_MESSAGE', message: { id: `cmd-${Date.now()}`, role: 'system', content: result, timestamp: Date.now() } });
-      })();
-      dispatch({ type: 'CHAT_SEND_MESSAGE', content });
-      return;
-    }
+    // Clear input in store
+    dispatch({ type: 'CHAT_SET_INPUT', value: '' });
 
-    // Normal chat message, send via ChatBridge through integration
-    const integration = getCoworkIntegration();
-    void integration.chatBridge.sendUserMessage(content, { threadId: state.chat.activeThreadId, autoSpawnAgents: true });
-    dispatch({ type: 'CHAT_SEND_MESSAGE', content });
+    // Send via bridge to trigger agent interactions
+    const workspaceId = state.activeProjectId;
+    const threadId = state.chat.activeThreadId;
+
+    void TuiRuntime.getInstance().bridge.chat.sendUserMessage(content, {
+      workspaceId,
+      threadId,
+    });
   };
 
   const activeAgent = typingAgentId 

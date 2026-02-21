@@ -75,15 +75,28 @@ export function useLLM() {
   const config = state.llmConfig;
 
   const updateProvider = useCallback((provider: LLMProvider) => {
+    // Save current config
+    if (config.provider) {
+      dispatch({
+        type: 'UPDATE_PROVIDER_CONFIG',
+        provider: config.provider,
+        config: config
+      });
+    }
+
+    // Load saved config or default
+    const savedConfig = state.providers?.[provider] || {};
     const info = PROVIDER_INFO[provider];
+
     dispatch({
       type: 'UPDATE_LLM_CONFIG',
       config: {
+        ...savedConfig,
         provider,
-        model: info.defaultModels[0],
+        model: savedConfig.model || info.defaultModels[0],
       },
     });
-  }, [dispatch]);
+  }, [dispatch, config, state.providers]);
 
   const updateModel = useCallback((model: string) => {
     dispatch({
