@@ -7,9 +7,9 @@ import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { useStore } from '../../store/store';
 import { COLORS, TEXT_STYLES, getRoleColor } from '../../theme';
-import type { Message } from '../../types';
+import type { Message, TeamMember } from '../../types';
 import { Panel, Badge, Timestamp, Spinner } from '../../components/common';
-import { TuiRuntime } from '../../runtime/tui-runtime';
+import { ChatBridge } from '../../cowork';
 
 // =============================================================================
 // MessageList Component
@@ -131,6 +131,9 @@ export function MessageInput({ onSubmit, placeholder = 'Type a message...' }: Me
       setInput((prev) => prev.slice(0, -1));
       dispatch({ type: 'CHAT_SET_INPUT', value: input.slice(0, -1) });
     }
+  });
+
+  const suggestions = state.team || [];
 
   return React.createElement(Box, {
     borderStyle: 'single',
@@ -139,10 +142,10 @@ export function MessageInput({ onSubmit, placeholder = 'Type a message...' }: Me
     marginTop: 1,
   },
     React.createElement(Text, { color: COLORS.muted, bold: true }, 'Mentions:'),
-    suggestions.map((member: typeof suggestions[0], idx: number) =>
+    suggestions.map((member: TeamMember, idx: number) =>
       React.createElement(Box, { key: member.id || idx },
         React.createElement(Text, { color: getRoleColor(member.role) }, `@${member.name}`),
-        React.createElement(Text, { color: COLORS.muted }, ` - ${member.roleLabel}`)
+        React.createElement(Text, { color: COLORS.muted }, ` - ${member.role}`)
       )
     )
   );
@@ -164,7 +167,7 @@ export function ChatPanel(): React.ReactElement {
     const workspaceId = state.activeProjectId;
     const threadId = state.chat.activeThreadId;
 
-    void TuiRuntime.getInstance().bridge.chat.sendUserMessage(content, {
+    void ChatBridge.getInstance().sendUserMessage(content, {
       workspaceId,
       threadId,
     });
@@ -185,13 +188,14 @@ export function ChatPanel(): React.ReactElement {
         })
       ),
       
-      showMentions && React.createElement(MentionSuggestions, {
-        query: mentionQuery,
-        onSelect: (name) => {
-          // Handle mention selection
-        }
-      }),
-      
+      // TODO: Implement MentionSuggestions component
+      // showMentions && React.createElement(MentionSuggestions, {
+      //   query: mentionQuery,
+      //   onSelect: (name: string) => {
+      //     // Handle mention selection
+      //   }
+      // }),
+
       React.createElement(MessageInput, { onSubmit: handleSendMessage })
     )
   );

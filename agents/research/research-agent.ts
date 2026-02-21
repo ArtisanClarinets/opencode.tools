@@ -6,6 +6,8 @@ import { JsonDatabase } from '../../src/database/json-db';
 import { ResearchGatekeeper } from '../../src/governance/gatekeeper';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
+import { EventBus } from '../../src/cowork/orchestrator/event-bus';
+import { createProvider, ProviderType } from '../../src/tui/llm';
 
 export class ResearchError extends Error {
   constructor(message: string, public context?: Record<string, any>) {
@@ -137,7 +139,7 @@ export class ResearchAgent {
     }
 
     // Generate summaries and analysis
-    const companySummary = this.generateCompanySummary(companyData, validatedInput);
+    const companySummary = await this.generateCompanySummary(companyData, validatedInput);
     const industryOverview = this.generateIndustryOverview(industryData);
     const risks = this.identifyRisks(validatedInput, industryData);
     const opportunities = this.identifyOpportunities(validatedInput, industryData);
@@ -159,7 +161,7 @@ export class ResearchAgent {
     // Publish findings to chat
     EventBus.getInstance().publish('chat:message:agent', {
       agentId: 'research-agent',
-      content: ,
+      content: `Research completed for "${validatedInput.brief.company}". Found ${sources.length} sources. Dossier ready.`,
       role: 'agent',
       timestamp: Date.now()
     });
