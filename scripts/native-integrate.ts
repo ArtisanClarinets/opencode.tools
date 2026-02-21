@@ -98,7 +98,29 @@ function integrateWithOpenCode(config: IntegrationConfig): void {
   const opencodeConfigPath = path.join(opencodeDir, 'opencode.json');
   let opencodeConfig: any = {};
   
-  if (fs.existsSync(opencodeConfigPath)) {
+  // First, try to copy the full configuration from the package
+  const packageOpencodeJson = path.join(__dirname, '..', 'opencode.json');
+  if (fs.existsSync(packageOpencodeJson)) {
+    try {
+      const packageConfig = JSON.parse(fs.readFileSync(packageOpencodeJson, 'utf-8'));
+      
+      // Merge with existing config (existing config takes precedence for MCP servers)
+      opencodeConfig = { ...packageConfig, ...opencodeConfig };
+      
+      // Ensure MCP servers from package are included
+      if (packageConfig.mcp) {
+        for (const [serverName, serverConfig] of Object.entries(packageConfig.mcp)) {
+          if (!opencodeConfig.mcp[serverName]) {
+            opencodeConfig.mcp[serverName] = serverConfig;
+          }
+        }
+      }
+      
+      logger.info('Loaded full opencode.json configuration from package');
+    } catch (e) {
+      logger.warn('Could not parse package opencode.json, using minimal config');
+    }
+  } else if (fs.existsSync(opencodeConfigPath)) {
     try {
       opencodeConfig = JSON.parse(fs.readFileSync(opencodeConfigPath, 'utf-8'));
     } catch (e) {
@@ -112,18 +134,69 @@ function integrateWithOpenCode(config: IntegrationConfig): void {
     opencodeConfig.mcp = {};
   }
 
-  // Add our MCP server configuration
-  // OpenCode expects: type: "local" with command array, or type: "remote" with url
-  // The command should be: ["opencode-tools", "mcp"] - CLI command with subcommand
+  // Add our MCP server configuration with full access
+  // This ensures the opencode-tools-mcp is available in global installation
   opencodeConfig.mcp['opencode-tools'] = {
     type: 'local',
     command: ['opencode-tools', 'mcp'],
-    description: 'Complete developer team automation - research, docs, architecture, code generation',
-    enabled: true
+    description: 'Complete developer team automation - research, docs, architecture, code generation, document creation (PDF, DOCX, XLSX, PPTX, CSV), delivery',
+    enabled: true,
+    timeout: 30000
+  };
+
+  // Add other recommended MCP servers
+  opencodeConfig.mcp['SequentialThinking'] = {
+    type: 'local',
+    command: ['npx', '-y', '@modelcontextprotocol/server-sequential-thinking'],
+    enabled: true,
+    timeout: 10000
+  };
+  
+  opencodeConfig.mcp['Memory'] = {
+    type: 'local',
+    command: ['npx', '-y', '@modelcontextprotocol/server-memory@latest'],
+    enabled: true,
+    timeout: 5000
+  };
+  
+  opencodeConfig.mcp['critical-thinking'] = {
+    type: 'local',
+    command: ['npx', '-y', 'mcp-server-actor-critic-thinking'],
+    enabled: true,
+    timeout: 15000
   };
 
   fs.writeFileSync(opencodeConfigPath, JSON.stringify(opencodeConfig, null, 2));
-  logger.success('MCP server configuration added to opencode.json');
+  logger.success('Full MCP server configuration added to opencode.json');
+  
+  // Also create a tools.json for complete tool access (using underscores for MCP compliance)
+  const toolsConfigPath = path.join(opencodeDir, 'opencode-tools.json');
+  const toolsConfig = {
+    version: "1.0.0",
+    description: "OpenCode Tools - Complete Developer Team Automation",
+    tools: [
+      "webfetch", "search", "search_with_retry", "search_for_facts",
+      "rate_limit", "source_normalize",
+      "audit_log", "audit_replay", "audit_check_reproducibility",
+      "research_plan", "research_gather", "research_extract_claims", "research_analyze_citations", "research_peer_review", "research_finalize",
+      "discovery_start_session", "discovery_export_session", "discovery_detect_stack",
+      "docs_generate_prd", "docs_generate_sow",
+      "arch_generate", "backlog_generate",
+      "codegen_scaffold", "codegen_feature", "codegen_tests",
+      "qa_generate_testplan", "qa_generate_risk_matrix", "qa_static_analysis", "qa_generate_tests", "qa_peer_review",
+      "proposal_generate", "proposal_peer_review", "proposal_export",
+      "delivery_generate_runbook", "delivery_generate_nginx", "delivery_smoketest", "delivery_handoff",
+      "documents_docx", "documents_xlsx", "documents_pptx", "documents_csv", "documents_md",
+      "ci_verify"
+    ],
+    agents: [
+      "foundry", "orchestrator", "architecture", "codegen", "database",
+      "proposal", "qa", "delivery", "research", "security", "pdf", "summarization"
+    ]
+  };
+  
+  fs.writeFileSync(toolsConfigPath, JSON.stringify(toolsConfig, null, 2));
+  logger.success('Tools configuration saved to opencode-tools.json');
   
   // Also copy CLI entry point to make it accessible
   const binDir = path.join(opencodeDir, 'bin');
