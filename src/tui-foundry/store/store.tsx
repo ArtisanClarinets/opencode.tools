@@ -11,6 +11,8 @@ import type {
   Project,
   Message,
   ChatThread,
+  LLMProvider,
+  LLMConfig,
   CollaborationEntry,
 } from '../types';
 import {
@@ -696,45 +698,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }): JSX.
   // Sync LLM config to global manager
   React.useEffect(() => {
     if (state.llmConfig && state.llmConfig.provider) {
-      configManager.setProviderConfig(state.llmConfig.provider, state.llmConfig);
+      configManager.setProviderConfig(state.llmConfig.provider as any, state.llmConfig);
     }
   }, [state.llmConfig]);
-
-  const value = React.useMemo(
-    () => ({ state, dispatch }),
-    [state]
-  );
-
-  return React.createElement(StoreContext.Provider, { value }, children);
-}
-
-// =============================================================================
-// Hooks
-// =============================================================================
-
-export function useStore(): StoreContextValue {
-  const context = React.useContext(StoreContext);
-  if (!context) {
-    throw new Error('useStore must be used within StoreProvider');
-  }
-  return context;
-}
-
-export function useDispatch(): (action: FoundryAction) => void {
-  const { dispatch } = useStore();
-  return dispatch;
-}
-
-        // Setup Cowork integration (single pipeline: adapter + chatBridge)
-        // The integration will initialize and wire the chat bridge to call dispatch.
-        await setupCoworkIntegration(dispatch, { debug: false, adapter: {}, chatBridge: {} });
-      } catch (err) {
-        // Fail fast but don't crash provider
-        // tslint:disable-next-line:no-console
-        console.error('Failed to initialize runtime/integration', err);
-      }
-    })();
-  }, [dispatch]);
 
   const value = React.useMemo(
     () => ({ state, dispatch }),

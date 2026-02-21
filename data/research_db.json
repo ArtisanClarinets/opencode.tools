@@ -76,5 +76,20 @@
         "relevanceScore": 1
       }
     ]
+  },
+  "123e4567-e89b-12d3-a456-426614174000": {
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "topic": "TechCorp",
+    "status": "in_progress",
+    "startedAt": "2026-02-21T17:33:00.828Z",
+    "findings": [
+      {
+        "id": "123e4567-e89b-12d3-a456-426614174000",
+        "sourceUrl": "https://example.com/research",
+        "content": "Research: TechCorp company overview",
+        "timestamp": "2026-02-21T17:33:00.828Z",
+        "relevanceScore": 1
+      }
+    ]
   }
 }
