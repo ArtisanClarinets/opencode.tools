@@ -1,15 +1,13 @@
 import React from 'react';
-import { Box, Text } from 'ink';
-import { useStore } from '../store/store';
-import { Panel } from '../components/common';
+import { Box } from 'ink';
+import WorkspaceList from '../components/workspaces/WorkspaceList';
+import WorkspaceInspector from '../components/workspaces/WorkspaceInspector';
 
 export function WorkspacesScreen(): React.ReactElement {
-  const { state } = useStore();
-
-  return React.createElement(Panel, { title: 'Workspaces' },
-    React.createElement(Box, { flexDirection: 'column' },
-      React.createElement(Text, null, `Active project: ${state.activeProjectId ?? 'none'}`),
-      React.createElement(Text, null, 'Workspace list is sourced from Cowork runtime controllers.'),
-    ),
+  return (
+    <Box flexDirection="row" flexGrow={1}>
+      <Box width={40} marginRight={1}><WorkspaceList /></Box>
+      <Box flexGrow={1}><WorkspaceInspector /></Box>
+    </Box>
   );
 }

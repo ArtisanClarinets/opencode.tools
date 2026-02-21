@@ -4,6 +4,8 @@ import { Badge, Panel, ProgressBar } from '../components/common';
 import { useTuiRuntime } from '../runtime/context';
 import { useStore } from '../store/store';
 import type { TeamMember } from '../types';
+import AgentList from '../components/agents/AgentList';
+import AgentInspector from '../components/agents/AgentInspector';
 
 type CommandMode = 'idle' | 'group' | 'individual' | 'review';
 
@@ -198,43 +200,11 @@ export function AgentHubScreen(): React.ReactElement {
         ? React.createElement(Text, { color: 'cyan' }, `${commandPrompt}: ${commandBuffer}_`)
         : null,
     ),
-    React.createElement(
-      Box,
-      { flexDirection: 'row', flexGrow: 1 },
       React.createElement(
         Box,
-        { width: '50%', marginRight: 1 },
-        React.createElement(
-          Panel,
-          { title: 'Project Team (select target agent)' },
-          state.team.map((member, index) => React.createElement(
-            Box,
-            { key: member.id, marginBottom: 1 },
-            React.createElement(Text, { bold: index === teamCursor }, `${index === teamCursor ? '▶' : ' '} ${member.name}`),
-            React.createElement(Badge, { status: member.status }),
-            React.createElement(Text, null, ` ${member.roleLabel}`),
-            member.currentTask ? React.createElement(Text, null, ` | task: ${member.currentTask}`) : null,
-          )),
-        ),
+        { flexDirection: 'row', flexGrow: 1 },
+        React.createElement(Box, { width: '50%', marginRight: 1 }, React.createElement(Panel, { title: 'Project Team (select target agent)' }, React.createElement(AgentList, {}))),
+        React.createElement(Box, { width: '50%' }, React.createElement(Panel, { title: 'Agent Inspector' }, React.createElement(AgentInspector, { agentId: selectedMember?.id })) ),
       ),
-      React.createElement(
-        Box,
-        { width: '50%' },
-        React.createElement(
-          Panel,
-          { title: 'Runtime Agent Activity (project/workspace scoped)' },
-          state.agents.map((agent) => React.createElement(
-            Box,
-            { key: agent.id, flexDirection: 'column', marginBottom: 1 },
-            React.createElement(Text, null, `${agent.name} (${agent.roleLabel})`),
-            React.createElement(Text, null, `Status: ${agent.status}`),
-            React.createElement(ProgressBar, { percent: agent.progress }),
-          )),
-          React.createElement(Text, null, `Active project: ${state.activeProjectId ?? 'none'}`),
-          React.createElement(Text, null, `Workspace scope: ${activeWorkspaceId ?? 'global'}`),
-          selectedMember ? React.createElement(Text, { bold: true }, `Selected agent: ${selectedMember.name}`) : null,
-        ),
-      ),
-    ),
   );
 }

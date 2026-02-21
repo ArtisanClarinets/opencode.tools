@@ -1,11 +1,16 @@
 import React from 'react';
-import { Box, Text } from 'ink';
-import { Panel } from '../components/common';
+import { Box } from 'ink';
+import ArtifactList from '../components/workspaces/ArtifactList';
+import FeedbackThreadList from '../components/workspaces/FeedbackThreadList';
+import ConflictList from '../components/workspaces/ConflictList';
+import CheckpointList from '../components/workspaces/CheckpointList';
 
 export function WorkspaceDetailScreen(): React.ReactElement {
-  return React.createElement(Box, { flexDirection: 'row', flexGrow: 1 },
-    React.createElement(Box, { width: '33%', marginRight: 1 }, React.createElement(Panel, { title: 'Artifacts' }, React.createElement(Text, null, 'Versioned artifacts'))),
-    React.createElement(Box, { width: '33%', marginRight: 1 }, React.createElement(Panel, { title: 'Feedback' }, React.createElement(Text, null, 'Critical and blocking threads'))),
-    React.createElement(Box, { width: '34%' }, React.createElement(Panel, { title: 'Conflicts & Checkpoints' }, React.createElement(Text, null, 'Resolve conflicts and restore checkpoints'))),
+  return (
+    <Box flexDirection="row" flexGrow={1}>
+      <Box width="33%" marginRight={1}><ArtifactList /></Box>
+      <Box width="33%" marginRight={1}><FeedbackThreadList /></Box>
+      <Box width="34%"><ConflictList /><CheckpointList /></Box>
+    </Box>
   );
 }

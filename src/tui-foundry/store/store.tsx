@@ -688,9 +688,7 @@ const StoreContext = React.createContext<StoreContextValue | null>(null);
 export function StoreProvider({ children }: { children: React.ReactNode }): JSX.Element {
   const [state, dispatch] = React.useReducer(reducer, initialState);
 
-  // Connect to EventBus
-  useEventBus(dispatch);
-
+  // Initialize runtime and Cowork integration once
   React.useEffect(() => {
     void TuiRuntime.getInstance().initialize(dispatch);
   }, [dispatch]);
@@ -701,6 +699,42 @@ export function StoreProvider({ children }: { children: React.ReactNode }): JSX.
       configManager.setProviderConfig(state.llmConfig.provider, state.llmConfig);
     }
   }, [state.llmConfig]);
+
+  const value = React.useMemo(
+    () => ({ state, dispatch }),
+    [state]
+  );
+
+  return React.createElement(StoreContext.Provider, { value }, children);
+}
+
+// =============================================================================
+// Hooks
+// =============================================================================
+
+export function useStore(): StoreContextValue {
+  const context = React.useContext(StoreContext);
+  if (!context) {
+    throw new Error('useStore must be used within StoreProvider');
+  }
+  return context;
+}
+
+export function useDispatch(): (action: FoundryAction) => void {
+  const { dispatch } = useStore();
+  return dispatch;
+}
+
+        // Setup Cowork integration (single pipeline: adapter + chatBridge)
+        // The integration will initialize and wire the chat bridge to call dispatch.
+        await setupCoworkIntegration(dispatch, { debug: false, adapter: {}, chatBridge: {} });
+      } catch (err) {
+        // Fail fast but don't crash provider
+        // tslint:disable-next-line:no-console
+        console.error('Failed to initialize runtime/integration', err);
+      }
+    })();
+  }, [dispatch]);
 
   const value = React.useMemo(
     () => ({ state, dispatch }),

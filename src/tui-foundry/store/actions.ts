@@ -62,6 +62,9 @@ export type ChatAddSuggestionAction = { type: 'CHAT_ADD_SUGGESTION'; suggestion:
 export type ChatClearSuggestionsAction = { type: 'CHAT_CLEAR_SUGGESTIONS' };
 export type ChatSetActiveThreadAction = { type: 'CHAT_SET_ACTIVE_THREAD'; threadId: string };
 export type ChatCreateThreadAction = { type: 'CHAT_CREATE_THREAD'; title: string; participants: string[] };
+// Inspector & Telemetry actions
+export type SetInspectorAction = { type: 'SET_INSPECTOR'; payload: { type: string; id?: string } };
+export type AddTelemetryEntryAction = { type: 'ADD_TELEMETRY_ENTRY'; entry: { id: string; message: string; source?: string; timestamp: number } };
 
 // Feed Actions
 export type AddFeedEntryAction = { type: 'ADD_FEED_ENTRY'; entry: CollaborationEntry };

@@ -218,6 +218,11 @@ export function selectExecutionStreams(state: FoundryState) {
   return state.executionStreams;
 }
 
+export function selectTelemetryEntries(state: FoundryState) {
+  // Flatten logs into telemetry entries
+  return state.executionStreams.flatMap(s => s.logs.map(l => ({ id: l.id, message: l.message, source: l.source, timestamp: l.timestamp })));
+}
+
 export function selectExecutionErrors(state: FoundryState) {
   return state.executionErrors;
 }

@@ -536,6 +536,195 @@ export interface ValidationResult {
   errors: string[];
 }
 
+// =============================================================================
+// LLM Provider Types
+// =============================================================================
+
+export const LLMProviderSchema = z.enum([
+  'openai',
+  'anthropic',
+  'google',
+  'azure',
+  'local',
+  'custom',
+]);
+export type LLMProvider = z.infer<typeof LLMProviderSchema>;
+
+export const LLMConfigSchema = z.object({
+  provider: LLMProviderSchema,
+  model: z.string(),
+  apiKey: z.string().optional(),
+  baseUrl: z.string().optional(),
+  temperature: z.number().min(0).max(2).default(0.7),
+  maxTokens: z.number().optional(),
+  topP: z.number().min(0).max(1).optional(),
+  enabled: z.boolean().default(true),
+});
+export type LLMConfig = z.infer<typeof LLMConfigSchema>;
+
+// =============================================================================
+// UI State Types
+// =============================================================================
+
+export const ChatUIStateSchema = z.object({
+  messages: z.array(MessageSchema),
+  threads: z.array(ChatThreadSchema),
+  activeThreadId: z.string().optional(),
+  inputValue: z.string(),
+  isTyping: z.boolean(),
+  typingAgentId: z.string().optional(),
+  suggestions: z.array(z.string()),
+  commandHistory: z.array(z.string()),
+  historyIndex: z.number(),
+  showMentions: z.boolean(),
+  mentionQuery: z.string(),
+});
+export type ChatUIState = z.infer<typeof ChatUIStateSchema>;
+
+export const NavigationStateSchema = z.object({
+  currentScreen: FoundryScreenSchema,
+  previousScreen: FoundryScreenSchema.optional(),
+  breadcrumbs: z.array(z.object({
+    label: z.string(),
+    screen: FoundryScreenSchema,
+  })),
+  focusedPanel: z.enum(['nav', 'main', 'sidebar', 'input']),
+});
+export type NavigationState = z.infer<typeof NavigationStateSchema>;
+
+// =============================================================================
+// Main Application State
+// =============================================================================
+
+export const FoundryStateSchema = z.object({
+  // Navigation
+  screen: FoundryScreenSchema,
+  phase: FoundryPhaseSchema,
+  connection: ConnectionStatusSchema,
+  
+  // Navigation state
+  navigation: NavigationStateSchema,
+  
+  // Projects
+  projects: z.array(ProjectSchema),
+  activeProjectId: z.string().optional(),
+  projectIntake: ProjectIntakeSchema,
+  
+  // Agents & Team
+  agents: z.array(AgentSchema),
+  team: z.array(TeamMemberSchema),
+  
+  // Chat & Collaboration
+  chat: ChatUIStateSchema,
+  feed: z.array(CollaborationEntrySchema),
+  
+  // Artifacts & Gates
+  artifacts: z.array(ArtifactSchema),
+  qualityGates: z.array(QualityGateSchema),
+  
+  // Execution
+  executionStreams: z.array(ExecutionStreamSchema),
+  executionErrors: z.array(z.string()),
+  
+  // Settings
+  llmConfig: LLMConfigSchema,
+  settings: z.object({
+    showNotifications: z.boolean(),
+    autoScroll: z.boolean(),
+    compactMode: z.boolean(),
+    theme: z.enum(['dark', 'light', 'system']),
+  }),
+  
+  // UI State
+  isHelpVisible: z.boolean(),
+  isLoading: z.boolean(),
+  error: z.string().optional(),
+});
+export type FoundryState = z.infer<typeof FoundryStateSchema>;
+
+// =============================================================================
+// Action Types
+// =============================================================================
+
+export type FoundryAction =
+  // Navigation
+  | { type: 'SET_SCREEN'; screen: FoundryScreen }
+  | { type: 'NAVIGATE_BACK' }
+  | { type: 'SET_FOCUSED_PANEL'; panel: NavigationState['focusedPanel'] }
+  
+  // Connection
+  | { type: 'SET_CONNECTION_STATUS'; connection: ConnectionStatus }
+  | { type: 'SET_ERROR'; error: string | undefined }
+  
+  // Phase
+  | { type: 'SET_PHASE'; phase: FoundryPhase }
+  | { type: 'ADVANCE_PHASE' }
+  
+  // Projects
+  | { type: 'UPDATE_INTAKE_FIELD'; field: keyof ProjectIntake; value: string }
+  | { type: 'SUBMIT_INTAKE' }
+  | { type: 'SET_ACTIVE_PROJECT'; projectId: string }
+  | { type: 'UPDATE_PROJECT'; projectId: string; updates: Partial<Project> }
+  | { type: 'DELETE_PROJECT'; projectId: string }
+  
+  // Agents
+  | { type: 'UPSERT_AGENT'; agent: Agent }
+  | { type: 'UPDATE_AGENT_STATUS'; agentId: string; status: AgentStatus; progress?: number }
+  | { type: 'REMOVE_AGENT'; agentId: string }
+  | { type: 'DELEGATE_TASK'; agentId: string; task: string; context?: Record<string, unknown> }
+  
+  // Team
+  | { type: 'UPSERT_TEAM_MEMBER'; member: TeamMember }
+  | { type: 'UPDATE_MEMBER_STATUS'; memberId: string; status: TeamStatus }
+  
+  // Chat
+  | { type: 'CHAT_SEND_MESSAGE'; content: string; role?: MessageRole }
+  | { type: 'CHAT_RECEIVE_MESSAGE'; message: Message }
+  | { type: 'CHAT_SET_INPUT'; value: string }
+  | { type: 'CHAT_SET_TYPING'; isTyping: boolean; agentId?: string }
+  | { type: 'CHAT_ADD_SUGGESTION'; suggestion: string }
+  | { type: 'CHAT_CLEAR_SUGGESTIONS' }
+  | { type: 'CHAT_SET_ACTIVE_THREAD'; threadId: string }
+  | { type: 'CHAT_CREATE_THREAD'; title: string; participants: string[] }
+  
+  // Feed
+  | { type: 'ADD_FEED_ENTRY'; entry: CollaborationEntry }
+  | { type: 'CLEAR_FEED' }
+  
+  // Artifacts
+  | { type: 'UPSERT_ARTIFACT'; artifact: Artifact }
+  | { type: 'DELETE_ARTIFACT'; artifactId: string }
+  
+  // Quality Gates
+  | { type: 'UPSERT_QUALITY_GATE'; gate: QualityGate }
+  | { type: 'RUN_GATE'; gateId: string }
+  | { type: 'RESET_GATE'; gateId: string }
+  
+  // Execution
+  | { type: 'ADD_EXECUTION_LOG'; streamId: string; log: ExecutionLog }
+  | { type: 'APPEND_EXECUTION_ERROR'; message: string }
+  | { type: 'CLEAR_EXECUTION_ERRORS' }
+  
+  // Settings
+  | { type: 'UPDATE_LLM_CONFIG'; config: Partial<LLMConfig> }
+  | { type: 'UPDATE_SETTINGS'; settings: Partial<FoundryState['settings']> }
+  
+  // UI
+  | { type: 'TOGGLE_HELP' }
+  | { type: 'SET_LOADING'; isLoading: boolean }
+  | { type: 'RESET_STATE' };
+
+export type FoundryDispatch = (action: FoundryAction) => void;
+
+// =============================================================================
+// Utility Types
+// =============================================================================
+
+export interface ValidationResult {
+  valid: boolean;
+  errors: string[];
+}
+
 export interface HealthStatus {
   healthy: boolean;
   initialized: boolean;

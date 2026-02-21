@@ -131,40 +131,6 @@ export function MessageInput({ onSubmit, placeholder = 'Type a message...' }: Me
       setInput((prev) => prev.slice(0, -1));
       dispatch({ type: 'CHAT_SET_INPUT', value: input.slice(0, -1) });
     }
-  });
-
-  return React.createElement(Box, {
-    borderStyle: 'single',
-    borderColor: state.navigation.focusedPanel === 'input' ? COLORS.highlight : COLORS.border,
-    paddingX: 1,
-    marginTop: 1,
-  },
-    React.createElement(Text, { color: COLORS.muted }, '> '),
-    React.createElement(Text, null, input),
-    React.createElement(Text, { color: COLORS.muted }, '_'),
-    input.length === 0 && React.createElement(Text, { color: COLORS.muted }, ` ${placeholder}`)
-  );
-}
-
-// =============================================================================
-// MentionSuggestions Component
-// =============================================================================
-
-interface MentionSuggestionsProps {
-  query: string;
-  onSelect: (agentName: string) => void;
-}
-
-export function MentionSuggestions({ query, onSelect }: MentionSuggestionsProps): React.ReactElement {
-  const { state } = useStore();
-  
-  const suggestions = state.team
-    .filter(m => m.name.toLowerCase().includes(query.toLowerCase()))
-    .slice(0, 5);
-
-  if (suggestions.length === 0) {
-    return React.createElement(Box);
-  }
 
   return React.createElement(Box, {
     borderStyle: 'single',
