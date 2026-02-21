@@ -9,6 +9,7 @@ import { useStore } from '../../store/store';
 import { COLORS, TEXT_STYLES, getRoleColor } from '../../theme';
 import type { Message } from '../../types';
 import { Panel, Badge, Timestamp, Spinner } from '../../components/common';
+import { ChatBridge } from '../../cowork/chat-bridge';
 import { TuiRuntime } from '../../runtime/tui-runtime';
 
 // =============================================================================
@@ -97,6 +98,41 @@ function MessageBubble({ message }: MessageBubbleProps): React.ReactElement {
 }
 
 // =============================================================================
+// MentionSuggestions Component
+// =============================================================================
+
+interface MentionSuggestionsProps {
+  query: string;
+  onSelect: (name: string) => void;
+}
+
+export function MentionSuggestions({ query, onSelect }: MentionSuggestionsProps): React.ReactElement {
+  const { state } = useStore();
+  const suggestions = state.team.filter(member =>
+    member.name.toLowerCase().includes(query.toLowerCase()) ||
+    member.role.toLowerCase().includes(query.toLowerCase())
+  );
+
+  if (suggestions.length === 0) return React.createElement(Box);
+
+  return React.createElement(Box, {
+    borderStyle: 'single',
+    borderColor: COLORS.border,
+    paddingX: 1,
+    marginTop: 1,
+    flexDirection: 'column'
+  },
+    React.createElement(Text, { color: COLORS.muted, bold: true }, 'Mentions:'),
+    suggestions.map((member: typeof state.team[0], idx: number) =>
+      React.createElement(Box, { key: member.id || idx },
+        React.createElement(Text, { color: getRoleColor(member.role) }, `@${member.name}`),
+        React.createElement(Text, { color: COLORS.muted }, ` - ${member.roleLabel}`)
+      )
+    )
+  );
+}
+
+// =============================================================================
 // MessageInput Component
 // =============================================================================
 
@@ -131,6 +167,7 @@ export function MessageInput({ onSubmit, placeholder = 'Type a message...' }: Me
       setInput((prev) => prev.slice(0, -1));
       dispatch({ type: 'CHAT_SET_INPUT', value: input.slice(0, -1) });
     }
+  });
 
   return React.createElement(Box, {
     borderStyle: 'single',
@@ -138,13 +175,7 @@ export function MessageInput({ onSubmit, placeholder = 'Type a message...' }: Me
     paddingX: 1,
     marginTop: 1,
   },
-    React.createElement(Text, { color: COLORS.muted, bold: true }, 'Mentions:'),
-    suggestions.map((member: typeof suggestions[0], idx: number) =>
-      React.createElement(Box, { key: member.id || idx },
-        React.createElement(Text, { color: getRoleColor(member.role) }, `@${member.name}`),
-        React.createElement(Text, { color: COLORS.muted }, ` - ${member.roleLabel}`)
-      )
-    )
+    React.createElement(Text, { color: "white" }, input || React.createElement(Text, { color: COLORS.muted }, placeholder))
   );
 }
 
@@ -164,7 +195,7 @@ export function ChatPanel(): React.ReactElement {
     const workspaceId = state.activeProjectId;
     const threadId = state.chat.activeThreadId;
 
-    void TuiRuntime.getInstance().bridge.chat.sendUserMessage(content, {
+    void ChatBridge.getInstance().sendUserMessage(content, {
       workspaceId,
       threadId,
     });
