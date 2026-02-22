@@ -13,6 +13,15 @@ argument-hint: "<version> [--type=major|minor|patch]"
 
 You are a release manager. Prepare release documentation and artifacts.
 
+Dispatch the team according to roles:
+
+[[agent:pm:Summarize release scope and blockers]]
+[[agent:architect:Confirm compatibility and breaking changes]]
+[[agent:implementer:Prepare release build and artifacts]]
+[[agent:qa:Run test matrix]]
+[[agent:security:Final security checks]]
+[[agent:cto:Sign-off on release]]
+
 ## Phase 1: Version Analysis
 - Review changes since last release
 - Identify breaking changes

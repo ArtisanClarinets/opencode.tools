@@ -249,10 +249,26 @@ function loadSkills(pluginPath: string): CoworkSkill[] {
 
 /**
  * Get the bundled plugins directory path.
+ * 
+ * Returns the appropriate path based on whether the code is running
+ * from source (development) or from a built/installed package (production).
  */
 export function getBundledPluginsDir(): string {
-  const projectRoot = path.resolve(__dirname, '..', '..', '..');
-  return path.join(projectRoot, 'src', 'cowork', 'plugins');
+  // Check if we're running from a built package (production) or source (development)
+  // In production: __dirname is like dist/src/cowork/, so we go to dist/assets/cowork/plugins
+  // In development: __dirname is like src/cowork/, so we go to src/cowork/plugins
+  
+  const isProduction = __dirname.includes('dist' + path.sep);
+  
+  if (isProduction) {
+    // Running from built package - use dist/assets/cowork/plugins
+    const projectRoot = path.resolve(__dirname, '..', '..', '..');
+    return path.join(projectRoot, 'dist', 'assets', 'cowork', 'plugins');
+  } else {
+    // Running from source - use src/cowork/plugins
+    const projectRoot = path.resolve(__dirname, '..', '..', '..');
+    return path.join(projectRoot, 'src', 'cowork', 'plugins');
+  }
 }
 
 /**

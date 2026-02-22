@@ -104,10 +104,11 @@ function integrateWithOpenCode(config: IntegrationConfig): void {
     try {
       const packageConfig = JSON.parse(fs.readFileSync(packageOpencodeJson, 'utf-8'));
       
-      // Merge with existing config (existing config takes precedence for MCP servers)
-      opencodeConfig = { ...packageConfig, ...opencodeConfig };
+      // Merge with existing config - existing config takes precedence
+      // but we add missing MCP servers from package
+      opencodeConfig = { ...opencodeConfig, ...packageConfig };
       
-      // Ensure MCP servers from package are included
+      // Ensure MCP servers from package are included (but don't override user settings)
       if (packageConfig.mcp) {
         for (const [serverName, serverConfig] of Object.entries(packageConfig.mcp)) {
           if (!opencodeConfig.mcp[serverName]) {
@@ -116,7 +117,12 @@ function integrateWithOpenCode(config: IntegrationConfig): void {
         }
       }
       
-      logger.info('Loaded full opencode.json configuration from package');
+      // Set default_agent from package if not set
+      if (!opencodeConfig.default_agent && packageConfig.default_agent) {
+        opencodeConfig.default_agent = packageConfig.default_agent;
+      }
+      
+      logger.info('Loaded and merged opencode.json configuration from package');
     } catch (e) {
       logger.warn('Could not parse package opencode.json, using minimal config');
     }
@@ -135,14 +141,20 @@ function integrateWithOpenCode(config: IntegrationConfig): void {
   }
 
   // Add our MCP server configuration with full access
+  // Use "opencodeTools" (camelCase) to avoid hyphen issues
   // This ensures the opencode-tools-mcp is available in global installation
-  opencodeConfig.mcp['opencode-tools'] = {
+  opencodeConfig.mcp['opencodeTools'] = {
     type: 'local',
     command: ['opencode-tools', 'mcp'],
     description: 'Complete developer team automation - research, docs, architecture, code generation, document creation (PDF, DOCX, XLSX, PPTX, CSV), delivery',
     enabled: true,
     timeout: 30000
   };
+
+  // Set default_agent if not set (use default_agent for official schema)
+  if (!opencodeConfig.default_agent) {
+    opencodeConfig.default_agent = 'foundry';
+  }
 
   // Add other recommended MCP servers
   opencodeConfig.mcp['SequentialThinking'] = {
@@ -198,6 +210,25 @@ function integrateWithOpenCode(config: IntegrationConfig): void {
   fs.writeFileSync(toolsConfigPath, JSON.stringify(toolsConfig, null, 2));
   logger.success('Tools configuration saved to opencode-tools.json');
   
+  // Copy optional devteam.ts template if it exists
+  const packageRoot = path.join(__dirname, '..');
+  const devteamTemplateSrc = path.join(packageRoot, 'templates', 'opencode', 'tools', 'devteam.ts');
+  const devteamTemplateDest = path.join(opencodeDir, 'tools', 'devteam.ts');
+  
+  if (fs.existsSync(devteamTemplateSrc)) {
+    try {
+      if (!fs.existsSync(path.dirname(devteamTemplateDest))) {
+        fs.mkdirSync(path.dirname(devteamTemplateDest), { recursive: true });
+      }
+      if (!fs.existsSync(devteamTemplateDest)) {
+        fs.copyFileSync(devteamTemplateSrc, devteamTemplateDest);
+        logger.success('Copied devteam.ts template to tools directory');
+      }
+    } catch (e) {
+      logger.warn('Could not copy devteam.ts template');
+    }
+  }
+   
   // Also copy CLI entry point to make it accessible
   const binDir = path.join(opencodeDir, 'bin');
   if (!fs.existsSync(binDir)) {

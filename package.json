@@ -9,7 +9,7 @@
   },
   "preferGlobal": true,
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node dist/scripts/copy-assets.js",
     "dev": "ts-node --project tsconfig.ink.json src/tui-app.ts",
     "tui": "ts-node --project tsconfig.ink.json src/tui-app.ts",
     "tui:foundry": "ts-node --project tsconfig.foundry.json src/cli-foundry.ts",
@@ -54,6 +54,7 @@
   "license": "MIT",
   "devDependencies": {
     "@jest/globals": "^30.2.0",
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "@types/ink-gradient": "^2.0.4",
     "@types/jest": "^29.5.14",
     "@types/js-yaml": "^4.0.9",
@@ -109,7 +110,8 @@
     "ulid": "^3.0.2",
     "uuid": "^13.0.0",
     "winston": "^3.19.0",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "@modelcontextprotocol/sdk": "^1.26.0"
   },
   "files": [
     "dist/**/*",

@@ -15,9 +15,9 @@
         "SequentialThinking": true,
         "Memory": true,
         "critical-thinking": true,
-        "audit.logToolCall": true,
-        "audit.replayRun": true,
-        "audit.checkReproducibility": true
+        "audit_logToolCall": true,
+        "audit_replayRun": true,
+        "audit_checkReproducibility": true
       },
       "permission": {
         "edit": "ask",
@@ -44,9 +44,9 @@
         "SequentialThinking": true,
         "Memory": true,
         "critical-thinking": true,
-        "audit.logToolCall": true,
-        "audit.replayRun": true,
-        "audit.checkReproducibility": true
+        "audit_logToolCall": true,
+        "audit_replayRun": true,
+        "audit_checkReproducibility": true
       },
       "permission": {
         "edit": "ask",
@@ -144,7 +144,7 @@
         "docs.prd.generate": true,
         "docs.sow.generate": true,
         "proposal.generate": true,
-        "proposal.peer_review": true,
+        "proposal_peer_review": true,
         "proposal.package.export": true,
         "SequentialThinking": true,
         "critical-thinking": true
@@ -163,7 +163,7 @@
         "qa.testplan.generate": true,
         "qa.risk_matrix.generate": true,
         "qa.static.run": true,
-        "qa.peer_review": true,
+        "qa_peer_review": true,
         "Memory": true,
         "critical-thinking": true
       },
@@ -213,13 +213,13 @@
         "read": true,
         "webfetch": true,
         "search": true,
-        "research.plan": true,
-        "research.gather": true,
-        "research.claims.extract": true,
-        "research.citations.analyze": true,
-        "research.peer_review": true,
-        "research.dossier.finalize": true,
-        "discovery.session.export": true,
+        "research_plan": true,
+        "research_gather": true,
+        "research_claims_extract": true,
+        "research_citations_analyze": true,
+        "research_peer_review": true,
+        "research_dossier_finalize": true,
+        "discovery_session_export": true,
         "rate-limit": true,
         "source-normalize": true,
         "DeepWiki-SSE": true,
@@ -319,7 +319,7 @@
     "Serena": false
   },
   "mcp": {
-    "opencode-tools": {
+    "opencodeTools": {
       "type": "local",
       "command": [
         "opencode-tools",

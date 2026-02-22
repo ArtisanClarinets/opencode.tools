@@ -5,11 +5,18 @@ import * as fs from 'fs';
 import { createFsTools, type FsTools } from './tools/fs';
 import { createEditTools, type EditTools } from './tools/edit';
 import { createBashTools, type BashTools } from './tools/bash';
+import { createGlobTool, type GlobTool } from './tools/glob';
+import { createGrepTool, type GrepTool } from './tools/grep';
 
 export interface ToolRouterOptions {
   fsBasePath?: string;
   allowedBashCommands?: string[];
   defaultTimeout?: number;
+}
+
+// Expose ability to configure base path at runtime for per-task/workspace initialization
+export interface RuntimeToolRouter extends ToolRouter {
+  configureBasePath: (basePath: string, allowedBashCommands?: string[]) => void;
 }
 
 /**
@@ -39,6 +46,8 @@ export class ToolRouter {
   private fsTools: FsTools | null = null;
   private editTools: EditTools | null = null;
   private bashTools: BashTools | null = null;
+  private globTool: GlobTool | null = null;
+  private grepTool: GrepTool | null = null;
   private defaultTimeout: number;
 
   constructor(options?: ToolRouterOptions) {
@@ -56,6 +65,21 @@ export class ToolRouter {
 
     // Register legacy filesystem tools (backward compatibility)
     this.registerLegacyFsTools();
+  }
+
+  /**
+   * Configure the filesystem base path dynamically at runtime.
+   * This will initialize production tools if not already initialized.
+   */
+  public configureBasePath(basePath: string, allowedBashCommands?: string[]) {
+    if (!basePath || typeof basePath !== 'string') {
+      throw new Error('Invalid basePath provided to ToolRouter.configureBasePath');
+    }
+
+    const resolved = path.resolve(basePath);
+    this.fsBasePath = resolved;
+    // Initialize tools with provided allowlist
+    this.initializeProductionTools(allowedBashCommands);
   }
 
   /**
@@ -103,6 +127,30 @@ export class ToolRouter {
 
     // Register production tools
     this.registerProductionTools();
+    // Register additional runtime utilities
+    this.register({
+      name: 'glob',
+      description: 'Glob files within base path',
+      parameters: { type: 'object', properties: { pattern: { type: 'array' } } },
+      handler: async (args) => {
+        if (!this.globTool) {
+          this.globTool = createGlobTool({ basePath: this.fsBasePath!, include: ['**/*'] });
+        }
+        return this.globTool.glob(args?.patterns || args?.pattern || []);
+      }
+    });
+
+    this.register({
+      name: 'grep',
+      description: 'Grep within files',
+      parameters: { type: 'object', properties: { pattern: { type: 'string' }, files: { type: 'array' } } },
+      handler: async (args) => {
+        if (!this.grepTool) {
+          this.grepTool = createGrepTool({ basePath: this.fsBasePath! });
+        }
+        return this.grepTool.grep(args.pattern, args.files || []);
+      }
+    });
   }
 
   /**

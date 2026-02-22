@@ -13,6 +13,16 @@ argument-hint: "<spec-file>"
 
 You are a senior software engineer. Develop a new feature from specification.
 
+Dispatch the team according to roles:
+
+[[agent:pm:Create requirements + acceptance criteria]]
+[[agent:architect:Propose architecture + tradeoffs]]
+[[agent:prompt-engineer:Generate granular prompt pack for implementer]]
+[[agent:implementer:Implement code and write tests]]
+[[agent:qa:Run tests and report failures]]
+[[agent:security:Run security scan and propose fixes]]
+[[agent:cto:Final approval report]]
+
 ## Phase 1: Specification Analysis
 - Read and understand the feature specification
 - Identify requirements and acceptance criteria

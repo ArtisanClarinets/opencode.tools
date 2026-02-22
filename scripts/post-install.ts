@@ -22,6 +22,8 @@ import * as os from 'os';
  */
 interface OpenCodeConfig {
   /** Default agent to use (singular, not agents) */
+  default_agent?: string;
+  /** Legacy agent field - use default_agent instead */
   agent?: string | Record<string, unknown>;
   /** Permission rules for tools */
   permission?: Record<string, unknown>;
@@ -117,23 +119,38 @@ class PostInstallIntegration {
       }
     }
 
+    // Try to merge package's opencode.json (preserves user-specific settings)
+    const packageConfigPath = path.join(this.currentPackageDir, 'opencode.json');
+    let packageConfig: Partial<OpenCodeConfig> = {};
+    if (fs.existsSync(packageConfigPath)) {
+      try {
+        packageConfig = JSON.parse(fs.readFileSync(packageConfigPath, 'utf-8'));
+        console.log('🔗 Merging package configuration...');
+      } catch (e) {
+        console.warn('⚠️ Could not parse package opencode.json');
+      }
+    }
+
     // Initialize MCP if missing
     if (!globalConfig.mcp) {
       globalConfig.mcp = {};
     }
 
     // Add opencode-tools MCP server (this is the key integration)
-    globalConfig.mcp['opencode-tools'] = {
-      type: 'local',
-      command: ['opencode-tools', 'mcp'],
-      description: 'Complete developer team automation - Foundry orchestration, Cowork agents, research, docs, architecture, code generation, PDF/DOCX/XLSX generation, delivery',
-      enabled: true,
-      timeout: 60000,
-    };
+    // Use "opencodeTools" (camelCase) to avoid hyphen issues in OpenCode config
+    if (!globalConfig.mcp['opencodeTools']) {
+      globalConfig.mcp['opencodeTools'] = {
+        type: 'local',
+        command: ['opencode-tools', 'mcp'],
+        description: 'Complete developer team automation - Foundry orchestration, Cowork agents, research, docs, architecture, code generation, PDF/DOCX/XLSX generation, delivery',
+        enabled: true,
+        timeout: 60000,
+      };
+    }
 
-    // Set default agent if not set
-    if (!globalConfig.agent) {
-      globalConfig.agent = 'foundry';
+    // Set default agent if not set (use default_agent for official schema)
+    if (!globalConfig.default_agent) {
+      globalConfig.default_agent = 'foundry';
     }
 
     // Add basic permission rules if not set
@@ -143,6 +160,15 @@ class PostInstallIntegration {
         'fs.delete': 'ask',
         'edit.apply': 'allow',
       };
+    }
+
+    // Merge package config properties (MCP servers from package take lower precedence)
+    if (packageConfig.mcp) {
+      for (const [serverName, serverConfig] of Object.entries(packageConfig.mcp)) {
+        if (!globalConfig.mcp[serverName]) {
+          globalConfig.mcp[serverName] = serverConfig;
+        }
+      }
     }
 
     console.log('🔗 Merging MCP configuration into opencode.json...');
@@ -164,6 +190,19 @@ class PostInstallIntegration {
       if (!fs.existsSync(fullPath)) {
         fs.mkdirSync(fullPath, { recursive: true });
         console.log(`📁 Created directory: ${dir}`);
+      }
+    }
+
+    // Copy optional devteam.ts template if it exists
+    const devteamTemplateSrc = path.join(this.currentPackageDir, 'templates', 'opencode', 'tools', 'devteam.ts');
+    const devteamTemplateDest = path.join(this.opencodeDir, 'tools', 'devteam.ts');
+    
+    if (fs.existsSync(devteamTemplateSrc) && !fs.existsSync(devteamTemplateDest)) {
+      try {
+        fs.copyFileSync(devteamTemplateSrc, devteamTemplateDest);
+        console.log('📁 Copied devteam.ts template to tools directory');
+      } catch (e) {
+        console.warn('⚠️ Could not copy devteam.ts template');
       }
     }
   }

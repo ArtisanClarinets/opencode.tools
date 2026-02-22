@@ -343,7 +343,7 @@ export function createBashTools(options: BashToolOptions) {
 
       let stdout = '';
       let stderr = '';
-      let truncated = false;
+      const truncated = false;
 
       const timeoutId = setTimeout(() => {
         proc.kill('SIGTERM');

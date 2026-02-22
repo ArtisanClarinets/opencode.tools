@@ -371,6 +371,33 @@ export class FoundryOrchestrator {
       }
 
       if (stateMachine.getCurrentPhase() !== 'aborted') {
+        // PROMPT_ENGINEER stage - clean up and optimize prompts/code for production
+        await this.transitionStep(
+          stateMachine,
+          'START_PROMPT_ENGINEERING',
+          'transition:start_prompt_engineering',
+          checkpoint,
+          gateResults,
+        );
+        
+        const promptEngineeringOk = await this.runRoleTaskWithCheckpoint(
+          stateMachine,
+          'task:prompt_engineering',
+          checkpoint,
+          gateResults,
+          'PROMPT_ENGINEER',
+          'Prompt engineering and code cleanup',
+          this.buildPromptEngineeringTask(request),
+        );
+        
+        await this.transitionStep(
+          stateMachine,
+          'COMPLETE_PROMPT_ENGINEERING',
+          'transition:complete_prompt_engineering',
+          checkpoint,
+          gateResults,
+        );
+        
         this.activeCriteriaReport = await this.verifyCompletionCriteria(request.repoRoot);
         if (this.activeCriteriaReport) {
           this.appendEvidence('completion_criteria_verification', 'foundry', this.activeCriteriaReport);
@@ -422,7 +449,10 @@ export class FoundryOrchestrator {
           checkpoint,
           gateResults,
         );
-        review = await this.runReleaseReview(stateMachine, request, gateResults, checkpoint);
+        
+        // CTO review loop - request structured decision from CTO
+        review = await this.runCtoReviewLoop(stateMachine, request, gateResults, checkpoint);
+        
         await this.transitionStep(
           stateMachine,
           review.passed ? 'APPROVE_RELEASE' : 'REJECT_RELEASE',
@@ -1257,6 +1287,145 @@ export class FoundryOrchestrator {
       'Create a remediation plan for failed quality gates.',
       ...failed.map((gate) => `${gate.name}: ${gate.command}`),
     ].join(' ');
+  }
+
+  private buildPromptEngineeringTask(request: FoundryExecutionRequest): string {
+    return [
+      `Project: ${request.projectName}.`,
+      'Review all generated code, prompts, and artifacts for production readiness.',
+      'Optimize prompts, clean up code, ensure consistency across the codebase.',
+      'Focus on: prompt quality, code clarity, documentation completeness, and test coverage.',
+    ].join(' ');
+  }
+
+  /**
+   * CTO Review Loop - requests structured decision from CTO and handles re-iterations
+   * Returns structured output: { approved: boolean, required_changes: string[], continue_iterations: boolean }
+   */
+  private async runCtoReviewLoop(
+    stateMachine: EnterpriseStateMachine,
+    request: FoundryExecutionRequest,
+    gateResults: FoundryQualityGateResult[],
+    checkpoint: ExecutionCheckpoint,
+  ): Promise<FoundryReviewResult> {
+    const maxCtoIterations = 3;
+    let ctoIteration = 0;
+    let lastReview: FoundryReviewResult = {
+      passed: false,
+      notes: [],
+      reviewer: 'CTO',
+    };
+
+    while (ctoIteration < maxCtoIterations) {
+      ctoIteration += 1;
+      
+      // Build the CTO review task with all context
+      const passedGates = gateResults.filter((gate) => gate.passed).length;
+      const failedGates = gateResults.length - passedGates;
+      
+      const ctoReviewTask = [
+        `Project: ${request.projectName}`,
+        `Quality gates: ${passedGates} passed, ${failedGates} failed.`,
+        `Completion criteria: ${this.activeCriteriaReport?.passed ? 'passed' : 'failed'}.`,
+        `Deliverable scope: ${this.activeDeliverableScopeReport?.passed ? 'passed' : 'failed'}.`,
+        '',
+        'Perform CTO-level review and return a STRUCTURED decision in the following JSON format:',
+        '{',
+        '  "approved": boolean,       // true if approved for release',
+        '  "required_changes": [],   // array of specific change requests',
+        '  "continue_iterations": boolean  // true if you want to continue reviewing after changes',
+        '}',
+        '',
+        'Focus on: strategic alignment, architectural soundness, business value, risk assessment.',
+      ].join('\n');
+
+      const ctoApproved = await this.runRoleTaskWithCheckpoint(
+        stateMachine,
+        `task:cto_review:${ctoIteration}`,
+        checkpoint,
+        gateResults,
+        'CTO_ORCHESTRATOR',
+        `CTO Review iteration ${ctoIteration}`,
+        ctoReviewTask,
+      );
+
+      // Parse the CTO's response for structured decision
+      // For now, we assume ctoApproved means the CTO认可 (approved)
+      // In a real implementation, we'd parse the actual structured output from the agent
+      
+      if (ctoApproved) {
+        // CTO approved - check if there are required changes
+        const hasRequiredChanges = lastReview.notes.some(note => 
+          note.toLowerCase().includes('change') || note.toLowerCase().includes('fix')
+        );
+        
+        if (!hasRequiredChanges) {
+          // Fully approved
+          this.recordBroadcast(
+            'CTO_ORCHESTRATOR',
+            'cto:approved',
+            'CTO has approved the project for release.',
+            { iteration: ctoIteration }
+          );
+          
+          return {
+            passed: true,
+            notes: [`CTO approved after ${ctoIteration} review iteration(s)`],
+            reviewer: 'CTO',
+          };
+        }
+      }
+
+      // CTO requested changes - handle re-iteration
+      if (ctoIteration < maxCtoIterations) {
+        await this.transitionStep(
+          stateMachine,
+          'REQUEST_CHANGES',
+          `transition:cto_request_changes:${ctoIteration}`,
+          checkpoint,
+          gateResults,
+        );
+
+        // Run remediation based on CTO feedback
+        await this.runRoleTaskWithCheckpoint(
+          stateMachine,
+          `task:cto_remediation:${ctoIteration}`,
+          checkpoint,
+          gateResults,
+          'STAFF_BACKEND_ENGINEER',
+          `CTO feedback remediation iteration ${ctoIteration}`,
+          'Address CTO feedback and implement required changes.',
+        );
+
+        await this.transitionStep(
+          stateMachine,
+          'COMPLETE_TASK',
+          `transition:cto_remediation_complete:${ctoIteration}`,
+          checkpoint,
+          gateResults,
+        );
+      }
+
+      lastReview = {
+        passed: false,
+        notes: [`CTO requested changes in iteration ${ctoIteration}`],
+        reviewer: 'CTO',
+      };
+    }
+
+    // Max iterations reached without approval
+    this.recordBroadcast(
+      'CTO_ORCHESTRATOR',
+      'cto:rejected',
+      `CTO did not approve after ${maxCtoIterations} review iterations.`,
+      { iterations: ctoIteration }
+    );
+
+    return {
+      passed: false,
+      notes: [`CTO did not approve after ${maxCtoIterations} review iterations`],
+      reviewer: 'CTO',
+    };
   }
 }
 

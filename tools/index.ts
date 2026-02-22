@@ -72,6 +72,9 @@ export {
   foundryCreateRequest
 } from './foundry';
 
+// Gateway MCP tools
+export { cto_sweep } from './mcp-server';
+
 // Cowork multi-agent runtime tools
 export { 
   coworkList,

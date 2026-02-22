@@ -218,6 +218,10 @@ export class CoworkOrchestrator {
     // Set up tool allowlist if specified in command
     if (command.allowedTools) {
       this.permissionGate.setCommandAllowlist(commandId, command.allowedTools);
+      // Store for spawnAgent to access
+      (this as any)._currentCommandAllowlist = command.allowedTools;
+    } else {
+      (this as any)._currentCommandAllowlist = undefined;
     }
 
     // Parse command body for agent references
@@ -307,6 +311,30 @@ export class CoworkOrchestrator {
       },
     };
 
+    // Look up agent definition from registry to get allowed tools
+    const agentDefinition = this.agentRegistry.get(agentId);
+    let tools: string[] | undefined;
+    
+    // Get current command context from instance property (set by executeWithContext)
+    const commandAllowlist = (this as any)._currentCommandAllowlist;
+
+    if (agentDefinition?.tools && agentDefinition.tools.length > 0) {
+      // Start with agent's defined tools
+      tools = [...agentDefinition.tools];
+      
+      // If command-level allowlist was set (from executeWithContext), intersect with it
+      if (commandAllowlist && commandAllowlist.length > 0) {
+        // Intersection: only tools that are in both agent definition AND command allowlist
+        tools = tools.filter(tool => commandAllowlist.includes(tool));
+      }
+    } else if (!agentDefinition?.tools || agentDefinition.tools.length === 0) {
+      // Agent has no defined tools - check if there's a command-level allowlist
+      if (commandAllowlist && commandAllowlist.length > 0) {
+        // Use command allowlist only
+        tools = commandAllowlist;
+      }
+    }
+
     const taskContext: TaskContext = {
       task,
       context: {
@@ -316,6 +344,7 @@ export class CoworkOrchestrator {
       messaging,
       sessionId: derivedSessionId,
       workspaceId,
+      tools, // Wire agent tools (or intersected with command allowlist)
     };
 
     try {

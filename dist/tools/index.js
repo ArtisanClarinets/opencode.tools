@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.coworkList = exports.foundryCreateRequest = exports.foundryHealth = exports.foundryStatus = exports.foundryOrchestrate = exports.generateQuickDocument = exports.generateMarkdown = exports.generateCSV = exports.generatePPTX = exports.generateXLSX = exports.generateDOCX = exports.generateDocument = exports.ciVerify = exports.packageHandoff = exports.runSmoketest = exports.generateNginxConfig = exports.generateRunbook = exports.packageExport = exports.proposalPeerReview = exports.generateProposal = exports.qaPeerReview = exports.qaGenerateTests = exports.runStaticAnalysis = exports.generateRiskMatrix = exports.generateTestPlan = exports.codegenGenerateTests = exports.generateFeature = exports.scaffold = exports.generateBacklog = exports.generateArchitecture = exports.generateSOW = exports.generatePRD = exports.detectStack = exports.exportSession = exports.startSession = exports.researchDossierFinalize = exports.researchPeerReview = exports.researchCitationsAnalyze = exports.researchClaimsExtract = exports.researchGather = exports.researchPlan = exports.checkReproducibility = exports.replayRun = exports.logToolCall = exports.normalizeSource = exports.enforceRateLimit = exports.searchForFacts = exports.searchWithRetry = exports.search = exports.webfetch = void 0;
-exports.coworkAgents = exports.coworkPlugins = exports.coworkHealth = exports.coworkSpawn = exports.coworkRun = void 0;
+exports.cto_sweep = exports.foundryCreateRequest = exports.foundryHealth = exports.foundryStatus = exports.foundryOrchestrate = exports.generateQuickDocument = exports.generateMarkdown = exports.generateCSV = exports.generatePPTX = exports.generateXLSX = exports.generateDOCX = exports.generateDocument = exports.ciVerify = exports.packageHandoff = exports.runSmoketest = exports.generateNginxConfig = exports.generateRunbook = exports.packageExport = exports.proposalPeerReview = exports.generateProposal = exports.qaPeerReview = exports.qaGenerateTests = exports.runStaticAnalysis = exports.generateRiskMatrix = exports.generateTestPlan = exports.codegenGenerateTests = exports.generateFeature = exports.scaffold = exports.generateBacklog = exports.generateArchitecture = exports.generateSOW = exports.generatePRD = exports.detectStack = exports.exportSession = exports.startSession = exports.researchDossierFinalize = exports.researchPeerReview = exports.researchCitationsAnalyze = exports.researchClaimsExtract = exports.researchGather = exports.researchPlan = exports.checkReproducibility = exports.replayRun = exports.logToolCall = exports.normalizeSource = exports.enforceRateLimit = exports.searchForFacts = exports.searchWithRetry = exports.search = exports.webfetch = void 0;
+exports.coworkAgents = exports.coworkPlugins = exports.coworkHealth = exports.coworkSpawn = exports.coworkRun = exports.coworkList = void 0;
 // Web fetch and search tools
 var webfetch_1 = require("./webfetch");
 Object.defineProperty(exports, "webfetch", { enumerable: true, get: function () { return webfetch_1.webfetch; } });
@@ -81,6 +81,9 @@ Object.defineProperty(exports, "foundryOrchestrate", { enumerable: true, get: fu
 Object.defineProperty(exports, "foundryStatus", { enumerable: true, get: function () { return foundry_1.foundryStatus; } });
 Object.defineProperty(exports, "foundryHealth", { enumerable: true, get: function () { return foundry_1.foundryHealth; } });
 Object.defineProperty(exports, "foundryCreateRequest", { enumerable: true, get: function () { return foundry_1.foundryCreateRequest; } });
+// Gateway MCP tools
+var mcp_server_1 = require("./mcp-server");
+Object.defineProperty(exports, "cto_sweep", { enumerable: true, get: function () { return mcp_server_1.cto_sweep; } });
 // Cowork multi-agent runtime tools
 var cowork_1 = require("./cowork");
 Object.defineProperty(exports, "coworkList", { enumerable: true, get: function () { return cowork_1.coworkList; } });

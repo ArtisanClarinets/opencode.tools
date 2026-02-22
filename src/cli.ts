@@ -215,6 +215,7 @@ program
   .description('Start the main orchestration agent for self-iterative development')
   .option('-p, --project <project>', 'Project name')
   .option('-m, --mode <mode>', 'Operation mode: research|docs|architect|code|full', 'full')
+  .option('--json', 'Output machine-readable JSON report (no ASCII banner)', false)
   .action(async (options) => {
     try {
       logger.info('Starting orchestration agent');
@@ -239,18 +240,23 @@ program
       const request = applyOrchestrationMode(baseRequest, mode);
       const report = await foundry.execute(request);
 
-      console.log('\n🧭 Foundry Report:');
-      console.log(`  Status: ${report.status}`);
-      console.log(`  Final phase: ${report.phase}`);
-      console.log(`  Mode: ${mode}`);
-      console.log(`  Tasks: ${report.tasks.filter(t => t.status === 'completed').length}/${report.tasks.length} completed`);
-      console.log(`  Quality gates: ${report.gateResults.filter(g => g.passed).length}/${report.gateResults.length} passed`);
-      if (report.deliverableScopeReport) {
-        console.log(
-          `  Deliverable scope: ${report.deliverableScopeReport.passed ? 'pass' : 'fail'} (${report.deliverableScopeReport.included.length} included, ${report.deliverableScopeReport.excluded.length} excluded)`,
-        );
+      if (options.json) {
+        // Output machine-readable report and exit
+        console.log(JSON.stringify(report, null, 2));
+      } else {
+        console.log('\n🧭 Foundry Report:');
+        console.log(`  Status: ${report.status}`);
+        console.log(`  Final phase: ${report.phase}`);
+        console.log(`  Mode: ${mode}`);
+        console.log(`  Tasks: ${report.tasks.filter(t => t.status === 'completed').length}/${report.tasks.length} completed`);
+        console.log(`  Quality gates: ${report.gateResults.filter(g => g.passed).length}/${report.gateResults.length} passed`);
+        if (report.deliverableScopeReport) {
+          console.log(
+            `  Deliverable scope: ${report.deliverableScopeReport.passed ? 'pass' : 'fail'} (${report.deliverableScopeReport.included.length} included, ${report.deliverableScopeReport.excluded.length} excluded)`,
+          );
+        }
+        console.log(`  Review: ${report.review.passed ? 'approved' : 'changes requested'} by ${report.review.reviewer}`);
       }
-      console.log(`  Review: ${report.review.passed ? 'approved' : 'changes requested'} by ${report.review.reviewer}`);
     } catch (error) {
       logger.error('Orchestration failed:', error);
       process.exit(1);

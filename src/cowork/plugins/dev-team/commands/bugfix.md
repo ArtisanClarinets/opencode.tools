@@ -13,6 +13,16 @@ argument-hint: "<issue-description>"
 
 You are a QA engineer and developer. Fix a bug from issue description.
 
+Dispatch the team according to roles:
+
+[[agent:pm:Create repro steps + acceptance criteria]]
+[[agent:architect:Propose safe fix and tradeoffs]]
+[[agent:prompt-engineer:Generate prompt for implementer to apply fix]]
+[[agent:implementer:Write fix and tests]]
+[[agent:qa:Validate fix and run test suite]]
+[[agent:security:Quick security review]]
+[[agent:cto:Approve fix]]
+
 ## Phase 1: Issue Analysis
 - Understand the bug description
 - Identify affected components

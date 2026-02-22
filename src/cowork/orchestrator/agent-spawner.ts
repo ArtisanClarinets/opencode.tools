@@ -114,9 +114,12 @@ export class AgentSpawner {
     this.customHandlers = new Map<string, AgentHandler>();
     this.eventBus = eventBus || EventBus.getInstance();
 
-    // Initialize Runtime
+    // Initialize Runtime with a ToolRouter instance that can be configured per-task
     const toolRouter = new ToolRouter();
     this.agentRunner = new AgentRunner(toolRouter);
+    // Keep a reference to the tool router so we can configure base paths per spawn
+    // (we cast to any to avoid circular type import issues)
+    (this as any).toolRouter = toolRouter;
   }
 
   /**
@@ -139,8 +142,30 @@ export class AgentSpawner {
     }
 
     // Set up tool allowlist if specified
+    // Apply allowlist to permission gate
     if (context.tools) {
       this.permissionGate.setAgentAllowlist(agentId, context.tools);
+    }
+
+    // Configure ToolRouter base path if available in context (projectDir or workspace mapping)
+    try {
+      const anyRouter: any = (this as any).toolRouter;
+      if (anyRouter && typeof anyRouter.configureBasePath === 'function') {
+        // Get projectDir from either top-level context or nested context.context
+        const topLevelContext = context.context as Record<string, unknown> | undefined;
+        const base = (context as any).projectDir 
+          || (context as any).repoRoot 
+          || (topLevelContext?.projectDir as string)
+          || (topLevelContext?.repoRoot as string)
+          || process.cwd();
+        anyRouter.configureBasePath(base, undefined);
+        // Apply allowlist to tool router as well so it can enforce tools
+        if (context.tools) {
+          anyRouter.setAllowlist(agentId, context.tools);
+        }
+      }
+    } catch (err) {
+      // Non-fatal; permissions will still be checked by permission gate
     }
 
     // Check tool permissions
