@@ -7,7 +7,7 @@ import { COLORS } from '../theme';
 export const Header: React.FC = () => (
   <Box flexDirection="column" alignItems="center" marginBottom={1}>
     <Box marginBottom={-1}>
-        <Gradient name="cyan">
+        <Gradient name="retro">
             <BigText text="OPENCODE" font="tiny" />
         </Gradient>
     </Box>

@@ -7,6 +7,8 @@ const logger_1 = require("../../src/runtime/logger");
 const json_db_1 = require("../../src/database/json-db");
 const gatekeeper_1 = require("../../src/governance/gatekeeper");
 const uuid_1 = require("uuid");
+const event_bus_1 = require("../../src/cowork/orchestrator/event-bus");
+const llm_1 = require("../../src/tui/llm");
 class ResearchError extends Error {
     constructor(message, context) {
         super(message);
@@ -17,6 +19,7 @@ class ResearchError extends Error {
 exports.ResearchError = ResearchError;
 class ResearchAgent {
     constructor(db, gatekeeper) {
+        this.provider = 'openai';
         this.agentName = 'research-agent';
         this.promptVersion = 'v1';
         this.mcpVersion = 'v1';
@@ -111,7 +114,7 @@ class ResearchAgent {
             await this.db.saveResearch(currentRecord);
         }
         // Generate summaries and analysis
-        const companySummary = this.generateCompanySummary(companyData, validatedInput);
+        const companySummary = await this.generateCompanySummary(companyData, validatedInput);
         const industryOverview = this.generateIndustryOverview(industryData);
         const risks = this.identifyRisks(validatedInput, industryData);
         const opportunities = this.identifyOpportunities(validatedInput, industryData);
@@ -127,6 +130,13 @@ class ResearchAgent {
             recommendations
         };
         logger_1.logger.info('Research Agent completed', { runId, sourcesCount: sources.length });
+        // Publish findings to chat
+        event_bus_1.EventBus.getInstance().publish('chat:message:agent', {
+            agentId: 'research-agent',
+            content: `Research completed for "${validatedInput.brief.company}". Found ${sources.length} sources. Dossier ready.`,
+            role: 'agent',
+            timestamp: Date.now()
+        });
         return {
             dossier,
             sources,
@@ -274,13 +284,24 @@ class ResearchAgent {
         target.infrastructure = merge(target.infrastructure, source.infrastructure);
         target.thirdParty = merge(target.thirdParty, source.thirdParty);
     }
-    generateCompanySummary(companyData, input) {
-        const baseSummary = `${input.brief.company} operates in the ${input.brief.industry} industry.`;
-        if (input.brief.description) {
-            return `${baseSummary} ${input.brief.description}`;
+    async generateCompanySummary(companyData, input) {
+        try {
+            // Use configured provider (default openai)
+            // Note: In real app, provider should be injected via constructor
+            const llm = (0, llm_1.createProvider)(this.provider);
+            const context = companyData.map(d => d.content).join('\n\n').substring(0, 4000);
+            const response = await llm.chatCompletion({
+                messages: [
+                    { role: 'system', content: 'You are a senior research analyst. Summarize the company profile based on the provided search results.' },
+                    { role: 'user', content: `Company: ${input.brief.company}\nIndustry: ${input.brief.industry}\nContext:\n${context}` }
+                ]
+            });
+            return response.content || `${input.brief.company} operates in the ${input.brief.industry} industry.`;
         }
-        const keyPoints = companyData.slice(0, 2).map(d => d.content.substring(0, 100).trim());
-        return `${baseSummary} Based on available information: ${keyPoints.join('. ')}`;
+        catch (error) {
+            console.error('LLM generation failed, falling back to basic summary', error);
+            return `${input.brief.company} operates in the ${input.brief.industry} industry.`;
+        }
     }
     generateIndustryOverview(industryData) {
         const trends = industryData.slice(0, 3).map(d => d.content.substring(0, 150).trim());

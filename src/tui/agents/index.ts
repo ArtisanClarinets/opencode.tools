@@ -6,6 +6,8 @@ import { OrchestratorAgent } from '../../agents/orchestrator';
 import { CoworkOrchestrator } from '../../cowork/orchestrator/cowork-orchestrator';
 import { CommandRegistry } from '../../cowork/registries/command-registry';
 import { logger } from '../../runtime/logger';
+import { FoundryOrchestrator, createFoundryExecutionRequest } from '../../foundry/orchestrator';
+import type { FoundryExecutionReport } from '../../foundry/contracts';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -15,7 +17,9 @@ const saveResearchResults = async (result: any, companyName: string) => {
     if (!fs.existsSync(artifactsDir)) {
       try {
         fs.mkdirSync(artifactsDir, { recursive: true });
-      } catch (e) {}
+      } catch (e) {
+        // Directory may already exist or permission denied, continue anyway
+      }
     }
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const safeCompanyName = companyName.replace(/[^a-zA-Z0-9]/g, '_');
@@ -31,6 +35,8 @@ const saveResearchResults = async (result: any, companyName: string) => {
 
 // Singleton orchestrator instance for REPL
 let orchestratorInstance: CoworkOrchestrator | null = null;
+let foundryInstance: FoundryOrchestrator | null = null;
+let lastFoundryReport: FoundryExecutionReport | null = null;
 
 const getOrchestrator = () => {
     if (!orchestratorInstance) {
@@ -69,19 +75,28 @@ const getOrchestrator = () => {
     return orchestratorInstance;
 };
 
+const getFoundryOrchestrator = () => {
+    if (!foundryInstance) {
+        foundryInstance = new FoundryOrchestrator();
+    }
+
+    return foundryInstance;
+};
+
 export const AGENTS: AgentDefinition[] = [
   {
     id: 'orchestrator',
-    name: 'Cowork Orchestrator',
-    description: 'Complete Apple-Level Engineering Team (Interactive)',
+    name: 'Foundry Orchestrator',
+    description: 'Enterprise multi-agent execution with peer review and quality gates',
     interactive: true,
     repl: true,
     steps: [],
     execute: async (answers, log) => {
-        log('Initializing Cowork Orchestrator REPL...');
+        log('Initializing Foundry Orchestrator REPL...');
         const orch = getOrchestrator();
-        log('Orchestrator ready. You have complete control.');
-        log('Type "help" for commands or enter natural language intents.');
+        getFoundryOrchestrator();
+        log('Foundry orchestrator ready. You have complete control.');
+        log('Type "help" for commands or enter natural language intent.');
         return { success: true };
     },
     onInput: async (input, log) => {
@@ -96,6 +111,9 @@ export const AGENTS: AgentDefinition[] = [
             const registry = CommandRegistry.getInstance();
             const commands = registry.list();
             log('Available Commands:');
+            log(' - run <intent>: Execute foundry workflow with quality gates');
+            log(' - quick <intent>: Execute foundry workflow without quality gates');
+            log(' - status: Show latest foundry execution status');
             commands.forEach(c => log(` - ${c.name}: ${c.description}`));
         } else if (cmdName === 'status') {
             const transcript = orch.getTranscript();
@@ -103,6 +121,39 @@ export const AGENTS: AgentDefinition[] = [
             log(`Status: ${activeCount} agents active.`);
             log('Recent Activity:');
             transcript.slice(-5).forEach(t => log(`[${t.timestamp}] ${t.message}`));
+            if (lastFoundryReport) {
+                log(`Foundry Last Run: ${lastFoundryReport.status} in phase ${lastFoundryReport.phase}`);
+                log(`Quality Gates: ${lastFoundryReport.gateResults.filter(g => g.passed).length}/${lastFoundryReport.gateResults.length} passed`);
+                if (lastFoundryReport.deliverableScopeReport) {
+                    log(`Deliverable Scope: ${lastFoundryReport.deliverableScopeReport.passed ? 'pass' : 'fail'} (${lastFoundryReport.deliverableScopeReport.included.length} included, ${lastFoundryReport.deliverableScopeReport.excluded.length} excluded)`);
+                }
+            }
+        } else if (cmdName === 'run' || cmdName === 'quick') {
+            const intent = args.join(' ').trim();
+            if (!intent) {
+                log(`Usage: ${cmdName} <intent>`);
+                return;
+            }
+
+            const foundry = getFoundryOrchestrator();
+            const runQualityGates = cmdName !== 'quick';
+            const request = createFoundryExecutionRequest(intent, process.cwd(), runQualityGates);
+
+            log(`Executing Foundry workflow for: "${intent}"`);
+            log(`Quality gates: ${runQualityGates ? 'enabled' : 'disabled'}`);
+
+            lastFoundryReport = await foundry.execute(request);
+
+            log(`Workflow status: ${lastFoundryReport.status}`);
+            log(`Final phase: ${lastFoundryReport.phase}`);
+            log(`Tasks completed: ${lastFoundryReport.tasks.filter(t => t.status === 'completed').length}/${lastFoundryReport.tasks.length}`);
+            if (runQualityGates) {
+                log(`Quality gates passed: ${lastFoundryReport.gateResults.filter(g => g.passed).length}/${lastFoundryReport.gateResults.length}`);
+            }
+            if (lastFoundryReport.deliverableScopeReport) {
+                log(`Deliverable scope: ${lastFoundryReport.deliverableScopeReport.passed ? 'pass' : 'fail'} (${lastFoundryReport.deliverableScopeReport.included.length} included, ${lastFoundryReport.deliverableScopeReport.excluded.length} excluded)`);
+            }
+            log(`Review: ${lastFoundryReport.review.passed ? 'approved' : 'changes requested'} by ${lastFoundryReport.review.reviewer}`);
         } else if (cmdName === 'spawn') {
             if (args.length < 2) {
                 log('Usage: spawn <agentId> <task>');
@@ -122,8 +173,15 @@ export const AGENTS: AgentDefinition[] = [
                 log(`Error spawning agent: ${e.message}`);
             }
         } else {
-            // Default: treat as natural language intent or unknown command
-            // For now, simple echo or try to execute if it matches a registered command ID
+             if (input.trim()) {
+                 const foundry = getFoundryOrchestrator();
+                 const request = createFoundryExecutionRequest(input, process.cwd(), true);
+                 log(`Interpreting input as Foundry intent: "${input}"`);
+                 lastFoundryReport = await foundry.execute(request);
+                 log(`Workflow status: ${lastFoundryReport.status} (${lastFoundryReport.phase})`);
+                 return;
+             }
+
              const registry = CommandRegistry.getInstance();
              const command = registry.getByName(cmdName);
              if (command) {
@@ -229,7 +287,11 @@ export const AGENTS: AgentDefinition[] = [
 
             const artifactsDir = 'artifacts/architecture';
             if (!fs.existsSync(artifactsDir)) {
-                try { fs.mkdirSync(artifactsDir, { recursive: true }); } catch (e) {}
+                try {
+                    fs.mkdirSync(artifactsDir, { recursive: true });
+                } catch (e) {
+                    // Directory may already exist or permission denied, continue anyway
+                }
             }
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
             const baseName = path.basename(answers.prdPath, '.md');

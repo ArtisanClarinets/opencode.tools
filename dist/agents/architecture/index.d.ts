@@ -13,6 +13,11 @@ export interface ArchitectureOutput {
             }>;
         }>;
     };
+    metadata?: {
+        runId: string;
+        generatedAt: string;
+        prdHash: string;
+    };
 }
 export declare class ArchitectureAgent {
     private readonly agentName;

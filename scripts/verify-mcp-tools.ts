@@ -223,10 +223,10 @@ class MCPVerifier {
     console.log(`  🌐 Testing remote URL: ${toolConfig.url}`);
 
     try {
-      const fetch = require('node-fetch');
+      // Use native fetch (Node 18+) - no external dependency needed
       const response = await fetch(toolConfig.url, { 
         method: 'HEAD',
-        timeout: toolConfig.timeout || 10000 
+        signal: toolConfig.timeout ? AbortSignal.timeout(toolConfig.timeout) : undefined
       });
 
       if (response.ok) {
