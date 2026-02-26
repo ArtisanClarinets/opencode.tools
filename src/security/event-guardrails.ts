@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'crypto';
-import { redactor } from './redaction';
+import { redactText } from './redaction';
 
 const DEFAULT_BLOCKED_KEYS = [
   '__proto__',
@@ -164,7 +164,7 @@ export function sanitizeEventPayload(payload: unknown, options: GuardrailPolicy 
 
     if (typeof value === 'string') {
       const trimmed = value.length > maxStringLength ? `${value.slice(0, maxStringLength)}...[TRUNCATED]` : value;
-      return redactor.redact(trimmed);
+      return redactText(trimmed);
     }
 
     if (Array.isArray(value)) {

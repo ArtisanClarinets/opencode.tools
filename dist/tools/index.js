@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.cto_sweep = exports.foundryCreateRequest = exports.foundryHealth = exports.foundryStatus = exports.foundryOrchestrate = exports.generateQuickDocument = exports.generateMarkdown = exports.generateCSV = exports.generatePPTX = exports.generateXLSX = exports.generateDOCX = exports.generateDocument = exports.ciVerify = exports.packageHandoff = exports.runSmoketest = exports.generateNginxConfig = exports.generateRunbook = exports.packageExport = exports.proposalPeerReview = exports.generateProposal = exports.qaPeerReview = exports.qaGenerateTests = exports.runStaticAnalysis = exports.generateRiskMatrix = exports.generateTestPlan = exports.codegenGenerateTests = exports.generateFeature = exports.scaffold = exports.generateBacklog = exports.generateArchitecture = exports.generateSOW = exports.generatePRD = exports.detectStack = exports.exportSession = exports.startSession = exports.researchDossierFinalize = exports.researchPeerReview = exports.researchCitationsAnalyze = exports.researchClaimsExtract = exports.researchGather = exports.researchPlan = exports.checkReproducibility = exports.replayRun = exports.logToolCall = exports.normalizeSource = exports.enforceRateLimit = exports.searchForFacts = exports.searchWithRetry = exports.search = exports.webfetch = void 0;
-exports.coworkAgents = exports.coworkPlugins = exports.coworkHealth = exports.coworkSpawn = exports.coworkRun = exports.coworkList = void 0;
+exports.securitySealEvidence = exports.securityRedact = exports.securityScan = exports.summarizeDossier = exports.pdfGenerate = exports.coworkAgents = exports.coworkPlugins = exports.coworkHealth = exports.coworkSpawn = exports.coworkRun = exports.coworkList = void 0;
 // Web fetch and search tools
 var webfetch_1 = require("./webfetch");
 Object.defineProperty(exports, "webfetch", { enumerable: true, get: function () { return webfetch_1.webfetch; } });
@@ -82,8 +82,8 @@ Object.defineProperty(exports, "foundryStatus", { enumerable: true, get: functio
 Object.defineProperty(exports, "foundryHealth", { enumerable: true, get: function () { return foundry_1.foundryHealth; } });
 Object.defineProperty(exports, "foundryCreateRequest", { enumerable: true, get: function () { return foundry_1.foundryCreateRequest; } });
 // Gateway MCP tools
-var mcp_server_1 = require("./mcp-server");
-Object.defineProperty(exports, "cto_sweep", { enumerable: true, get: function () { return mcp_server_1.cto_sweep; } });
+var mcp_server_legacy_1 = require("./mcp-server-legacy");
+Object.defineProperty(exports, "cto_sweep", { enumerable: true, get: function () { return mcp_server_legacy_1.cto_sweep; } });
 // Cowork multi-agent runtime tools
 var cowork_1 = require("./cowork");
 Object.defineProperty(exports, "coworkList", { enumerable: true, get: function () { return cowork_1.coworkList; } });
@@ -92,4 +92,13 @@ Object.defineProperty(exports, "coworkSpawn", { enumerable: true, get: function 
 Object.defineProperty(exports, "coworkHealth", { enumerable: true, get: function () { return cowork_1.coworkHealth; } });
 Object.defineProperty(exports, "coworkPlugins", { enumerable: true, get: function () { return cowork_1.coworkPlugins; } });
 Object.defineProperty(exports, "coworkAgents", { enumerable: true, get: function () { return cowork_1.coworkAgents; } });
+// New tools for MCP
+var pdf_1 = require("./pdf");
+Object.defineProperty(exports, "pdfGenerate", { enumerable: true, get: function () { return pdf_1.pdfGenerate; } });
+var summarization_1 = require("./summarization");
+Object.defineProperty(exports, "summarizeDossier", { enumerable: true, get: function () { return summarization_1.summarizeDossier; } });
+var security_1 = require("./security");
+Object.defineProperty(exports, "securityScan", { enumerable: true, get: function () { return security_1.securityScan; } });
+Object.defineProperty(exports, "securityRedact", { enumerable: true, get: function () { return security_1.securityRedact; } });
+Object.defineProperty(exports, "securitySealEvidence", { enumerable: true, get: function () { return security_1.securitySealEvidence; } });
 //# sourceMappingURL=index.js.map

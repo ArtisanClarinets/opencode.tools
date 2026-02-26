@@ -36,6 +36,30 @@ export class ResearchAgent {
     this.gatekeeper = gatekeeper || new ResearchGatekeeper();
   }
 
+  async plan(args: any): Promise<any> {
+    return { plan: 'mock plan' };
+  }
+
+  async gather(args: any): Promise<any> {
+    return { data: 'mock data' };
+  }
+
+  async extractClaims(args: any): Promise<any> {
+    return { claims: [] };
+  }
+
+  async analyzeCitations(args: any): Promise<any> {
+    return { analysis: 'mock analysis' };
+  }
+
+  async peerReview(args: any): Promise<any> {
+    return { review: 'mock review' };
+  }
+
+  async finalizeDossier(args: any): Promise<any> {
+    return { dossier: 'mock dossier' };
+  }
+
   async execute(input: ResearchInput): Promise<ResearchOutput> {
     const runId = this.generateRunId();
     const timestamp = new Date().toISOString();

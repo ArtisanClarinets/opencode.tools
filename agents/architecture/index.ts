@@ -67,7 +67,12 @@ export class ArchitectureAgent {
     `;
     }
 
-    private generateBacklog(content: string) {
+    public async generateArchitecture(prd_content: string): Promise<string> {
+        const result = await this.execute({ prd_content });
+        return result.architectureDiagram;
+    }
+
+    public generateBacklog(content: string) {
         const slug = crypto.createHash('sha1').update(content).digest('hex').slice(0, 6).toUpperCase();
         const topics = Array.from(new Set(content.toLowerCase().match(/[a-z][a-z0-9-]{4,}/g) ?? []))
             .slice(0, 3);

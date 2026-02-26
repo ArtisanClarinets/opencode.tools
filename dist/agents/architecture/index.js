@@ -75,6 +75,10 @@ class ArchitectureAgent {
     style DB fill:#dfd,stroke:#333
     `;
     }
+    async generateArchitecture(prd_content) {
+        const result = await this.execute({ prd_content });
+        return result.architectureDiagram;
+    }
     generateBacklog(content) {
         const slug = crypto.createHash('sha1').update(content).digest('hex').slice(0, 6).toUpperCase();
         const topics = Array.from(new Set(content.toLowerCase().match(/[a-z][a-z0-9-]{4,}/g) ?? []))

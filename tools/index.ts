@@ -73,7 +73,7 @@ export {
 } from './foundry';
 
 // Gateway MCP tools
-export { cto_sweep } from './mcp-server';
+export { cto_sweep } from './mcp-server-legacy';
 
 // Cowork multi-agent runtime tools
 export { 
@@ -84,3 +84,8 @@ export {
   coworkPlugins,
   coworkAgents
 } from './cowork';
+
+// New tools for MCP
+export { pdfGenerate } from './pdf';
+export { summarizeDossier } from './summarization';
+export { securityScan, securityRedact, securitySealEvidence } from './security';

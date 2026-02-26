@@ -15,7 +15,6 @@ import {
   isJsonRpcNotification
 } from './mcp/defs';
 import { TOOL_DEFS, getToolHandler } from './mcp/registry';
-import { cto_sweep } from './mcp-server-legacy';
 
 // Set MCP mode and patch console to prevent stdout pollution
 if (typeof process !== 'undefined') {
@@ -217,4 +216,5 @@ export async function main(): Promise<void> {
   });
 }
 
-export { cto_sweep };
+// Export the main function and other utilities
+export { cto_sweep } from './mcp-server-legacy';

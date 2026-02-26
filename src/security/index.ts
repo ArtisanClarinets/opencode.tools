@@ -1,4 +1,4 @@
-export { redactor, Redactor } from './redaction';
+export { redactText } from './redaction';
 export { SecretRegistry } from './secrets';
 export {
   authorizeDirectMessage,
@@ -13,11 +13,5 @@ export {
   type SecureEventEnvelope,
 } from './event-guardrails';
 export {
-  canonicalizeForHash,
-  createEvidenceRecord,
-  hashEvidencePayload,
-  sealEvidenceBatch,
-  verifyEvidenceRecord,
-  type EvidenceBatchSeal,
-  type EvidenceRecord,
+  sealEvidence
 } from './evidence-integrity';

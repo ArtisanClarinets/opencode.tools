@@ -110,6 +110,16 @@ Estimated delivery: 8-12 weeks from project kickoff.
 3. Delivery readiness checklist approved
 `;
     }
+
+    public async generatePRD(dossier: ResearchDossier, brief: string): Promise<string> {
+        const docs = await this.generateDocuments(dossier, brief);
+        return docs.prd;
+    }
+
+    public async generateSOW(dossier: ResearchDossier, brief: string): Promise<string> {
+        const docs = await this.generateDocuments(dossier, brief);
+        return docs.sow;
+    }
 }
 
 // Functional wrapper for backward compatibility

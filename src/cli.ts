@@ -274,7 +274,7 @@ program
   .option('-h, --host <host>', 'Host for remote MCP server', 'localhost')
   .action(async (options) => {
     try {
-      logger.info('Starting MCP server...');
+      process.env.OPENCODE_MCP = '1';
       
       // Import and run the MCP server
       // The MCP server uses stdio transport for local execution

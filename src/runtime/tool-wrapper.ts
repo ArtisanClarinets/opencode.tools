@@ -4,7 +4,7 @@ import { ToolCache } from './cache';
 import { ReplayManager } from './replay';
 import { ToolCallRecord } from '../types/run';
 import { PolicyViolationError } from './errors';
-import { redactor } from '../security/redaction';
+import { redactText } from '../security/redaction';
 import { normalizeToolResponseEnvelope, ToolResponseEnvelopeSchema } from './tool-response';
 
 export class ToolWrapper {

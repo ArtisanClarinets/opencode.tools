@@ -13,6 +13,12 @@ export declare class ResearchAgent {
     private db;
     private gatekeeper;
     constructor(db?: Database, gatekeeper?: ResearchGatekeeper);
+    plan(args: any): Promise<any>;
+    gather(args: any): Promise<any>;
+    extractClaims(args: any): Promise<any>;
+    analyzeCitations(args: any): Promise<any>;
+    peerReview(args: any): Promise<any>;
+    finalizeDossier(args: any): Promise<any>;
     execute(input: ResearchInput): Promise<ResearchOutput>;
     private generateRunId;
     private gatherCompanyData;

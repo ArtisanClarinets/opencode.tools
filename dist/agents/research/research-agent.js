@@ -26,6 +26,24 @@ class ResearchAgent {
         this.db = db || new json_db_1.JsonDatabase();
         this.gatekeeper = gatekeeper || new gatekeeper_1.ResearchGatekeeper();
     }
+    async plan(args) {
+        return { plan: 'mock plan' };
+    }
+    async gather(args) {
+        return { data: 'mock data' };
+    }
+    async extractClaims(args) {
+        return { claims: [] };
+    }
+    async analyzeCitations(args) {
+        return { analysis: 'mock analysis' };
+    }
+    async peerReview(args) {
+        return { review: 'mock review' };
+    }
+    async finalizeDossier(args) {
+        return { dossier: 'mock dossier' };
+    }
     async execute(input) {
         const runId = this.generateRunId();
         const timestamp = new Date().toISOString();
