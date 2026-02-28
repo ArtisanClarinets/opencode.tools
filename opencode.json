@@ -15,9 +15,9 @@
         "SequentialThinking": true,
         "Memory": true,
         "critical-thinking": true,
-        "audit_logToolCall": true,
-        "audit_replayRun": true,
-        "audit_checkReproducibility": true
+        "audit.logToolCall": true,
+        "audit.replayRun": true,
+        "audit.checkReproducibility": true
       },
       "permission": {
         "edit": "ask",
@@ -44,9 +44,9 @@
         "SequentialThinking": true,
         "Memory": true,
         "critical-thinking": true,
-        "audit_logToolCall": true,
-        "audit_replayRun": true,
-        "audit_checkReproducibility": true
+        "audit.logToolCall": true,
+        "audit.replayRun": true,
+        "audit.checkReproducibility": true
       },
       "permission": {
         "edit": "ask",
@@ -144,7 +144,7 @@
         "docs.prd.generate": true,
         "docs.sow.generate": true,
         "proposal.generate": true,
-        "proposal_peer_review": true,
+        "proposal.peer_review": true,
         "proposal.package.export": true,
         "SequentialThinking": true,
         "critical-thinking": true
@@ -163,7 +163,7 @@
         "qa.testplan.generate": true,
         "qa.risk_matrix.generate": true,
         "qa.static.run": true,
-        "qa_peer_review": true,
+        "qa.peer_review": true,
         "Memory": true,
         "critical-thinking": true
       },
@@ -180,7 +180,7 @@
     "delivery": {
       "description": "Delivery Agent - Deployment, runbooks, and client handoff.",
       "mode": "subagent",
-      "prompt": "You are Delivery Agent. Manage final delivery, create runbooks, and package client handoff materials. Generate professional documents including PDF, DOCX, XLSX, PPTX, CSV, and Markdown. Create tables, charts, flowcharts, diagrams, and images for corporate presentations. Ensure environment parity and operational readiness.",
+      "prompt": "You are Delivery Agent. Manage final delivery, create runbooks, and package client handoff materials. Ensure environment parity and operational readiness.",
       "tools": {
         "read": true,
         "write": true,
@@ -190,11 +190,6 @@
         "delivery.nginx.generate": true,
         "delivery.smoketest.run": true,
         "delivery.handoff.package": true,
-        "documents.docx.generate": true,
-        "documents.xlsx.generate": true,
-        "documents.pptx.generate": true,
-        "documents.csv.generate": true,
-        "documents.md.generate": true,
         "Memory": true
       },
       "permission": {
@@ -213,13 +208,13 @@
         "read": true,
         "webfetch": true,
         "search": true,
-        "research_plan": true,
-        "research_gather": true,
-        "research_claims_extract": true,
-        "research_citations_analyze": true,
-        "research_peer_review": true,
-        "research_dossier_finalize": true,
-        "discovery_session_export": true,
+        "research.plan": true,
+        "research.gather": true,
+        "research.claims.extract": true,
+        "research.citations.analyze": true,
+        "research.peer_review": true,
+        "research.dossier.finalize": true,
+        "discovery.session.export": true,
         "rate-limit": true,
         "source-normalize": true,
         "DeepWiki-SSE": true,
@@ -239,104 +234,61 @@
         "Memory": true,
         "critical-thinking": true
       }
-    },
-    "pdf": {
-      "description": "PDF Agent - Professional PDF document generation with charts, diagrams, and compliance features",
-      "mode": "subagent",
-      "prompt": "You are a PDF Generation Agent. Create professional PDF documents with charts, diagrams, tables, and custom styling. Support PDF/A and PDF/X for compliance. Generate tables of contents, bookmarks, and security features including encryption and password protection.",
-      "tools": {
-        "read": true,
-        "write": true,
-        "Memory": true,
-        "critical-thinking": true
-      }
-    },
-    "summarization": {
-      "description": "Summarization Agent - AI-powered content summarization and extraction",
-      "mode": "subagent",
-      "prompt": "You are a Summarization Agent. Analyze and summarize content from various sources. Extract key points, generate abstracts, and condense information while preserving essential meaning.",
-      "tools": {
-        "read": true,
-        "write": true,
-        "webfetch": true,
-        "search": true,
-        "source-normalize": true,
-        "Memory": true,
-        "critical-thinking": true
-      }
     }
   },
   "tools": {
     "SequentialThinking": true,
-    "Desktop-Commander": false,
+    "Desktop-Commander": true,
     "Memory": true,
-    "critical-thinking": false,
+    "critical-thinking": true,
     "testsprite": false,
-    "next-devtools": false,
+    "next-devtools": true,
     "Prisma": false,
     "webfetch": true,
     "search": true,
     "rate-limit": true,
     "source-normalize": true,
-    "audit_log": false,
-    "audit_replay": false,
-    "audit_check_reproducibility": false,
-    "research_plan": true,
-    "research_gather": true,
-    "research_extract_claims": true,
-    "research_analyze_citations": true,
-    "research_peer_review": true,
-    "research_finalize": true,
-    "discovery_start_session": false,
-    "discovery_export_session": true,
-    "discovery_detect_stack": false,
-    "qa_generate_testplan": false,
-    "qa_generate_risk_matrix": false,
-    "qa_static_analysis": false,
-    "qa_generate_tests": false,
-    "qa_peer_review": false,
-    "docs_generate_prd": false,
-    "docs_generate_sow": false,
-    "proposal_generate": false,
-    "proposal_peer_review": false,
-    "proposal_export": false,
-    "arch_generate": false,
-    "backlog_generate": false,
-    "codegen_scaffold": false,
-    "codegen_feature": false,
-    "codegen_tests": false,
-    "ci_verify": false,
-    "delivery_generate_runbook": false,
-    "delivery_generate_nginx": false,
-    "delivery_smoketest": false,
-    "delivery_handoff": false,
-    "documents_docx": true,
-    "documents_xlsx": true,
-    "documents_pptx": true,
-    "documents_csv": true,
-    "documents_md": true,
+    "audit.logToolCall": false,
+    "audit.replayRun": false,
+    "audit.checkReproducibility": false,
+    "research.plan": true,
+    "research.gather": true,
+    "research.claims.extract": true,
+    "research.citations.analyze": true,
+    "research.peer_review": true,
+    "research.dossier.finalize": true,
+    "discovery.session.start": false,
+    "discovery.session.export": true,
+    "qa.testplan.generate": false,
+    "qa.risk_matrix.generate": false,
+    "qa.static.run": false,
+    "qa.peer_review": false,
+    "docs.prd.generate": false,
+    "docs.sow.generate": false,
+    "proposal.generate": false,
+    "proposal.peer_review": false,
+    "proposal.package.export": false,
+    "arch.generate": false,
+    "backlog.generate": false,
+    "codegen.scaffold": false,
+    "codegen.feature": false,
+    "codegen.tests": false,
+    "ci.verify": false,
+    "delivery.runbook.generate": false,
+    "delivery.nginx.generate": false,
+    "delivery.smoketest.run": false,
+    "delivery.handoff.package": false,
     "DeepWiki-SSE": true,
-    "Serena": false
+    "Serena": true
   },
   "mcp": {
-    "opencodeTools": {
+    "opencode-tools": {
       "type": "local",
       "command": [
         "opencode-tools",
         "mcp"
       ],
-      "enabled": true,
-      "timeout": 30000
-    },
-    "SequentialThinking": {
-      "type": "local",
-      "command": [
-        "npx",
-        "-y",
-        "@modelcontextprotocol/server-sequential-thinking"
-      ],
-      "enabled": true,
-      "timeout": 10000
+      "enabled": true
     },
     "Memory": {
       "type": "local",
@@ -358,11 +310,83 @@
       "enabled": true,
       "timeout": 15000
     },
-    "DeepWiki-SSE": {
-      "type": "remote",
-      "url": "https://mcp.deepwiki.com/sse",
+    "Serena": {
+      "type": "local",
+      "command": [
+        "uvx",
+        "--from",
+        "git+https://github.com/oraios/serena",
+        "serena",
+        "start-mcp-server"
+      ],
       "enabled": true,
       "timeout": 15000
+    },
+    "sequential-thinking": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ],
+      "enabled": true
+    },
+    "shadcn": {
+      "type": "local",
+      "command": [
+        "npx",
+        "shadcn@latest",
+        "mcp"
+      ],
+      "enabled": true
+    },
+    "Desktop-Commander": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@wonderwhy-er/desktop-commander"
+      ],
+      "enabled": true
+    },
+    "next-devtools": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "next-devtools-mcp@latest"
+      ],
+      "enabled": true
+    },
+    "prisma-mcp-server": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "prisma",
+        "mcp"
+      ],
+      "enabled": true
+    },
+    "Better Auth": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "mcp-remote",
+        "https://mcp.inkeep.com/better-auth/mcp"
+      ],
+      "enabled": true
+    },
+    "Stripe": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "mcp-remote",
+        "https://mcp.stripe.com"
+      ],
+      "enabled": true
     }
   },
   "permission": {
@@ -375,6 +399,14 @@
       "pwd": "allow",
       "echo *": "allow"
     },
-    "write": "allow"
-  }
+    "write": "allow",
+    "read": "allow"
+  },
+  "plugin": [
+    "@mohak34/opencode-notifier@latest",
+    "opencode-scheduler",
+    "octto",
+    "@nick-vi/opencode-type-inject"
+
+  ]
 }
