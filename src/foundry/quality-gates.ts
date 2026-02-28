@@ -40,11 +40,15 @@ export class QualityGateRunner {
   private runGate(gate: GateCommand, cwd: string): Promise<FoundryQualityGateResult> {
     return new Promise((resolve) => {
       const isWindows = process.platform === 'win32';
-      const useShell = isWindows && (gate.command === 'npm' || gate.command === 'npx');
+      // Use .cmd variants directly on Windows to avoid shell execution
+      const command = (isWindows && (gate.command === 'npm' || gate.command === 'npx'))
+        ? `${gate.command}.cmd`
+        : gate.command;
 
-      const child = spawn(gate.command, gate.args, {
+      // nosemgrep: javascript.lang.security.detect-child-process.detect-child-process
+      const child = spawn(command, gate.args, {
         cwd,
-        shell: useShell,
+        shell: false,
       });
 
       let stdout = '';

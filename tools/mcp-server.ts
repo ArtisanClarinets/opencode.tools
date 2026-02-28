@@ -85,7 +85,7 @@ function handleInitialize(params: unknown, id: string | number): JsonRpcResponse
     },
     serverInfo: {
       name: 'opencode-tools-mcp',
-      version: '1.0.0'
+      version: process.env.npm_package_version || '1.0.0'
     }
   });
 }
