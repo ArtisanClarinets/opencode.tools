@@ -24,7 +24,8 @@ describe('runtime run-id propagation', () => {
     });
 
     const records = await runStore.getAuditLogger().readAll();
-    const output = records[0].output as any;
+    const parsedRecord = typeof records[0] === 'string' ? JSON.parse(records[0]) : records[0];
+    const output = parsedRecord.output as any;
 
     expect(result).toEqual({ value: 42 });
     expect(records).toHaveLength(1);

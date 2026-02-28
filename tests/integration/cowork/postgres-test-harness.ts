@@ -23,11 +23,13 @@ export async function startPostgresHarness(): Promise<StartedPostgresHarness> {
   const database = 'postgres';
 
   const container = await new GenericContainer(POSTGRES_IMAGE)
-    .withEnvironment({
-      POSTGRES_USER: username,
-      POSTGRES_PASSWORD: password,
-      POSTGRES_DB: database,
-    })
+    .withEnvironment({POSTGRES_USER: username})
+    .withEnvironment({POSTGRES_PASSWORD: password})
+    .withEnvironment({POSTGRES_DB: database})
+
+
+
+
     .withExposedPorts(5432)
     .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/i))
     .start();

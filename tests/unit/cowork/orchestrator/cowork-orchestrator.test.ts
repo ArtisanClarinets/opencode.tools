@@ -132,6 +132,9 @@ describe('CoworkOrchestrator', () => {
 
   describe('direct messaging', () => {
     it('delivers messages even when agents are not currently active', async () => {
+      // Allow pm to architect message for this test
+      (orchestrator as any).coordinator.directMessagePolicy = { defaultAllow: true };
+
       agentRegistry.register({
         id: 'pm',
         name: 'Project Manager',

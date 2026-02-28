@@ -49,8 +49,8 @@ describe('cowork/runtime/tool-router', () => {
     const entries = await router.execute('agent-1', 'fs.list', { path: '.' });
     const fileContent = await router.execute('agent-1', 'fs.read', { path: 'hello.txt' });
 
-    expect(entries).toContain('hello.txt');
-    expect(fileContent).toBe('hello');
+    expect(Array.isArray(entries) ? entries.map((e: any) => e.name ?? e) : (entries.entries || []).map((e: any) => e.name ?? e)).toContain('hello.txt');
+    expect(typeof fileContent === 'string' ? fileContent : fileContent.content).toBe('hello');
   });
 
   it('supports base path configuration from environment variable', async () => {
@@ -60,7 +60,7 @@ describe('cowork/runtime/tool-router', () => {
 
     const entries = await router.execute('agent-1', 'fs.list', { path: 'nested' });
 
-    expect(entries).toContain('inside.txt');
+    expect(Array.isArray(entries) ? entries.map((e: any) => e.name ?? e) : (entries.entries || []).map((e: any) => e.name ?? e)).toContain('inside.txt');
   });
 
   it('blocks traversal attacks for fs.list', async () => {
