@@ -70,5 +70,5 @@ export function normalizeToolResponseEnvelope<T>(
 }
 
 export function assertToolResponseEnvelope(payload: unknown): ToolResponseEnvelope {
-  return ToolResponseEnvelopeSchema.parse(payload);
+  return ToolResponseEnvelopeSchema.parse(payload) as ToolResponseEnvelope;
 }

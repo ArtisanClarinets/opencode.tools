@@ -21,22 +21,12 @@ import { z } from 'zod';
 if (typeof process !== 'undefined') {
   process.env.OPENCODE_MCP = '1';
   
-  // Patch console methods to write to stderr instead of stdout
-  console.log = (...args) => process.stderr.write(args.map(arg =>
-    typeof arg === 'string' ? arg : JSON.stringify(arg, null, 2)
-  ).join(' ') + '\n');
-  
-  console.info = (...args) => process.stderr.write(args.map(arg =>
-    typeof arg === 'string' ? arg : JSON.stringify(arg, null, 2)
-  ).join(' ') + '\n');
-  
-  console.debug = (...args) => process.stderr.write(args.map(arg =>
-    typeof arg === 'string' ? arg : JSON.stringify(arg, null, 2)
-  ).join(' ') + '\n');
-  
-  console.warn = (...args) => process.stderr.write(args.map(arg =>
-    typeof arg === 'string' ? arg : JSON.stringify(arg, null, 2)
-  ).join(' ') + '\n');
+  // Patch console methods to write to stderr instead of stdout using util.format
+  const util = require('util');
+  console.log = (...args) => process.stderr.write(util.format(...args) + '\n');
+  console.info = (...args) => process.stderr.write(util.format(...args) + '\n');
+  console.debug = (...args) => process.stderr.write(util.format(...args) + '\n');
+  console.warn = (...args) => process.stderr.write(util.format(...args) + '\n');
   
   // Keep console.error as-is (already writes to stderr)
 }

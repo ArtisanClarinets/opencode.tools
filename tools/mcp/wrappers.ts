@@ -43,11 +43,10 @@ export async function searchWithRetryWrapper(args: any): Promise<any> {
 }
 
 export async function searchForFactsWrapper(args: any): Promise<any> {
-  const { query, num = 5 } = args; // The real method expects string array for facts, adjusting below
+  const { query, num = 5, facts = ['overview', 'key features', 'pricing', 'competitors'] } = args;
   if (!query) throw new Error('Query is required');
   
-  // Note: searchForFacts in search.ts expects factsToFind array.
-  return await searchForFacts(query, ['overview']); // Basic adaptation, though wrapper arguments might need adjustment in real usage.
+  return await searchForFacts(query, Array.isArray(facts) ? facts : [facts]);
 }
 
 // Rate limiting and normalization

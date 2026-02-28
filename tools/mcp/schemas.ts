@@ -36,7 +36,8 @@ export const SEARCH_FOR_FACTS_SCHEMA = {
   type: 'object',
   properties: {
     query: { type: 'string', description: 'Search query for facts' },
-    num: { type: 'number', description: 'Number of results', minimum: 1, maximum: 20 }
+    num: { type: 'number', description: 'Number of results', minimum: 1, maximum: 20 },
+    facts: { type: 'array', items: { type: 'string' }, description: 'Specific facts to find' }
   },
   required: ['query'],
   additionalProperties: true
