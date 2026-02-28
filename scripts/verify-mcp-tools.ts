@@ -32,8 +32,8 @@ async function main() {
     console.log(`MCP Server exited with code ${code}`);
   });
 
-  await sendRequest(server, 'initialize', { protocolVersion: '2025-06-18' });
-  await sendRequest(server, 'notifications/initialized', {});
+  await sendRequest(server, 'initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'verify', version: '1.0' } });
+  server.stdin?.write(JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }) + '\n');
   await sendRequest(server, 'tools/list', {});
   await sendRequest(server, 'tools/call', { name: 'foundry_health', arguments: {} });
 

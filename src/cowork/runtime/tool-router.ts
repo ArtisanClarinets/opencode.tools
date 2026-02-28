@@ -58,13 +58,13 @@ export class ToolRouter {
     const configuredBasePath = options?.fsBasePath ?? process.env.COWORK_FS_BASE_PATH;
     this.fsBasePath = configuredBasePath ? path.resolve(configuredBasePath) : undefined;
 
-    // Initialize tools if base path is set
+    // Register legacy filesystem tools (backward compatibility)
+    this.registerLegacyFsTools();
+
+    // Initialize tools if base path is set (this will overwrite legacy tools if they share names)
     if (this.fsBasePath) {
       this.initializeProductionTools(options?.allowedBashCommands);
     }
-
-    // Register legacy filesystem tools (backward compatibility)
-    this.registerLegacyFsTools();
   }
 
   /**
@@ -400,6 +400,36 @@ export class ToolRouter {
    * Register legacy filesystem tools for backward compatibility
    */
   private registerLegacyFsTools(): void {
+    // If we're operating without a base path, ensure we still have stubs that fail gracefully
+    // to match expected test behavior, but these will be overwritten by initializeProductionTools
+    this.register({
+      name: 'fs.list',
+      description: 'List directory contents',
+      parameters: {
+        type: 'object',
+        properties: { path: { type: 'string', description: 'Relative path to directory' } },
+        required: ['path'],
+      },
+      handler: async (args) => {
+        this.ensureFsTools();
+        return this.fsTools!.list(args.path);
+      },
+    });
+
+    this.register({
+      name: 'fs.read',
+      description: 'Read file contents',
+      parameters: {
+        type: 'object',
+        properties: { path: { type: 'string', description: 'Relative path to file' } },
+        required: ['path'],
+      },
+      handler: async (args) => {
+        this.ensureFsTools();
+        return this.fsTools!.read(args.path);
+      },
+    });
+
     this.register({
         name: 'fs.list.legacy',
         description: 'List files in a directory (legacy)',

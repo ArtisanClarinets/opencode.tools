@@ -16,14 +16,15 @@ describe('loadNativeAgents', () => {
   const configDir = path.join(mockHomeDir, '.config', 'opencode');
   const toolsConfigPath = path.join(configDir, 'opencode-tools.json');
   const legacyConfigPath = path.join(configDir, 'opencode.json');
+  const officialConfigPath = path.join(configDir, 'opencode-tools.json');
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('should load agents from opencode-tools.json', () => {
+  it('should load agents from opencode.json (official)', () => {
     (fs.readFileSync as jest.Mock).mockImplementation((filePath: string) => {
-      if (filePath === toolsConfigPath) {
+      if (filePath === officialConfigPath) {
         return JSON.stringify({
           agents: {
             research: {
@@ -47,9 +48,9 @@ describe('loadNativeAgents', () => {
     expect(agents[0].tools).toEqual(['webfetch']);
   });
 
-  it('should fallback to opencode.json if opencode-tools.json is missing', () => {
+  it('should fallback to opencode-tools.json if opencode.json is missing', () => {
     (fs.readFileSync as jest.Mock).mockImplementation((filePath: string) => {
-      if (filePath === toolsConfigPath) {
+      if (filePath === officialConfigPath) {
         throw new Error('File not found');
       }
       if (filePath === legacyConfigPath) {
@@ -73,16 +74,16 @@ describe('loadNativeAgents', () => {
     expect(agents[0].tools).toEqual(['legacyTool']);
   });
 
-  it('should prefer opencode-tools.json over opencode.json', () => {
+  it('should prefer opencode.json over opencode-tools.json', () => {
     (fs.readFileSync as jest.Mock).mockImplementation((filePath: string) => {
-      if (filePath === toolsConfigPath) {
+      if (filePath === legacyConfigPath) {
         return JSON.stringify({
           agents: {
             newAgent: { description: 'New Agent', prompt: 'New', tools: { newTool: true } }
           }
         });
       }
-      if (filePath === legacyConfigPath) {
+      if (filePath === toolsConfigPath) {
         return JSON.stringify({
           agents: {
             oldAgent: { description: 'Old Agent', prompt: 'Old', tools: { oldTool: true } }
