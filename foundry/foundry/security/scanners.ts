@@ -40,10 +40,20 @@ export class SemgrepScanner implements SecurityScanner {
   type = "sast" as const;
 
   async scan(options: { target: string }): Promise<ScanResult> {
+    let stdoutData = "";
     try {
       const { stdout } = await execFileAsync("semgrep", ["scan", options.target, "--json", "--config=auto"]);
-      const results = JSON.parse(stdout);
+      stdoutData = stdout;
+    } catch (error: any) {
+      if (error.stdout) {
+        stdoutData = error.stdout;
+      } else {
+        throw error;
+      }
+    }
 
+    try {
+      const results = JSON.parse(stdoutData);
       return {
         findings: results.results?.map((r: any) => ({
           id: `${r.check_id}-${r.start?.line || 0}`,
@@ -82,10 +92,20 @@ export class GitLeaksScanner implements SecurityScanner {
   type = "secrets" as const;
 
   async scan(options: { target: string }): Promise<ScanResult> {
+    let stdoutData = "";
     try {
       const { stdout } = await execFileAsync("gitleaks", ["detect", options.target, "--verbose", "--json"]);
-      const results = JSON.parse(stdout);
+      stdoutData = stdout;
+    } catch (error: any) {
+      if (error.stdout) {
+        stdoutData = error.stdout;
+      } else {
+        throw error;
+      }
+    }
 
+    try {
+      const results = JSON.parse(stdoutData);
       return {
         findings: results?.map((f: any) => ({
           id: `${f.RuleID}-${f.StartLine}`,
@@ -112,10 +132,20 @@ export class SnykScanner implements SecurityScanner {
   type = "sca" as const;
 
   async scan(options: { target: string }): Promise<ScanResult> {
+    let stdoutData = "";
     try {
       const { stdout } = await execFileAsync("snyk", ["test", options.target, "--json"]);
-      const results = JSON.parse(stdout);
+      stdoutData = stdout;
+    } catch (error: any) {
+      if (error.stdout) {
+        stdoutData = error.stdout;
+      } else {
+        throw error;
+      }
+    }
 
+    try {
+      const results = JSON.parse(stdoutData);
       const findings = results.vulnerabilities?.map((v: any) => ({
         id: v.id,
         severity: v.severity?.toLowerCase() as SecurityFinding["severity"],
@@ -148,10 +178,20 @@ export class CheckovScanner implements SecurityScanner {
   type = "iac" as const;
 
   async scan(options: { target: string }): Promise<ScanResult> {
+    let stdoutData = "";
     try {
       const { stdout } = await execFileAsync("checkov", ["-d", options.target, "--output", "json"]);
-      const results = JSON.parse(stdout);
+      stdoutData = stdout;
+    } catch (error: any) {
+      if (error.stdout) {
+        stdoutData = error.stdout;
+      } else {
+        throw error;
+      }
+    }
 
+    try {
+      const results = JSON.parse(stdoutData);
       const findings: SecurityFinding[] = [];
 
       for (const [framework, checks] of Object.entries(results)) {
@@ -188,10 +228,20 @@ export class TrivyScanner implements SecurityScanner {
   type = "container" as const;
 
   async scan(options: { target: string }): Promise<ScanResult> {
+    let stdoutData = "";
     try {
       const { stdout } = await execFileAsync("trivy", ["image", options.target, "--format", "json"]);
-      const results = JSON.parse(stdout);
+      stdoutData = stdout;
+    } catch (error: any) {
+      if (error.stdout) {
+        stdoutData = error.stdout;
+      } else {
+        throw error;
+      }
+    }
 
+    try {
+      const results = JSON.parse(stdoutData);
       const findings: SecurityFinding[] = [];
 
       for (const result of results.Results || []) {

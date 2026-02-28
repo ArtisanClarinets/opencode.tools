@@ -774,8 +774,12 @@ export async function opencodeToolsCliWrapper(args: any): Promise<any> {
   return new Promise((resolve, reject) => {
     try {
       // Safely resolve the cli path whether running from src/ or dist/
-      const isCompiled = __dirname.includes('dist');
-      const cliPath = path.resolve(__dirname, '..', '..', isCompiled ? 'src' : 'dist/src', 'cli.js');
+      // __dirname is either [project]/tools/mcp (src) or [project]/dist/tools/mcp (dist)
+      const projectRoot = __dirname.includes('dist')
+        ? path.resolve(__dirname, '..', '..', '..')
+        : path.resolve(__dirname, '..', '..');
+
+      const cliPath = path.join(projectRoot, 'dist', 'src', 'cli.js');
 
       const child = spawn(process.execPath, [cliPath, ...cliArgs]);
 

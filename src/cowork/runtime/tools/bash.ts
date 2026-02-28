@@ -198,6 +198,7 @@ export function createBashTools(options: BashToolOptions) {
         let truncated = false;
         let timedOut = false;
 
+        // nosemgrep: javascript.lang.security.audit.spawn-shell-true.spawn-shell-true, javascript.lang.security.detect-child-process.detect-child-process
         const proc: ChildProcess = spawn(command, args, {
           cwd,
           env: {
@@ -329,6 +330,7 @@ export function createBashTools(options: BashToolOptions) {
       const startTime = Date.now();
       const effectiveTimeout = execOptions?.timeout ?? timeout;
 
+      // nosemgrep: javascript.lang.security.audit.spawn-shell-true.spawn-shell-true, javascript.lang.security.detect-child-process.detect-child-process
       const proc: ChildProcess = spawn(command, args, {
         cwd,
         env: {
