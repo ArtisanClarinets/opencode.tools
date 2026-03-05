@@ -6,6 +6,7 @@ export declare class ResearchError extends Error {
     constructor(message: string, context?: Record<string, any> | undefined);
 }
 export declare class ResearchAgent {
+    private provider;
     private readonly agentName;
     private readonly promptVersion;
     private readonly mcpVersion;
