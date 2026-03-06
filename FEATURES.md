@@ -27,7 +27,7 @@ This document outlines an exhaustive list of features and functions that could b
     *   Run code modifications in an isolated, hidden shadow environment (like a temporary git worktree or Docker container) to capture compiler/linter errors instantly before committing changes to the primary workspace.
 *   **Design-Pattern Enforcers:**
     *   Specialized modules to verify and generate specific design patterns (e.g., Singleton, Repository, Factory, Adapter).
-*   **Automated Dependency Management Management:**
+*   **Automated Dependency Management:**
     *   Tools to autonomously evaluate, select, install, and resolve version conflicts for third-party libraries (e.g., `npm_install_and_resolve`, `pip_lock_analyzer`).
 
 ## 3. Comprehensive Quality Assurance & Testing
