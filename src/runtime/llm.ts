@@ -8,7 +8,7 @@ export interface LLMProvider {
   analyze(content: string, criteria: string): Promise<LLMResponse>;
 }
 
-import { createProvider } from '../tui/llm';
+import { createProvider } from '../llm-providers';
 
 export class MockLLMProvider implements LLMProvider {
   async generate(prompt: string, context?: any): Promise<LLMResponse> {

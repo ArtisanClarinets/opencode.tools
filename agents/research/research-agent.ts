@@ -7,7 +7,7 @@ import { ResearchGatekeeper } from '../../src/governance/gatekeeper';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 import { EventBus } from '../../src/cowork/orchestrator/event-bus';
-import { createProvider, ProviderType } from '../../src/tui/llm';
+import { createProvider, ProviderType } from '../../src/llm-providers';
 
 export class ResearchError extends Error {
   constructor(message: string, public context?: Record<string, any>) {

@@ -5,6 +5,24 @@
 import { ToolDefinition } from './defs';
 import * as schemas from './schemas';
 import * as wrappers from './wrappers';
+import { runtimeHealthCheck, listRuntimeTools, isRuntimeInitialized } from '../../src/runtime/bootstrap';
+
+// Runtime tool wrappers that use the bootstrap module
+async function runtimeHealthCheckWrapper(_args: any): Promise<any> {
+  return runtimeHealthCheck();
+}
+
+async function listRuntimeToolsWrapper(_args: any): Promise<any> {
+  return { tools: listRuntimeTools() };
+}
+
+async function runtimeStatusWrapper(_args: any): Promise<any> {
+  const initialized = isRuntimeInitialized();
+  return { 
+    initialized,
+    timestamp: new Date().toISOString()
+  };
+}
 
 // Canonical tool definitions
 const CANONICAL_TOOLS: ToolDefinition[] = [
@@ -350,6 +368,35 @@ const CANONICAL_TOOLS: ToolDefinition[] = [
     name: 'opencode_tools_cli',
     description: 'Execute opencode-tools CLI command',
     inputSchema: schemas.OPENCODE_TOOLS_CLI_SCHEMA
+  },
+  
+  // Runtime health check tools
+  {
+    name: 'opencode_tools_status',
+    description: 'Get OpenCode Tools runtime status',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+      additionalProperties: false
+    }
+  },
+  {
+    name: 'opencode_tools_health',
+    description: 'Perform health check on OpenCode Tools runtime',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+      additionalProperties: false
+    }
+  },
+  {
+    name: 'opencode_tools_list',
+    description: 'List all available tools in the runtime',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+      additionalProperties: false
+    }
   }
 ];
 
@@ -428,29 +475,18 @@ export const TOOL_HANDLERS: Record<string, (args: any) => Promise<any>> = {
   
   // Foundry tools
   foundryOrchestrate: wrappers.foundryOrchestrateWrapper,
-  foundryStatus: wrappers.foundryStatusWrapper,
-  foundryHealth: wrappers.foundryHealthWrapper,
-  foundryCreateRequest: wrappers.foundryCreateRequestWrapper,
   
-  // Gateway tools
-  cto_sweep: wrappers.ctoSweepWrapper,
+  // Runtime tools
+  opencode_tools_cli: wrappers.opencodeToolsCliWrapper,
   
-  // Cowork tools
-  coworkList: wrappers.coworkListWrapper,
-  coworkRun: wrappers.coworkRunWrapper,
-  coworkSpawn: wrappers.coworkSpawnWrapper,
-  coworkHealth: wrappers.coworkHealthWrapper,
-  coworkPlugins: wrappers.coworkPluginsWrapper,
-  coworkAgents: wrappers.coworkAgentsWrapper,
-  
-  // New tools
-  pdf_generate: wrappers.pdfGenerateWrapper,
-  summarization_summarize: wrappers.summarizationSummarizeWrapper,
-  security_scan: wrappers.securityScanWrapper,
-  security_redact: wrappers.securityRedactWrapper,
-  security_seal_evidence: wrappers.securitySealEvidenceWrapper,
-  opencode_tools_cli: wrappers.opencodeToolsCliWrapper
+  // Runtime health check tools
+  opencode_tools_status: runtimeStatusWrapper,
+  opencode_tools_health: runtimeHealthCheckWrapper,
+  opencode_tools_list: listRuntimeToolsWrapper,
 };
+
+// Runtime health check and info handlers
+// These are added to the MCP server to verify runtime state
 
 // Generate aliases
 export const EXPLICIT_ALIASES: Record<string, string> = {

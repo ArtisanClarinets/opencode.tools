@@ -1,27 +1,27 @@
 # OpenCode Tools
 
-**Foundry-driven autonomous engineering team orchestration for OpenCode.**
+**MCP-based developer team automation for OpenCode.**
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/opencode/ai-tool)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-OpenCode Tools provides a multi-agent runtime that combines Foundry orchestration, Cowork plugin-based delegation, and a TUI/CLI operator interface.
+OpenCode Tools provides a multi-agent runtime that combines Foundry orchestration and Cowork plugin-based delegation through the Model Context Protocol (MCP).
 
 ## Current Status
 
-- Foundry is now the default orchestrator agent in `opencode.json`.
+- **MCP is now the primary interface** - all functionality is accessed through MCP tools.
+- Foundry is wired as the internal orchestration engine.
 - Cowork command/agent/plugin loading is integrated and test-covered.
 - Quality gates run through lint/build/typecheck/tests plus strict deliverable-scope validation.
-- Production-deliverable enforcement is enabled by default (`enforceDeliverableScope: true`): generated artifacts are excluded/reported, and release approval fails on blocking non-source artifacts.
-- `docs/ENTERPRISE_GAP_BACKLOG.md` tracks optional strategic enhancements beyond the default production delivery path.
+- Production-deliverable enforcement is enabled by default (`enforceDeliverableScope: true`).
 
 ## Core Capabilities
 
-- **Foundry Orchestration**: phased execution, iterative loops, peer review, and release gating.
-- **Cowork Runtime**: command registry, agent registry, plugin loading, permission gates, persistent event bus, Postgres-backed workspace/blackboard storage, and a Phase 1 workflow foundation.
-- **Specialized Agents**: research, docs, architecture, codegen, QA, delivery, PDF generation.
-- **Operator Interfaces**: interactive TUI and CLI commands for orchestration and plugin operations.
-- **Production Deliverable Guardrails**: strict scope policy (code/docs/tests only), bespoke-output constraints, and release blocking on scope violations.
+- **MCP Server**: Access all tools via the Model Context Protocol
+- **Foundry Orchestration**: phased execution, iterative loops, peer review, and release gating (internal)
+- **Cowork Runtime**: command registry, agent registry, plugin loading, permission gates, persistent event bus
+- **Specialized Agents**: research, docs, architecture, codegen, QA, delivery, PDF generation (available via MCP)
+- **Production Deliverable Guardrails**: strict scope policy (code/docs/tests only)
 
 ## 🆕 Collaborative Development Teams (New!)
 
@@ -113,50 +113,36 @@ npm install
 # Build
 npm run build
 
-# Launch TUI
-npm run tui
+# Start MCP server (primary interface)
+npm run mcp
 
-# Launch dedicated Foundry TUI
-npm run foundry:tui
-
-# Run Foundry orchestration from CLI
-npm run build && opencode-tools orchestrate --project "MyApp"
+# Or use the CLI to start MCP
+opencode-tools mcp
 ```
 
-Short alias is also available after global install:
+### Using with an MCP Client
+
+Configure your MCP client to connect to the opencode-tools server:
 
 ```bash
-oct orchestrate --project "MyApp"
+# The MCP server runs on stdio by default
+opencode-tools mcp
 ```
 
 ## CLI Commands
 
 ```bash
-# Foundry orchestration entry
-opencode-tools orchestrate --project "MyApp" --mode full
-opencode-tools orchestrate --project "MyApp" --mode research
-
-# Interactive TUI
-opencode-tools tui
-
-# Cowork system
-opencode-tools cowork list
-opencode-tools cowork run <command> [args...]
-opencode-tools cowork agents
-opencode-tools cowork plugins
-
-# MCP server
+# Start MCP server (primary interface)
 opencode-tools mcp
 
-# Manual integration helper
-opencode-tools integrate
-
-# Runtime wiring verification
+# Verify runtime health
 opencode-tools verify
-opencode-tools --verify
+opencode-tools doctor
 
-# Deliverable scope policy check
-npm run validate:deliverable-scope
+# Check runtime status
+npm run verify
+npm run doctor
+```
 
 # Dedicated Foundry TUI
 npm run foundry:tui

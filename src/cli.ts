@@ -70,70 +70,96 @@ function initializeCowork(): void {
 export function createCliProgram(dependencies: CliDependencies = defaultDependencies): Command {
 const program = new Command();
 
+// Deprecation message for removed CLI commands
+const DEPRECATION_NOTICE = `
+⚠️  DEPRECATED: This command has been removed in favor of the MCP interface.
+
+The OpenCode Tools are now accessed exclusively through the Model Context Protocol (MCP).
+To use this functionality, please use an MCP client with the opencode-tools server.
+
+Quick start:
+  1. Install: npm install -g opencode-tools
+  2. Run MCP server: opencode-tools mcp
+  3. Connect your MCP client to the server
+
+For more information, see the updated documentation.
+`;
+
 program
   .name('opencode-tools')
-  .description('OpenCode Tools - Complete Developer Team Automation (Independent TUI & CLI)')
+  .description('OpenCode Tools - MCP-based Developer Team Automation')
   .version(VERSION);
 
+// ============================================================
+// DEPRECATED CLI COMMANDS - Redirect to MCP
+// ============================================================
+
+// Research command - deprecated
 program
   .command('research')
-
-  .description('Execute research agent to gather comprehensive dossier')
-  .argument('<company>', 'Company name to research')
-  .option('-i, --industry <industry>', 'Industry sector')
-  .option('-o, --output <output>', 'Output directory', './output')
-  .action(async (company, options) => {
-    try {
-      logger.info(`Starting research for ${company}`);
-      const agent = new ResearchAgent();
-      const result = await agent.execute({
-        brief: {
-          company,
-          industry: options.industry || 'Technology',
-          description: 'Research project for comprehensive analysis',
-          goals: ['comprehensive research']
-        }
-      });
-      console.log('Research completed:', result);
-    } catch (error) {
-      logger.error('Research failed:', error);
-      process.exit(1);
-    }
+  .description('[DEPRECATED] Use MCP instead')
+  .action(() => {
+    console.error(DEPRECATION_NOTICE);
+    process.exit(1);
   });
 
+// Docs command - deprecated
 program
   .command('docs')
-  .description('Generate documentation (PRD and SOW)')
-  .argument('<input>', 'Input dossier file path')
-  .option('-o, --output <output>', 'Output directory', './output')
-  .action(async (input, options) => {
-    try {
-      logger.info('Generating documentation');
-      const inputPath = resolveReadableFile(input);
-      const outputDir = resolveOutputDirectory(options.output);
-      const payload = parseJsonFile<DocsCommandInput>(inputPath);
-      const dossier = extractDossier(payload);
-      const brief = extractBrief(payload);
-
-      const agent = dependencies.createDocumentationAgent();
-      const documents = await agent.generateDocuments(dossier, brief);
-
-      ensureDirectory(outputDir);
-      const prdPath = path.join(outputDir, 'PRD.md');
-      const sowPath = path.join(outputDir, 'SOW.md');
-      const metadataPath = path.join(outputDir, 'docs.metadata.json');
-      fs.writeFileSync(prdPath, documents.prd, 'utf-8');
-      fs.writeFileSync(sowPath, documents.sow, 'utf-8');
-      if (documents.metadata) {
-        fs.writeFileSync(metadataPath, JSON.stringify(documents.metadata, null, 2), 'utf-8');
-      }
-
-      console.log(`Documentation generated: PRD=${prdPath} SOW=${sowPath}`);
-    } catch (error) {
-      logger.error('Documentation generation failed:', error);
-      process.exit(1);
-    }
+  .description('[DEPRECATED] Use MCP instead')
+  .action(() => {
+    console.error(DEPRECATION_NOTICE);
+    process.exit(1);
   });
+
+// Architect command - deprecated
+program
+  .command('architect')
+  .description('[DEPRECATED] Use MCP instead')
+  .action(() => {
+    console.error(DEPRECATION_NOTICE);
+    process.exit(1);
+  });
+
+// PDF command - deprecated
+program
+  .command('pdf')
+  .description('[DEPRECATED] Use MCP instead')
+  .action(() => {
+    console.error(DEPRECATION_NOTICE);
+    process.exit(1);
+  });
+
+// TUI command - deprecated
+program
+  .command('tui')
+  .description('[DEPRECATED] Use MCP instead')
+  .action(() => {
+    console.error(DEPRECATION_NOTICE);
+    process.exit(1);
+  });
+
+// Orchestrate command - deprecated
+program
+  .command('orchestrate')
+  .description('[DEPRECATED] Use MCP instead')
+  .action(() => {
+    console.error(DEPRECATION_NOTICE);
+    process.exit(1);
+  });
+
+// Integrate command - deprecated
+program
+  .command('integrate')
+  .description('[DEPRECATED] Use MCP instead')
+  .action(() => {
+    console.error(DEPRECATION_NOTICE);
+    process.exit(1);
+  });
+
+// ============================================================
+// RETAINED CLI COMMANDS - MCP and Health Check
+// ============================================================
 
 program
   .command('architect')
@@ -200,65 +226,25 @@ program
     }
   });
 
+// ============================================================
+// MCP Server Command
+// ============================================================
+
 program
-  .command('tui')
-  .description('Launch interactive TUI')
+  .command('mcp')
+  .description('Start the MCP server for OpenCode integration')
   .action(async () => {
-    // Import and launch TUI
-    // Use dynamic import for ESM compatibility and to allow mocks in tests
-    const { startTui } = await import("./tui-app");
-    await startTui();
-  });
-
-program
-  .command('orchestrate')
-  .description('Start the main orchestration agent for self-iterative development')
-  .option('-p, --project <project>', 'Project name')
-  .option('-m, --mode <mode>', 'Operation mode: research|docs|architect|code|full', 'full')
-  .option('--json', 'Output machine-readable JSON report (no ASCII banner)', false)
-  .action(async (options) => {
     try {
-      logger.info('Starting orchestration agent');
-      console.log(`
-╔══════════════════════════════════════════════════════════════╗
-║              OpenCode Tools - Orchestration Mode             ║
-╠══════════════════════════════════════════════════════════════╣
-║  Acting as: Complete Apple-Level Engineering Team            ║
-║  - Receptionist: Initial requirements gathering              ║
-║  - Project Manager: Task coordination and planning           ║
-║  - Senior Engineers: Architecture and code generation        ║
-║  - QA Engineers: Testing and validation                      ║
-║  - DevOps: Deployment and infrastructure                     ║
-║  - CTO: Strategic oversight and final approval               ║
-╚══════════════════════════════════════════════════════════════╝
-      `);
+      process.env.OPENCODE_MCP = '1';
       
-      const intent = options.project || 'Enterprise implementation workflow';
-      const mode = normalizeOrchestrationMode(options.mode);
-      const foundry = new FoundryOrchestrator();
-      const baseRequest = createFoundryExecutionRequest(intent, process.cwd(), true);
-      const request = applyOrchestrationMode(baseRequest, mode);
-      const report = await foundry.execute(request);
-
-      if (options.json) {
-        // Output machine-readable report and exit
-        console.log(JSON.stringify(report, null, 2));
-      } else {
-        console.log('\n🧭 Foundry Report:');
-        console.log(`  Status: ${report.status}`);
-        console.log(`  Final phase: ${report.phase}`);
-        console.log(`  Mode: ${mode}`);
-        console.log(`  Tasks: ${report.tasks.filter(t => t.status === 'completed').length}/${report.tasks.length} completed`);
-        console.log(`  Quality gates: ${report.gateResults.filter(g => g.passed).length}/${report.gateResults.length} passed`);
-        if (report.deliverableScopeReport) {
-          console.log(
-            `  Deliverable scope: ${report.deliverableScopeReport.passed ? 'pass' : 'fail'} (${report.deliverableScopeReport.included.length} included, ${report.deliverableScopeReport.excluded.length} excluded)`,
-          );
-        }
-        console.log(`  Review: ${report.review.passed ? 'approved' : 'changes requested'} by ${report.review.reviewer}`);
-      }
+      // Import and run the MCP server
+      // The MCP server uses stdio transport for local execution
+      const { main } = await import('../tools/mcp-server.js');
+      
+      // This will run indefinitely until killed
+      await main();
     } catch (error) {
-      logger.error('Orchestration failed:', error);
+      logger.error('MCP server failed to start:', error);
       process.exit(1);
     }
   });
@@ -290,10 +276,82 @@ program
   .command('verify')
   .description('Verify Foundry/Cowork runtime wiring and health')
   .action(async () => {
+    // Initialize runtime and run verification
+    const { initializeRuntime, runtimeHealthCheck } = await import('./runtime/bootstrap');
+    initializeRuntime();
+    const health = runtimeHealthCheck();
+    console.log('Runtime Health Check:');
+    console.log(JSON.stringify(health, null, 2));
+    process.exit(health.errors.length > 0 ? 1 : 0);
+  });
+
+// Remove old orchestrate command - deprecated
+// (kept as placeholder to prevent CLI errors)
+
+program
+  .command('doctor')
+  .description('Run diagnostics and health checks')
+  .action(async () => {
+    const { initializeRuntime, runtimeHealthCheck } = await import('./runtime/bootstrap');
+    initializeRuntime();
+    const health = runtimeHealthCheck();
+    console.log('OpenCode Tools Diagnostics');
+    console.log('='.repeat(40));
+    console.log(`Initialized: ${health.initialized}`);
+    console.log(`Plugins: ${health.pluginCount}`);
+    console.log(`Agents: ${health.agentCount}`);
+    console.log(`Commands: ${health.commandCount}`);
+    console.log(`FS Base Path: ${health.fsBasePath}`);
+    console.log(`Foundry Bridge: ${health.foundryBridgeHealthy}`);
+    if (health.errors.length > 0) {
+      console.log('\nErrors:');
+      health.errors.forEach(e => console.log(`  - ${e}`));
+    }
+  });
+
+// MCP Server Command
+// ============================================================
+
+program
+  .command('mcp')
+  .description('Start the MCP server for OpenCode integration')
+  .action(async () => {
+    try {
+      process.env.OPENCODE_MCP = '1';
+      
+      // Import and run the MCP server
+      // The MCP server uses stdio transport for local execution
+      const { main } = await import('../tools/mcp-server.js');
+      
+      // This will run indefinitely until killed
+      await main();
+    } catch (error) {
+      logger.error('MCP server failed to start:', error);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('verify')
+  .description('Verify Foundry/Cowork runtime wiring and health')
+  .action(async () => {
     try {
       await runRuntimeVerification();
     } catch (error) {
       logger.error('Verification failed:', error);
+      process.exit(1);
+    }
+  });
+
+// Alias for verify - kept for compatibility
+program
+  .command('doctor')
+  .description('Alias for verify - check runtime health')
+  .action(async () => {
+    try {
+      await runRuntimeVerification();
+    } catch (error) {
+      logger.error('Health check failed:', error);
       process.exit(1);
     }
   });

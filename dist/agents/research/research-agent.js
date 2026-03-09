@@ -8,7 +8,7 @@ const json_db_1 = require("../../src/database/json-db");
 const gatekeeper_1 = require("../../src/governance/gatekeeper");
 const uuid_1 = require("uuid");
 const event_bus_1 = require("../../src/cowork/orchestrator/event-bus");
-const llm_1 = require("../../src/tui/llm");
+const llm_providers_1 = require("../../src/llm-providers");
 class ResearchError extends Error {
     constructor(message, context) {
         super(message);
@@ -28,7 +28,7 @@ class ResearchAgent {
     }
     async plan(args) {
         const { topic, scope, goals } = args;
-        const llm = (0, llm_1.createProvider)(this.provider);
+        const llm = (0, llm_providers_1.createProvider)(this.provider);
         const response = await llm.chatCompletion({
             messages: [
                 { role: "system", content: "You are a senior research analyst. Generate a research plan." },
@@ -43,7 +43,7 @@ class ResearchAgent {
     }
     async extractClaims(args) {
         const { content } = args;
-        const llm = (0, llm_1.createProvider)(this.provider);
+        const llm = (0, llm_providers_1.createProvider)(this.provider);
         const response = await llm.chatCompletion({
             messages: [
                 { role: "system", content: "Extract key factual claims from the text as a JSON list of strings." },
@@ -65,7 +65,7 @@ class ResearchAgent {
     }
     async peerReview(args) {
         const { dossier, criteria } = args;
-        const llm = (0, llm_1.createProvider)(this.provider);
+        const llm = (0, llm_providers_1.createProvider)(this.provider);
         const response = await llm.chatCompletion({
             messages: [
                 { role: "system", content: "Perform a peer review of the given research dossier." },
@@ -339,7 +339,7 @@ class ResearchAgent {
         try {
             // Use configured provider (default openai)
             // Note: In real app, provider should be injected via constructor
-            const llm = (0, llm_1.createProvider)(this.provider);
+            const llm = (0, llm_providers_1.createProvider)(this.provider);
             const context = companyData.map(d => d.content).join('\n\n').substring(0, 4000);
             const response = await llm.chatCompletion({
                 messages: [

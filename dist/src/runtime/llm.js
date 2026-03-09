@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MockLLMProvider = void 0;
-const llm_1 = require("../tui/llm");
+const llm_providers_1 = require("../llm-providers");
 class MockLLMProvider {
     async generate(prompt, context) {
         if (process.env.NODE_ENV === 'test' || process.env.COWORK_ALLOW_MOCK_LLM === 'true') {
@@ -15,7 +15,7 @@ class MockLLMProvider {
             };
         }
         else {
-            const provider = (0, llm_1.createProvider)('openai');
+            const provider = (0, llm_providers_1.createProvider)('openai');
             const response = await provider.chatCompletion({
                 messages: [{ role: 'user', content: prompt }]
             });
@@ -53,7 +53,7 @@ class MockLLMProvider {
             };
         }
         else {
-            const provider = (0, llm_1.createProvider)('openai');
+            const provider = (0, llm_providers_1.createProvider)('openai');
             const response = await provider.chatCompletion({
                 messages: [{ role: 'user', content: `Analyze the following content based on these criteria: ${criteria}\n\nContent:\n${content}` }]
             });

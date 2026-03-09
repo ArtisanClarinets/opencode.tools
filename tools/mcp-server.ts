@@ -15,6 +15,7 @@ import {
 import { TOOL_DEFS, getToolHandler } from './mcp/registry';
 import { toMcpContent } from './mcp/defs';
 import { z } from 'zod';
+import { initializeRuntime, getRuntime, runtimeHealthCheck } from '../src/runtime/bootstrap';
 
 // Set MCP mode and patch console to prevent stdout pollution
 if (typeof process !== 'undefined') {
@@ -43,6 +44,13 @@ if (typeof process !== 'undefined') {
  * Main MCP server implementation
  */
 export async function main(): Promise<void> {
+  // Initialize the runtime (loads plugins, agents, registries)
+  // This is the single source of truth for bootstrap - no more duplicated init logic
+  const runtime = initializeRuntime({
+    eagerInit: true,
+    verbose: false,
+  });
+  
   const server = new Server(
     {
       name: 'opencode-tools-mcp',
