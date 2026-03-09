@@ -68,7 +68,7 @@ Ensure that the inputs provided by the LLM exactly match the expected schema bef
 If an MCP tool connection closes, the orchestration client should attempt to restart the server and retry the operation at least once before failing the entire agent workflow.
 
 ### 4.3. Resource Limits
-If running in Docker/Kubernetes, ensure the container has enough memory. Node.js processes might need \`--max-old-space-size=4096\` if they are processing large datasets (like codebases or wikis).
+Node.js processes might need `--max-old-space-size=4096` if they are processing large datasets (like codebases or wikis).
 
 ## 5. Summary Checklist
 
