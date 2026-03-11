@@ -130,11 +130,6 @@ program
     process.exit(1);
   });
 
-// Delete these lines:
-//     process.exit(1);
-//   });
-  });
-
 // Orchestrate command - deprecated
 program
   .command('orchestrate')
@@ -827,3 +822,4 @@ if (require.main === module) {
 
   cli.parse(argv);
 }
+
