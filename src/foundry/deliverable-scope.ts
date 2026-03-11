@@ -72,7 +72,7 @@ const ROOT_DOC_FILES = new Set([
   'README.md',
   'AGENTS.md',
   'INTEGRATION_GUIDE.md',
-  'TUI_INTEGRATION.md',
+
   'FOUNDRY_PROMPT.md',
   'opencode-system-prompt.md',
 ]);

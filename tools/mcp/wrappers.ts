@@ -766,7 +766,7 @@ export async function securitySealEvidenceWrapper(args: any): Promise<any> {
 export async function opencodeToolsCliWrapper(args: any): Promise<any> {
   const { args: cliArgs = [] } = args;
   
-  if (cliArgs.includes('mcp') || cliArgs.includes('tui') || cliArgs.includes('dev')) {
+  if (cliArgs.includes('mcp') || cliArgs.includes('dev')) {
     throw new Error('Cannot run interactive or recursive commands from within MCP server');
   }
   
