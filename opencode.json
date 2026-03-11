@@ -293,8 +293,7 @@
     "Memory": {
       "type": "local",
       "command": [
-        "npx",
-        "@modelcontextprotocol/server-memory"
+        "mcp-server-memory"
       ],
       "enabled": true,
       "timeout": 15000
@@ -302,7 +301,6 @@
     "critical-thinking": {
       "type": "local",
       "command": [
-        "npx",
         "mcp-server-actor-critic-thinking"
       ],
       "enabled": true,
@@ -323,11 +321,10 @@
     "sequential-thinking": {
       "type": "local",
       "command": [
-        "npx",
-        "@modelcontextprotocol/server-sequential-thinking"
+        "mcp-server-sequential-thinking"
       ],
       "enabled": true,
-      "timeout": 15000
+      "timeout": 60000
     },
     "shadcn": {
       "type": "local",
@@ -338,7 +335,7 @@
         "mcp"
       ],
       "enabled": true,
-      "timeout": 15000
+      "timeout": 60000
     },
     "Desktop-Commander": {
       "type": "local",
@@ -347,7 +344,7 @@
         "@wonderwhy-er/desktop-commander"
       ],
       "enabled": true,
-      "timeout": 15000
+      "timeout": 60000
     },
     "next-devtools": {
       "type": "local",
@@ -356,7 +353,7 @@
         "next-devtools-mcp@latest"
       ],
       "enabled": true,
-      "timeout": 15000
+      "timeout": 60000
     },
     "prisma-mcp-server": {
       "type": "local",
@@ -367,7 +364,7 @@
         "mcp"
       ],
       "enabled": true,
-      "timeout": 15000
+      "timeout": 60000
     },
     "Better Auth": {
       "type": "local",
@@ -408,6 +405,5 @@
     "opencode-scheduler",
     "octto",
     "@nick-vi/opencode-type-inject"
-
   ]
 }

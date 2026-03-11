@@ -46,7 +46,7 @@
   "license": "MIT",
   "devDependencies": {
     "@jest/globals": "^27.5.1",
-    "@modelcontextprotocol/sdk": "^1.26.0",
+    "@modelcontextprotocol/sdk": "^1.27.1",
     "@modelcontextprotocol/server-memory": "^2026.1.26",
     "@modelcontextprotocol/server-sequential-thinking": "^2025.12.18",
     "@types/ink-gradient": "^2.0.4",
@@ -69,7 +69,6 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.26.0",
     "@types/archiver": "^7.0.0",
     "@types/handlebars": "^4.1.0",
     "@types/html-to-text": "^9.0.4",
