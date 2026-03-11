@@ -7,7 +7,7 @@
  * This bridge ensures that:
  * - Foundry messages are published to Cowork EventBus
  * - Cowork events are captured and stored in Foundry CollaborationHub
- * - TUI and other subscribers receive all collaboration messages
+ * - UI and other subscribers receive all collaboration messages
  */
 
 import type { FoundryMessage } from '../../foundry/contracts';

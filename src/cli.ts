@@ -130,12 +130,6 @@ program
     process.exit(1);
   });
 
-// TUI command - deprecated
-program
-  .command('tui')
-  .description('[DEPRECATED] Use MCP instead')
-  .action(() => {
-    console.error(DEPRECATION_NOTICE);
     process.exit(1);
   });
 
@@ -822,7 +816,7 @@ function resolveModulePath(specifier: string): string | null {
 if (require.main === module) {
   const cli = createCliProgram();
   const argv = process.argv.length === 2
-    ? [...process.argv, 'tui']
+    ? [...process.argv, 'mcp']
     : [...process.argv];
 
   if (argv.length === 3 && argv[2] === '--verify') {

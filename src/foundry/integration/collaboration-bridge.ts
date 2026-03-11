@@ -3,7 +3,7 @@
  *
  * Deep integration between FoundryOrchestrator and Cowork runtime.
  * Enables team-based execution, parallel monitoring, evidence collection,
- * and real-time visibility to TUI.
+ * and real-time visibility to UI.
  */
 
 import { FoundryOrchestrator } from '@/foundry/orchestrator';
@@ -125,7 +125,7 @@ export class FoundryCollaborationBridge {
     // Start collaboration request worker
     this.startRequestWorker();
 
-    // Set up event listeners for TUI visibility
+    // Set up event listeners for UI visibility
     this.setupEventListeners();
 
     this.initialized = true;
@@ -454,7 +454,7 @@ export class FoundryCollaborationBridge {
   }
 
   /**
-   * Publish team updates to EventBus for TUI visibility
+   * Publish team updates to EventBus for UI visibility
    */
   public publishTeamUpdates(projectId: string): void {
     const context = this.projectContexts.get(projectId);
@@ -465,7 +465,7 @@ export class FoundryCollaborationBridge {
     const team = context.team;
     const activities = this.getTeamActivity(projectId);
 
-    // Publish team:* events for TUI
+    // Publish team:* events for UI
     this.eventBus.publish('team:activity', {
       projectId,
       teamId: team.id,
@@ -607,7 +607,7 @@ export class FoundryCollaborationBridge {
     activities.push(activity);
     this.teamActivities.set(projectId, activities);
 
-    // Publish for TUI visibility
+    // Publish for UI visibility
     this.eventBus.publish('team:activity:update', {
       projectId,
       activity,
