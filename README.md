@@ -61,8 +61,6 @@ OpenCode Tools now supports **parallel, event-driven autonomous development team
 # Execute project with full team collaboration
 opencode-tools orchestrate --project "MyApp" --mode full
 
-# Dedicated Foundry TUI (new)
-npm run foundry:tui
 ```
 
 ### Configuration
@@ -144,8 +142,6 @@ npm run verify
 npm run doctor
 ```
 
-# Dedicated Foundry TUI
-npm run foundry:tui
 ```
 
 Notes:
@@ -167,7 +163,6 @@ Notes:
 # TypeScript build
 npm run build
 
-# TUI dev run
 npm run dev
 
 # Lint
@@ -207,7 +202,6 @@ npx jest tests/integration/cowork/persistence-and-eventing.integration.test.ts -
 ## Architecture Map
 
 - CLI entry: `src/cli.ts`
-- TUI entry: `src/tui-app.ts`
 - Foundry runtime bridge: `src/foundry/*`
 - Cowork runtime: `src/cowork/*`
 - Agent implementations: `agents/*`
@@ -224,10 +218,8 @@ npx jest tests/integration/cowork/persistence-and-eventing.integration.test.ts -
 
 - Developer guide: `AGENTS.md`
 - Integration: `INTEGRATION_GUIDE.md`
-- TUI integration notes: `TUI_INTEGRATION.md`
 - Foundry implementation notes: `FOUNDRY_IMPLEMENTATION_SUMMARY.md`
 - **Collaborative Teams Guide**: `docs/FOUNDRY_COWORK_INTEGRATION_GUIDE.md`
-- **Foundry TUI Guide**: `docs/FOUNDRY_TUI_GUIDE.md`
 - **Cowork Workspace Guide**: `docs/COWORK_SPACE_GUIDE.md`
 - **Cowork Test Hardening Notes**: `docs/COWORK_TEST_FIXES.md`
 - **Production Deliverable Policy**: `docs/PRODUCTION_DELIVERABLE_POLICY.md`
