@@ -194,14 +194,16 @@ export function resolveLLMProviderConfig(config?: LLMProviderConfig): ResolvedLL
         ? 'openai'
         : undefined);
 
+  const isMcp = process.env.OPENCODE_MCP === "1";
   if (!providerType) {
+    if (isMcp) return { type: "mock" };
     throw new Error(
       'Invalid cowork LLM provider configuration: set COWORK_LLM_PROVIDER=openai and OPENAI_API_KEY, or opt into mock with COWORK_ALLOW_MOCK_LLM=true in development/test.'
     );
   }
 
   if (providerType === 'mock') {
-    if (nodeEnv === 'test' || (isDevEnvironment(nodeEnv) && allowMockInDev)) {
+    if (nodeEnv === 'test' || isMcp || (isDevEnvironment(nodeEnv) && allowMockInDev)) {
       return { type: 'mock' };
     }
 
@@ -216,6 +218,7 @@ export function resolveLLMProviderConfig(config?: LLMProviderConfig): ResolvedLL
 
   const resolvedApiKey = config?.openai?.apiKey ?? process.env.OPENAI_API_KEY;
   if (!resolvedApiKey) {
+    if (isMcp) return { type: 'mock' };
     throw new Error('Invalid cowork LLM provider configuration: OPENAI_API_KEY is required for openai provider.');
   }
 

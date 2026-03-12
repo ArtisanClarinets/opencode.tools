@@ -268,6 +268,7 @@ program
   .description('Verify Foundry/Cowork runtime wiring and health')
   .action(async () => {
     // Initialize runtime and run verification
+    process.env.OPENCODE_MCP = "1";
     const { initializeRuntime, runtimeHealthCheck } = await import('./runtime/bootstrap');
     initializeRuntime();
     const health = runtimeHealthCheck();
@@ -283,6 +284,7 @@ program
   .command('doctor')
   .description('Run diagnostics and health checks')
   .action(async () => {
+    process.env.OPENCODE_MCP = "1";
     const { initializeRuntime, runtimeHealthCheck } = await import('./runtime/bootstrap');
     initializeRuntime();
     const health = runtimeHealthCheck();
