@@ -52,7 +52,7 @@ function integrateWithOpenCode(packageRoot) {
     try { fs.copyFileSync(systemPromptSrc, systemPromptDest); logger.success(`System prompt installed to: ${systemPromptDest}`); } catch(e) {}
   }
 
-  // Register MCP server configuration
+  // Register MCP server configuration and merge opencode.json
   const mcpConfigPath = path.join(opencodeDir, 'mcp.json');
   let mcpConfig = { servers: {} };
   if (fs.existsSync(mcpConfigPath)) {
